@@ -21,22 +21,27 @@ class GooglePlacesService:
     def search_places(
         self, query: str, location_bias: str = "", max_results: int = 10
     ) -> List[Dict[str, Any]]:
+        text_query = f"{query} {location_bias}".strip() if location_bias else query
         payload: Dict[str, Any] = {
-            "textQuery": query,
+            "textQuery": text_query,
             "maxResultCount": max_results,
         }
 
-        resp = httpx.post(
-            f"{PLACES_BASE}/places:searchText",
-            json=payload,
-            headers={
-                "X-Goog-Api-Key": self.api_key,
-                "X-Goog-FieldMask": FIELD_MASK,
-            },
-            timeout=10.0,
-        )
-        resp.raise_for_status()
-        data = resp.json()
+        try:
+            resp = httpx.post(
+                f"{PLACES_BASE}/places:searchText",
+                json=payload,
+                headers={
+                    "X-Goog-Api-Key": self.api_key,
+                    "X-Goog-FieldMask": FIELD_MASK,
+                },
+                timeout=10.0,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+        except httpx.HTTPError as e:
+            logger.error("Places API error for query '%s': %s", query, e)
+            return []
 
         results = []
         for place in data.get("places", []):
@@ -55,16 +60,29 @@ class GooglePlacesService:
         return results
 
     def get_place_details(self, place_id: str) -> Dict[str, Any]:
-        resp = httpx.get(
-            f"{PLACES_BASE}/places/{place_id}",
-            headers={
-                "X-Goog-Api-Key": self.api_key,
-                "X-Goog-FieldMask": FIELD_MASK,
-            },
-            timeout=10.0,
-        )
-        resp.raise_for_status()
-        return resp.json()
+        try:
+            resp = httpx.get(
+                f"{PLACES_BASE}/places/{place_id}",
+                headers={"X-Goog-Api-Key": self.api_key, "X-Goog-FieldMask": FIELD_MASK},
+                timeout=10.0,
+            )
+            resp.raise_for_status()
+            place = resp.json()
+            return {
+                "place_id": place.get("id", place_id),
+                "name": place.get("displayName", {}).get("text", ""),
+                "address": place.get("formattedAddress", ""),
+                "lat": place.get("location", {}).get("latitude", 0.0),
+                "lng": place.get("location", {}).get("longitude", 0.0),
+                "rating": place.get("rating"),
+                "review_count": place.get("userRatingCount"),
+                "price_level": _parse_price_level(place.get("priceLevel")),
+                "opening_hours": _parse_opening_hours(place.get("currentOpeningHours")),
+                "photo_url": _parse_photo_url(place.get("photos", []), self.api_key),
+            }
+        except httpx.HTTPError as e:
+            logger.error("Places API detail error for %s: %s", place_id, e)
+            return {"place_id": place_id}
 
 
 def _parse_price_level(level: Optional[str]) -> Optional[int]:

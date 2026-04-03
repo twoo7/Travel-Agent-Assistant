@@ -1,7 +1,6 @@
 import pytest
 import httpx
 import respx
-from unittest.mock import MagicMock, patch
 from backend.src.services.google_places_service import GooglePlacesService
 from backend.src.services.google_directions_service import GoogleDirectionsService
 from backend.src.models.trip import DayItem
@@ -66,24 +65,41 @@ def test_places_service_empty_response():
     assert results == []
 
 
+@respx.mock
 def test_directions_service_returns_routes():
-    with patch("backend.src.services.google_directions_service.httpx.get") as mock_get:
-        mock_get.return_value = MagicMock(
-            status_code=200,
-            json=lambda: MOCK_DIRECTIONS,
-        )
+    respx.get("https://maps.googleapis.com/maps/api/directions/json").mock(
+        return_value=httpx.Response(200, json=MOCK_DIRECTIONS)
+    )
 
-        service = GoogleDirectionsService(api_key="test_key")
-        items = [
-            DayItem(type="poi", name="A", address="Addr A", lat=35.71, lng=139.79),
-            DayItem(type="poi", name="B", address="Addr B", lat=35.72, lng=139.80),
-        ]
-        routes = service.get_routes(items)
+    service = GoogleDirectionsService(api_key="test_key")
+    items = [
+        DayItem(type="poi", name="A", address="Addr A", lat=35.71, lng=139.79),
+        DayItem(type="poi", name="B", address="Addr B", lat=35.72, lng=139.80),
+    ]
+    routes = service.get_routes(items)
 
     assert len(routes) == 1
     assert routes[0]["distance_km"] == pytest.approx(1.4, abs=0.01)
     assert routes[0]["travel_time_mins"] == 18
     assert routes[0]["encoded_polyline"] == "abc123encodedpolyline"
+
+
+@respx.mock
+def test_directions_service_handles_network_error():
+    respx.get("https://maps.googleapis.com/maps/api/directions/json").mock(
+        side_effect=httpx.ConnectError("Connection refused")
+    )
+
+    service = GoogleDirectionsService(api_key="test_key")
+    items = [
+        DayItem(type="poi", name="A", address="Addr A", lat=35.71, lng=139.79),
+        DayItem(type="poi", name="B", address="Addr B", lat=35.72, lng=139.80),
+    ]
+    routes = service.get_routes(items)
+
+    assert len(routes) == 1
+    assert routes[0]["distance_km"] is None
+    assert routes[0]["encoded_polyline"] is None
 
 
 def test_directions_service_single_item_returns_empty():

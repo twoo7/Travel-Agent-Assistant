@@ -28,18 +28,23 @@ class GoogleDirectionsService:
             origin = f"{items[i].lat},{items[i].lng}"
             destination = f"{items[i + 1].lat},{items[i + 1].lng}"
 
-            resp = httpx.get(
-                DIRECTIONS_BASE,
-                params={
-                    "origin": origin,
-                    "destination": destination,
-                    "mode": "walking",
-                    "key": self.api_key,
-                },
-                timeout=10.0,
-            )
-            resp.raise_for_status()
-            data = resp.json()
+            try:
+                resp = httpx.get(
+                    DIRECTIONS_BASE,
+                    params={
+                        "origin": origin,
+                        "destination": destination,
+                        "mode": "walking",
+                        "key": self.api_key,
+                    },
+                    timeout=10.0,
+                )
+                resp.raise_for_status()
+                data = resp.json()
+            except httpx.HTTPError as e:
+                logger.error("Directions API error for %s→%s: %s", origin, destination, e)
+                routes.append({"distance_km": None, "travel_time_mins": None, "encoded_polyline": None})
+                continue
 
             if data.get("status") != "OK" or not data.get("routes"):
                 routes.append({
