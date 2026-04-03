@@ -8,12 +8,15 @@ def test_config_raises_when_missing_keys(monkeypatch):
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     monkeypatch.delenv("GOOGLE_PLACES_API_KEY", raising=False)
 
-    import importlib
-    import backend.src.config as cfg
-    importlib.reload(cfg)
+    from backend.src.config import Config
+    with pytest.raises(ValueError) as exc_info:
+        Config.validate()
 
-    with pytest.raises(ValueError, match="AMADEUS_API_KEY"):
-        cfg.Config.validate()
+    error_msg = str(exc_info.value)
+    assert "AMADEUS_API_KEY" in error_msg
+    assert "AMADEUS_API_SECRET" in error_msg
+    assert "ANTHROPIC_API_KEY" in error_msg
+    assert "GOOGLE_PLACES_API_KEY" in error_msg
 
 
 def test_config_passes_when_all_keys_present(monkeypatch):
@@ -22,8 +25,5 @@ def test_config_passes_when_all_keys_present(monkeypatch):
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test_anthropic")
     monkeypatch.setenv("GOOGLE_PLACES_API_KEY", "test_google")
 
-    import importlib
-    import backend.src.config as cfg
-    importlib.reload(cfg)
-
-    cfg.Config.validate()  # should not raise
+    from backend.src.config import Config
+    Config.validate()  # should not raise
