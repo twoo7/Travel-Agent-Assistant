@@ -2,9 +2,12 @@ from dotenv import load_dotenv
 from pathlib import Path
 import os
 
-# Load only from backend/.env to avoid picking up root-level .env files
+# Load only from backend/.env to avoid picking up root-level .env files.
+# Skip when running under pytest (PYTEST_CURRENT_TEST is set by pytest automatically)
+# so that test monkeypatches that clear env vars are not overwritten by load_dotenv.
 _backend_env = Path(__file__).parent.parent / ".env"
-load_dotenv(dotenv_path=_backend_env)
+if not os.getenv("PYTEST_CURRENT_TEST"):
+    load_dotenv(dotenv_path=_backend_env, override=False)
 
 
 class Config:
