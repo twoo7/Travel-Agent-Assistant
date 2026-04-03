@@ -1,3 +1,4 @@
+import html as html_lib
 import json
 import logging
 from datetime import datetime, timezone
@@ -23,10 +24,10 @@ class ExportService:
         try:
             from weasyprint import HTML  # lazy import — fails gracefully on Windows without GTK
             return HTML(string=html).write_pdf()
-        except OSError as e:
+        except (OSError, ImportError) as e:
             raise RuntimeError(
-                f"WeasyPrint requires GTK system libraries (not available on Windows). "
-                f"Deploy on Linux for PDF generation. Original error: {e}"
+                f"WeasyPrint is not available: {e}. "
+                "On Windows, install GTK runtime. On Linux, run: pip install weasyprint"
             ) from e
 
 
@@ -38,14 +39,17 @@ def _build_html(request: ExportRequest) -> str:
         if leg.selected_flight:
             f = leg.selected_flight
             seg = f.segments[0]
-            flight_info = f"<p>✈ {seg.departure_airport} → {seg.arrival_airport} · {f.price} {f.currency}</p>"
+            flight_info = (
+                f"<p>✈ {html_lib.escape(seg.departure_airport)} → {html_lib.escape(seg.arrival_airport)}"
+                f" · {html_lib.escape(str(f.price))} {html_lib.escape(f.currency)}</p>"
+            )
         stays = "".join(
-            f"<p>🏨 {s.hotel.name} ({s.check_in} – {s.check_out})</p>"
+            f"<p>🏨 {html_lib.escape(s.hotel.name)} ({html_lib.escape(s.check_in)} – {html_lib.escape(s.check_out)})</p>"
             for s in leg.hotel_stays
         )
         legs_summary += (
             f"<div class='leg'>"
-            f"<h3>Leg {leg.leg_number}: {leg.origin} → {leg.destination}</h3>"
+            f"<h3>Leg {html_lib.escape(str(leg.leg_number))}: {html_lib.escape(leg.origin)} → {html_lib.escape(leg.destination)}</h3>"
             f"{flight_info}{stays}"
             f"</div>"
         )
@@ -54,11 +58,12 @@ def _build_html(request: ExportRequest) -> str:
     for day in request.itinerary:
         items_html = "".join(
             "<li>"
-            + item.name
-            + f" — {item.address}"
-            + (f" ({item.duration_mins} min)" if item.duration_mins else "")
+            + html_lib.escape(item.name)
+            + f" — {html_lib.escape(item.address)}"
+            + (f" ({html_lib.escape(str(item.duration_mins))} min)" if item.duration_mins else "")
             + (
-                f" <span class='distance'>{item.travel_time_to_next_mins} min · {item.distance_to_next_km} km →</span>"
+                f" <span class='distance'>{html_lib.escape(str(item.travel_time_to_next_mins))} min"
+                f" · {html_lib.escape(str(item.distance_to_next_km))} km →</span>"
                 if item.distance_to_next_km
                 else ""
             )
@@ -67,8 +72,8 @@ def _build_html(request: ExportRequest) -> str:
         )
         days_html += (
             f"<div class='day'>"
-            f"<h3>Day {day.day_number} — {day.date} · {day.city}</h3>"
-            f"<p class='narrative'>{day.narrative}</p>"
+            f"<h3>Day {html_lib.escape(str(day.day_number))} — {html_lib.escape(day.date)} · {html_lib.escape(day.city)}</h3>"
+            f"<p class='narrative'>{html_lib.escape(day.narrative)}</p>"
             f"<ul>{items_html}</ul>"
             f"</div>"
         )
@@ -92,7 +97,7 @@ def _build_html(request: ExportRequest) -> str:
 </head>
 <body>
 <h1>Trip Plan</h1>
-<p>{ctx.adults} adults{f' + {ctx.children} children' if ctx.children else ''} · Departing from {ctx.home_origin}</p>
+<p>{html_lib.escape(str(ctx.adults))} adults{f' + {html_lib.escape(str(ctx.children))} children' if ctx.children else ''} · Departing from {html_lib.escape(ctx.home_origin)}</p>
 <h2>Flight &amp; Hotel Summary</h2>
 {legs_summary}
 <h2>Itinerary</h2>
