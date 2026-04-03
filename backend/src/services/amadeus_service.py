@@ -39,7 +39,14 @@ class AmadeusService:
             response = self.client.shopping.flight_offers_search.get(**params)
             offers: List[FlightOffer] = []
             for raw in response.data:
+                # Skip offers with no itineraries
+                if not raw.get("itineraries"):
+                    logger.warning("Skipping flight offer %s: no itineraries", raw.get("id"))
+                    continue
                 itinerary = raw["itineraries"][0]
+                if not itinerary.get("segments"):
+                    logger.warning("Skipping flight offer %s: no segments", raw.get("id"))
+                    continue
                 segments = [
                     FlightSegment(
                         departure_airport=seg["departure"]["iataCode"],
@@ -85,6 +92,9 @@ class AmadeusService:
             offers: List[HotelOffer] = []
             for raw in response.data:
                 hotel = raw["hotel"]
+                if not raw.get("offers"):
+                    logger.warning("Skipping hotel %s: no offers", hotel.get("hotelId"))
+                    continue
                 price = float(raw["offers"][0]["price"]["total"])
                 currency = raw["offers"][0]["price"]["currency"]
                 address_lines = hotel.get("address", {}).get("lines", [])
