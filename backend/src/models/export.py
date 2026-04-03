@@ -25,5 +25,6 @@ class ExportRequest(BaseModel):
 
 
 from backend.src.models.trip import TripContext  # noqa: E402
-ExportPlan.model_rebuild()
-ExportRequest.model_rebuild()
+_ns = {"TripContext": TripContext, "DayItem": DayItem}
+ExportPlan.model_rebuild(_types_namespace=_ns)
+ExportRequest.model_rebuild(_types_namespace=_ns)

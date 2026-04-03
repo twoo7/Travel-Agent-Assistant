@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 
 class DayItem(BaseModel):
+    id: Optional[str] = None
     type: Literal["poi", "hotel", "airport"]
     name: str
     address: str

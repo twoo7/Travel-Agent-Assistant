@@ -20,7 +20,7 @@ class POI(BaseModel):
     review_count: Optional[int] = None
     photo_url: Optional[str] = None
     nearest_transit: Optional[str] = None
-    claude_note: str
+    claude_note: str = ""
     claude_best_time: Optional[str] = None
     claude_booking_tip: Optional[str] = None
 
