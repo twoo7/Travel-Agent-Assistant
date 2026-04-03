@@ -1,0 +1,88 @@
+<h2>POI & Itinerary View — Layout Options</h2>
+<p class="subtitle">How should users visualize their day-by-day plan and distances?</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>List-only with distance indicators</h3>
+      <p>Drag-and-drop ordered list per day. Travel time and distance shown inline between each stop.</p>
+      <div style="margin-top: 12px; font-family: monospace; font-size: 11px; background: #0d1117; color: #e6edf3; padding: 12px; border-radius: 6px; line-height: 1.9;">
+        <div style="background: #1f2937; border-radius: 4px; padding: 6px 10px; margin-bottom: 2px; display: flex; align-items: center; gap: 8px;">
+          <span style="color: #6b7280;">⠿</span>
+          <span style="color: #fbbf24;">📍</span>
+          <span>Eiffel Tower</span>
+          <span style="margin-left: auto; color: #60a5fa; font-size: 10px;">9:00 AM · 2hr</span>
+        </div>
+        <div style="text-align: center; color: #6b7280; font-size: 10px; padding: 2px 0;">↓ &nbsp; 18 min walk · 1.4 km</div>
+        <div style="background: #1f2937; border-radius: 4px; padding: 6px 10px; margin-bottom: 2px; display: flex; align-items: center; gap: 8px;">
+          <span style="color: #6b7280;">⠿</span>
+          <span style="color: #fbbf24;">📍</span>
+          <span>Musée d'Orsay</span>
+          <span style="margin-left: auto; color: #60a5fa; font-size: 10px;">11:30 AM · 2.5hr</span>
+        </div>
+        <div style="text-align: center; color: #6b7280; font-size: 10px; padding: 2px 0;">↓ &nbsp; 6 min walk · 0.5 km</div>
+        <div style="background: #1f2937; border-radius: 4px; padding: 6px 10px; display: flex; align-items: center; gap: 8px;">
+          <span style="color: #6b7280;">⠿</span>
+          <span style="color: #fbbf24;">🍽️</span>
+          <span>Café de Flore</span>
+          <span style="margin-left: auto; color: #60a5fa; font-size: 10px;">2:00 PM · 1hr</span>
+        </div>
+      </div>
+      <div class="pros-cons" style="margin-top: 10px;">
+        <div class="pros"><h4>Pros</h4><ul><li>Simple, fast to build</li><li>Clean mobile experience</li><li>No map API costs</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>No spatial context</li><li>Can't see if route backtracks</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Split view — List + Live Map</h3>
+      <p>Drag-and-drop list on the left. Interactive map on the right showing numbered pins and route lines between POIs.</p>
+      <div style="margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <div style="font-family: monospace; font-size: 11px; background: #0d1117; color: #e6edf3; padding: 10px; border-radius: 6px; line-height: 1.9;">
+          <div style="color: #6b7280; font-size: 10px; margin-bottom: 6px;">DAY 1 · Paris</div>
+          <div style="background: #1f2937; border-radius: 4px; padding: 5px 8px; margin-bottom: 4px; font-size: 10px; display:flex; gap:6px; align-items:center;">
+            <span style="color:#6b7280;">⠿</span>
+            <span style="background:#3b82f6;color:white;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;">1</span>
+            Eiffel Tower
+          </div>
+          <div style="text-align:center;color:#4b5563;font-size:9px;">↓ 18 min · 1.4km</div>
+          <div style="background: #1f2937; border-radius: 4px; padding: 5px 8px; margin-bottom: 4px; font-size: 10px; display:flex; gap:6px; align-items:center;">
+            <span style="color:#6b7280;">⠿</span>
+            <span style="background:#3b82f6;color:white;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;">2</span>
+            Musée d'Orsay
+          </div>
+          <div style="text-align:center;color:#4b5563;font-size:9px;">↓ 6 min · 0.5km</div>
+          <div style="background: #1f2937; border-radius: 4px; padding: 5px 8px; font-size: 10px; display:flex; gap:6px; align-items:center;">
+            <span style="color:#6b7280;">⠿</span>
+            <span style="background:#3b82f6;color:white;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;">3</span>
+            Café de Flore
+          </div>
+        </div>
+        <div style="background: #1a2332; border-radius: 6px; padding: 8px; display: flex; align-items: center; justify-content: center; min-height: 120px; position: relative; overflow: hidden;">
+          <!-- Fake map -->
+          <div style="position:absolute;inset:0;background:linear-gradient(135deg,#1a2e1a 0%,#1a2332 40%,#1a2d2a 100%);opacity:0.6;"></div>
+          <svg width="100%" height="100%" style="position:absolute;inset:0;" viewBox="0 0 120 120">
+            <!-- Route line -->
+            <polyline points="35,80 55,50 70,65" fill="none" stroke="#3b82f6" stroke-width="2" stroke-dasharray="4,2"/>
+            <!-- Pins -->
+            <circle cx="35" cy="80" r="8" fill="#3b82f6"/>
+            <text x="35" y="83" text-anchor="middle" fill="white" font-size="8">1</text>
+            <circle cx="55" cy="50" r="8" fill="#3b82f6"/>
+            <text x="55" y="53" text-anchor="middle" fill="white" font-size="8">2</text>
+            <circle cx="70" cy="65" r="8" fill="#3b82f6"/>
+            <text x="70" y="68" text-anchor="middle" fill="white" font-size="8">3</text>
+          </svg>
+          <span style="color:#6b7280;font-size:10px;position:relative;z-index:1;">Google Maps</span>
+        </div>
+      </div>
+      <div class="pros-cons" style="margin-top: 10px;">
+        <div class="pros"><h4>Pros</h4><ul><li>Spatial context at a glance</li><li>Spot inefficient routes instantly</li><li>More impressive portfolio piece</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Google Maps JS API costs</li><li>More complex to build</li><li>Less ideal on mobile</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>

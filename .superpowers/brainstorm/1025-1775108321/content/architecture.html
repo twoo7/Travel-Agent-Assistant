@@ -1,0 +1,102 @@
+<h2>System Architecture — Travel Agent Assistant</h2>
+<p class="subtitle">Option C: Frontend-owned state with full context passing</p>
+
+<div style="font-family: monospace; font-size: 13px; line-height: 1.7; background: #0d1117; color: #e6edf3; padding: 28px 32px; border-radius: 12px; margin: 16px 0;">
+
+<div style="color: #79c0ff; font-weight: bold; margin-bottom: 16px; font-size: 15px;">FRONTEND (Next.js / TypeScript)</div>
+<div style="padding-left: 16px; border-left: 2px solid #30363d; margin-bottom: 8px;">
+  <span style="color: #ffa657;">TripPlanContext</span> &nbsp;—&nbsp; <span style="color: #a5d6ff;">Global state: destination, dates, travelers, selected flight, hotel, POIs</span>
+</div>
+<div style="padding-left: 16px; border-left: 2px solid #30363d; margin-bottom: 20px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;">
+  <div style="background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 8px; text-align: center;">
+    <div style="color: #79c0ff; font-size: 11px;">Step 1</div>
+    <div style="color: #e6edf3; font-size: 12px; margin-top: 4px;">Trip Setup</div>
+    <div style="color: #8b949e; font-size: 10px; margin-top: 2px;">destination<br>dates · travelers</div>
+  </div>
+  <div style="background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 8px; text-align: center;">
+    <div style="color: #79c0ff; font-size: 11px;">Step 2</div>
+    <div style="color: #e6edf3; font-size: 12px; margin-top: 4px;">Flights</div>
+    <div style="color: #8b949e; font-size: 10px; margin-top: 2px;">search · AI pick<br>select</div>
+  </div>
+  <div style="background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 8px; text-align: center;">
+    <div style="color: #79c0ff; font-size: 11px;">Step 3</div>
+    <div style="color: #e6edf3; font-size: 12px; margin-top: 4px;">Hotels</div>
+    <div style="color: #8b949e; font-size: 10px; margin-top: 2px;">search · AI pick<br>select</div>
+  </div>
+  <div style="background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 8px; text-align: center;">
+    <div style="color: #79c0ff; font-size: 11px;">Step 4</div>
+    <div style="color: #e6edf3; font-size: 12px; margin-top: 4px;">Points of Interest</div>
+    <div style="color: #8b949e; font-size: 10px; margin-top: 2px;">AI suggest<br>enrich · select</div>
+  </div>
+  <div style="background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 8px; text-align: center;">
+    <div style="color: #79c0ff; font-size: 11px;">Step 5</div>
+    <div style="color: #e6edf3; font-size: 12px; margin-top: 4px;">Plan &amp; Export</div>
+    <div style="color: #8b949e; font-size: 10px; margin-top: 2px;">review · PDF<br>+ JSON</div>
+  </div>
+</div>
+
+<div style="text-align: center; color: #8b949e; margin: 4px 0;">↕ &nbsp; REST API (full TripContext passed with every request)</div>
+
+<div style="color: #7ee787; font-weight: bold; margin: 20px 0 16px; font-size: 15px;">BACKEND (FastAPI / Python)</div>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding-left: 16px; border-left: 2px solid #30363d; margin-bottom: 20px;">
+  <div>
+    <div style="color: #ffa657; font-size: 12px; font-weight: bold; margin-bottom: 8px;">AGENTS (Claude orchestration)</div>
+    <div style="background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 10px; font-size: 11px; line-height: 1.8;">
+      <div><span style="color: #d2a8ff;">FlightAgent</span> &nbsp;→ rank &amp; suggest flights</div>
+      <div><span style="color: #d2a8ff;">HotelAgent</span> &nbsp;→ rank &amp; suggest hotels</div>
+      <div><span style="color: #d2a8ff;">POIAgent</span> &nbsp;&nbsp;&nbsp;→ generate + curate POIs</div>
+      <div><span style="color: #d2a8ff;">ItineraryAgent</span> → write day-by-day narrative</div>
+    </div>
+  </div>
+  <div>
+    <div style="color: #ffa657; font-size: 12px; font-weight: bold; margin-bottom: 8px;">SERVICES (external APIs)</div>
+    <div style="background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 10px; font-size: 11px; line-height: 1.8;">
+      <div><span style="color: #79c0ff;">AmadeusService</span> &nbsp;→ flights + hotels</div>
+      <div><span style="color: #79c0ff;">GooglePlacesService</span> → POI data</div>
+      <div><span style="color: #79c0ff;">ExportService</span> &nbsp;&nbsp;&nbsp;&nbsp;→ PDF + JSON gen</div>
+      <div style="color: #8b949e;">&nbsp;</div>
+    </div>
+  </div>
+</div>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding-left: 16px; border-left: 2px solid #30363d;">
+  <div>
+    <div style="color: #ffa657; font-size: 12px; font-weight: bold; margin-bottom: 8px;">MODELS (Pydantic)</div>
+    <div style="background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 10px; font-size: 11px; line-height: 1.8; color: #a5d6ff;">
+      <div>TripContext &nbsp; FlightOffer</div>
+      <div>HotelOffer &nbsp;&nbsp; POI</div>
+      <div>Itinerary &nbsp;&nbsp;&nbsp; DayPlan</div>
+      <div>ExportPlan</div>
+    </div>
+  </div>
+  <div>
+    <div style="color: #ffa657; font-size: 12px; font-weight: bold; margin-bottom: 8px;">API ENDPOINTS</div>
+    <div style="background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 10px; font-size: 11px; line-height: 1.8; color: #a5d6ff;">
+      <div>POST /flights/search</div>
+      <div>POST /hotels/search</div>
+      <div>POST /pois/suggest</div>
+      <div>POST /itinerary/generate</div>
+      <div>POST /export/plan</div>
+    </div>
+  </div>
+</div>
+
+<div style="text-align: center; color: #8b949e; margin: 20px 0 4px;">↕ &nbsp; External API calls</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 12px;">
+  <div style="background: #161b22; border: 1px solid #f0883e40; border-radius: 6px; padding: 10px; text-align: center;">
+    <div style="color: #ffa657; font-weight: bold; font-size: 12px;">Amadeus API</div>
+    <div style="color: #8b949e; font-size: 10px; margin-top: 4px;">Flights · Hotels</div>
+  </div>
+  <div style="background: #161b22; border: 1px solid #3fb95040; border-radius: 6px; padding: 10px; text-align: center;">
+    <div style="color: #7ee787; font-weight: bold; font-size: 12px;">Google Places API</div>
+    <div style="color: #8b949e; font-size: 10px; margin-top: 4px;">POIs · Hours · Distance</div>
+  </div>
+  <div style="background: #161b22; border: 1px solid #79c0ff40; border-radius: 6px; padding: 10px; text-align: center;">
+    <div style="color: #79c0ff; font-weight: bold; font-size: 12px;">Anthropic Claude API</div>
+    <div style="color: #8b949e; font-size: 10px; margin-top: 4px;">Suggestions · Narration</div>
+  </div>
+</div>
+
+</div>
+
+<p class="subtitle" style="margin-top: 16px;">Does this overall architecture look right? Any components missing or need changing?</p>

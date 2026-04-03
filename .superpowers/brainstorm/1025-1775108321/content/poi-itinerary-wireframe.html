@@ -1,0 +1,206 @@
+<h2>Step 4 — Points of Interest & Itinerary Builder</h2>
+<p class="subtitle">Split view: drag-and-drop day planner + live Google Map with route</p>
+
+<div style="background: #0d1117; border-radius: 12px; padding: 4px; margin: 16px 0; overflow: hidden;">
+
+  <!-- Top bar -->
+  <div style="background: #161b22; padding: 10px 16px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #30363d;">
+    <span style="color: #8b949e; font-size: 11px; font-family: monospace;">✈ Paris · Jun 10–17 · 2 adults</span>
+    <span style="margin-left: auto; background: #21262d; color: #58a6ff; font-size: 11px; padding: 3px 10px; border-radius: 20px; font-family: monospace;">Step 4 of 5 — Points of Interest</span>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 380px 1fr; min-height: 520px;">
+
+    <!-- LEFT: Drag & drop itinerary -->
+    <div style="border-right: 1px solid #30363d; overflow-y: auto; max-height: 520px;">
+
+      <!-- AI Suggestions Bar -->
+      <div style="background: #0d2136; border-bottom: 1px solid #1f3a52; padding: 10px 14px; display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 16px;">✨</span>
+        <span style="color: #58a6ff; font-size: 11px; font-family: monospace;">Claude suggests 12 POIs based on your trip</span>
+        <span style="margin-left: auto; background: #1f6feb; color: white; font-size: 10px; padding: 3px 8px; border-radius: 4px; cursor: pointer; white-space: nowrap;">View Suggestions</span>
+      </div>
+
+      <!-- Day 1 -->
+      <div style="padding: 10px 12px 4px; border-bottom: 1px solid #21262d;">
+        <div style="color: #f0883e; font-size: 11px; font-weight: bold; font-family: monospace; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+          <span>DAY 1 — Tue Jun 10</span>
+          <span style="margin-left: auto; color: #6e7681; font-size: 10px; font-weight: normal;">3 stops</span>
+        </div>
+        <!-- POI Item -->
+        <div style="background: #21262d; border: 1px solid #30363d; border-radius: 6px; padding: 8px 10px; margin-bottom: 3px; display: flex; align-items: center; gap: 8px; font-family: monospace; font-size: 11px; cursor: grab;">
+          <span style="color: #6e7681; font-size: 14px; line-height:1;">⠿</span>
+          <span style="background: #1f6feb; color: white; border-radius: 50%; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink:0;">1</span>
+          <div style="flex:1;">
+            <div style="color: #e6edf3;">Eiffel Tower</div>
+            <div style="color: #8b949e; font-size: 10px;">Landmark · 9:00 AM · ~2 hr</div>
+          </div>
+          <span style="color: #3fb950; font-size: 10px;">Open</span>
+        </div>
+        <!-- Distance connector -->
+        <div style="text-align: center; color: #484f58; font-size: 10px; font-family: monospace; padding: 2px 0; display: flex; align-items: center; justify-content: center; gap: 4px;">
+          <span>↓</span><span style="color: #388bfd;">18 min walk · 1.4 km</span>
+        </div>
+        <div style="background: #21262d; border: 1px solid #30363d; border-radius: 6px; padding: 8px 10px; margin-bottom: 3px; display: flex; align-items: center; gap: 8px; font-family: monospace; font-size: 11px; cursor: grab;">
+          <span style="color: #6e7681; font-size: 14px; line-height:1;">⠿</span>
+          <span style="background: #1f6feb; color: white; border-radius: 50%; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink:0;">2</span>
+          <div style="flex:1;">
+            <div style="color: #e6edf3;">Musée d'Orsay</div>
+            <div style="color: #8b949e; font-size: 10px;">Museum · 11:30 AM · ~2.5 hr</div>
+          </div>
+          <span style="color: #3fb950; font-size: 10px;">Open</span>
+        </div>
+        <div style="text-align: center; color: #484f58; font-size: 10px; font-family: monospace; padding: 2px 0; display: flex; align-items: center; justify-content: center; gap: 4px;">
+          <span>↓</span><span style="color: #388bfd;">6 min walk · 0.5 km</span>
+        </div>
+        <div style="background: #21262d; border: 1px solid #30363d; border-radius: 6px; padding: 8px 10px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; font-family: monospace; font-size: 11px; cursor: grab;">
+          <span style="color: #6e7681; font-size: 14px; line-height:1;">⠿</span>
+          <span style="background: #1f6feb; color: white; border-radius: 50%; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink:0;">3</span>
+          <div style="flex:1;">
+            <div style="color: #e6edf3;">Café de Flore</div>
+            <div style="color: #8b949e; font-size: 10px;">Restaurant · 2:00 PM · ~1.5 hr</div>
+          </div>
+          <span style="color: #3fb950; font-size: 10px;">Open</span>
+        </div>
+        <div style="border: 1px dashed #30363d; border-radius: 6px; padding: 6px; text-align: center; color: #484f58; font-size: 10px; font-family: monospace; margin-bottom: 8px;">+ Drop POI here</div>
+      </div>
+
+      <!-- Day 2 -->
+      <div style="padding: 10px 12px 4px; border-bottom: 1px solid #21262d;">
+        <div style="color: #f0883e; font-size: 11px; font-weight: bold; font-family: monospace; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+          <span>DAY 2 — Wed Jun 11</span>
+          <span style="margin-left: auto; color: #6e7681; font-size: 10px; font-weight: normal;">2 stops</span>
+        </div>
+        <div style="background: #21262d; border: 1px solid #30363d; border-radius: 6px; padding: 8px 10px; margin-bottom: 3px; display: flex; align-items: center; gap: 8px; font-family: monospace; font-size: 11px; cursor: grab;">
+          <span style="color: #6e7681; font-size: 14px; line-height:1;">⠿</span>
+          <span style="background: #1f6feb; color: white; border-radius: 50%; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink:0;">4</span>
+          <div style="flex:1;">
+            <div style="color: #e6edf3;">Louvre Museum</div>
+            <div style="color: #8b949e; font-size: 10px;">Museum · 10:00 AM · ~3 hr</div>
+          </div>
+          <span style="color: #3fb950; font-size: 10px;">Open</span>
+        </div>
+        <div style="text-align: center; color: #484f58; font-size: 10px; font-family: monospace; padding: 2px 0; display: flex; align-items: center; justify-content: center; gap: 4px;">
+          <span>↓</span><span style="color: #388bfd;">12 min walk · 1.0 km</span>
+        </div>
+        <div style="background: #21262d; border: 1px solid #30363d; border-radius: 6px; padding: 8px 10px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; font-family: monospace; font-size: 11px; cursor: grab;">
+          <span style="color: #6e7681; font-size: 14px; line-height:1;">⠿</span>
+          <span style="background: #1f6feb; color: white; border-radius: 50%; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink:0;">5</span>
+          <div style="flex:1;">
+            <div style="color: #e6edf3;">Palais Royal Garden</div>
+            <div style="color: #8b949e; font-size: 10px;">Park · 1:30 PM · ~1 hr</div>
+          </div>
+          <span style="color: #3fb950; font-size: 10px;">Open</span>
+        </div>
+        <div style="border: 1px dashed #30363d; border-radius: 6px; padding: 6px; text-align: center; color: #484f58; font-size: 10px; font-family: monospace; margin-bottom: 8px;">+ Drop POI here</div>
+      </div>
+
+      <!-- Unscheduled pool -->
+      <div style="padding: 10px 12px;">
+        <div style="color: #8b949e; font-size: 11px; font-weight: bold; font-family: monospace; margin-bottom: 8px;">UNSCHEDULED</div>
+        <div style="background: #161b22; border: 1px dashed #388bfd; border-radius: 6px; padding: 8px 10px; margin-bottom: 3px; display: flex; align-items: center; gap: 8px; font-family: monospace; font-size: 11px; cursor: grab; opacity: 0.8;">
+          <span style="color: #6e7681; font-size: 14px; line-height:1;">⠿</span>
+          <div style="flex:1;">
+            <div style="color: #e6edf3;">Notre-Dame Cathedral</div>
+            <div style="color: #8b949e; font-size: 10px;">Landmark · Not scheduled yet</div>
+          </div>
+          <span style="color: #f0883e; font-size: 10px;">Drag to day →</span>
+        </div>
+        <div style="background: #161b22; border: 1px dashed #388bfd; border-radius: 6px; padding: 8px 10px; margin-bottom: 3px; display: flex; align-items: center; gap: 8px; font-family: monospace; font-size: 11px; cursor: grab; opacity: 0.8;">
+          <span style="color: #6e7681; font-size: 14px; line-height:1;">⠿</span>
+          <div style="flex:1;">
+            <div style="color: #e6edf3;">Montmartre District</div>
+            <div style="color: #8b949e; font-size: 10px;">Neighborhood · Not scheduled yet</div>
+          </div>
+          <span style="color: #f0883e; font-size: 10px;">Drag to day →</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Map panel -->
+    <div style="position: relative; background: #1c2128; display: flex; flex-direction: column;">
+      <!-- Day tabs -->
+      <div style="background: #161b22; border-bottom: 1px solid #30363d; padding: 8px 12px; display: flex; gap: 6px; flex-wrap: wrap;">
+        <span style="background: #1f6feb; color: white; font-size: 10px; padding: 3px 10px; border-radius: 20px; font-family: monospace; cursor: pointer;">All Days</span>
+        <span style="background: #21262d; color: #8b949e; font-size: 10px; padding: 3px 10px; border-radius: 20px; font-family: monospace; cursor: pointer;">Day 1</span>
+        <span style="background: #21262d; color: #8b949e; font-size: 10px; padding: 3px 10px; border-radius: 20px; font-family: monospace; cursor: pointer;">Day 2</span>
+        <span style="background: #21262d; color: #8b949e; font-size: 10px; padding: 3px 10px; border-radius: 20px; font-family: monospace; cursor: pointer;">Day 3 ···</span>
+        <span style="margin-left: auto; color: #8b949e; font-size: 10px; font-family: monospace; align-self: center;">📍 5 locations</span>
+      </div>
+
+      <!-- Mock map -->
+      <div style="flex:1; position: relative; overflow: hidden; min-height: 420px;">
+        <!-- Simulated map background -->
+        <div style="position:absolute;inset:0;background: linear-gradient(135deg, #1a2e1a 0%, #1c2128 30%, #1a2a2e 60%, #1e2a1e 100%);"></div>
+
+        <!-- Fake streets -->
+        <svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 400 420" preserveAspectRatio="xMidYMid slice">
+          <!-- Streets -->
+          <line x1="0" y1="120" x2="400" y2="100" stroke="#2d3748" stroke-width="8"/>
+          <line x1="0" y1="200" x2="400" y2="220" stroke="#2d3748" stroke-width="12"/>
+          <line x1="0" y1="300" x2="400" y2="290" stroke="#2d3748" stroke-width="8"/>
+          <line x1="80" y1="0" x2="100" y2="420" stroke="#2d3748" stroke-width="8"/>
+          <line x1="180" y1="0" x2="200" y2="420" stroke="#2d3748" stroke-width="14"/>
+          <line x1="300" y1="0" x2="310" y2="420" stroke="#2d3748" stroke-width="8"/>
+          <!-- Park area -->
+          <rect x="220" y="140" width="60" height="50" rx="4" fill="#1a3a1a" opacity="0.7"/>
+          <!-- Water -->
+          <path d="M 100 250 Q 160 240 220 255 Q 280 265 340 250" stroke="#1a3a4a" stroke-width="18" fill="none"/>
+
+          <!-- Day 1 route (blue) -->
+          <polyline points="120,320 190,210 210,240" fill="none" stroke="#388bfd" stroke-width="2.5" stroke-dasharray="0" opacity="0.9"/>
+          <!-- Day 2 route (purple) -->
+          <polyline points="195,130 220,160" fill="none" stroke="#a371f7" stroke-width="2.5" opacity="0.9"/>
+
+          <!-- Pin 1 - Eiffel Tower -->
+          <circle cx="120" cy="320" r="14" fill="#388bfd" stroke="#1c2128" stroke-width="2"/>
+          <text x="120" y="325" text-anchor="middle" fill="white" font-size="11" font-weight="bold">1</text>
+
+          <!-- Pin 2 - Musée d'Orsay -->
+          <circle cx="190" cy="210" r="14" fill="#388bfd" stroke="#1c2128" stroke-width="2"/>
+          <text x="190" y="215" text-anchor="middle" fill="white" font-size="11" font-weight="bold">2</text>
+
+          <!-- Pin 3 - Café de Flore -->
+          <circle cx="210" cy="240" r="14" fill="#388bfd" stroke="#1c2128" stroke-width="2"/>
+          <text x="210" y="245" text-anchor="middle" fill="white" font-size="11" font-weight="bold">3</text>
+
+          <!-- Pin 4 - Louvre -->
+          <circle cx="195" cy="130" r="14" fill="#a371f7" stroke="#1c2128" stroke-width="2"/>
+          <text x="195" y="135" text-anchor="middle" fill="white" font-size="11" font-weight="bold">4</text>
+
+          <!-- Pin 5 - Palais Royal -->
+          <circle cx="220" cy="160" r="14" fill="#a371f7" stroke="#1c2128" stroke-width="2"/>
+          <text x="220" y="165" text-anchor="middle" fill="white" font-size="11" font-weight="bold">5</text>
+
+          <!-- Legend -->
+          <rect x="290" y="10" width="100" height="52" rx="4" fill="#161b22" opacity="0.9"/>
+          <circle cx="302" cy="25" r="5" fill="#388bfd"/>
+          <text x="312" y="29" fill="#8b949e" font-size="9">Day 1</text>
+          <circle cx="302" cy="42" r="5" fill="#a371f7"/>
+          <text x="312" y="46" fill="#8b949e" font-size="9">Day 2</text>
+          <line x1="296" y1="55" x2="306" y2="55" stroke="#30363d" stroke-width="1.5" stroke-dasharray="3,2"/>
+          <text x="312" y="59" fill="#484f58" font-size="9">Route</text>
+        </svg>
+
+        <!-- Hover card mockup -->
+        <div style="position:absolute; top: 16px; left: 16px; background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 10px 12px; font-family: monospace; font-size: 11px; min-width: 160px; box-shadow: 0 4px 12px rgba(0,0,0,0.4);">
+          <div style="color: #e6edf3; font-weight: bold; margin-bottom: 4px;">📍 Eiffel Tower</div>
+          <div style="color: #3fb950; font-size: 10px;">Open · Closes 11:45 PM</div>
+          <div style="color: #8b949e; font-size: 10px; margin-top: 2px;">Landmark · 7th arr.</div>
+          <div style="color: #8b949e; font-size: 10px;">⭐ 4.7 · 180k reviews</div>
+          <div style="color: #388bfd; font-size: 10px; margin-top: 4px; cursor: pointer;">View details →</div>
+        </div>
+      </div>
+
+      <!-- Bottom bar: AI narration trigger -->
+      <div style="background: #161b22; border-top: 1px solid #30363d; padding: 10px 14px; display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 14px;">✨</span>
+        <span style="color: #8b949e; font-size: 11px; font-family: monospace; flex: 1;">Ready to generate your day-by-day itinerary narrative</span>
+        <span style="background: #238636; color: white; font-size: 11px; padding: 5px 14px; border-radius: 6px; cursor: pointer; white-space: nowrap; font-family: monospace;">Generate Itinerary →</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top: 12px;">Does this layout capture what you had in mind for the POI step?</p>
