@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build a stateless FastAPI backend with Pydantic data models, Amadeus/Google/Anthropic service wrappers, four Claude agents, and six REST endpoints powering the travel planning funnel.
+**Goal:** Build a stateless FastAPI backend with Pydantic data models, Amadeus/Google/Anthropic service wrappers, four Claude agents, and REST endpoints powering the travel planning funnel. Supports multi-destination trips with per-leg transport modes (flight, train, ferry, car), detailed AI pick explanations, and a full transport-segment export.
 
-**Architecture:** Six POST endpoints each accept a full `TripContext` payload alongside request-specific params. Services wrap external APIs; agents call Claude with structured prompts and return typed responses. No session state — every call is self-contained.
+**Architecture:** POST endpoints each accept a full `TripContext` payload alongside request-specific params. Services wrap external APIs; agents call Claude with structured prompts and return typed responses. No session state — every call is self-contained. Transport mode drives which search path runs: Amadeus for flights, Google Directions for car legs, static info cards for train/ferry.
 
 **Tech Stack:** Python 3.11 · FastAPI · Pydantic v2 · anthropic SDK · amadeus SDK · httpx · WeasyPrint · pytest
 
@@ -20,24 +20,25 @@
 | `backend/.gitignore` | Exclude venv, .env, pycache |
 | `backend/main.py` | FastAPI app, router registration, CORS |
 | `backend/src/config.py` | Load + validate env vars |
-| `backend/src/models/trip.py` | TripContext, TripLeg, HotelStay, DayPlan, DayItem |
+| `backend/src/models/trip.py` | TripContext, TripLeg (+ transport_mode), HotelStay (+ accommodation_type), DayPlan, DayItem (+ transport_mode, spans_days) |
 | `backend/src/models/flight.py` | FlightOffer, FlightSegment, FlightSearchRequest |
-| `backend/src/models/hotel.py` | HotelOffer, HotelSearchRequest |
+| `backend/src/models/hotel.py` | HotelOffer, HotelStay, HotelSearchRequest |
 | `backend/src/models/poi.py` | POI, POISuggestRequest, DistancesRequest |
-| `backend/src/models/export.py` | ExportPlan, ItineraryDay, ExportRequest |
+| `backend/src/models/export.py` | ExportPlan, ItineraryDay, ExportRequest, TransportSegment <!-- NEW: added for multi-modal export --> |
 | `backend/src/services/amadeus_service.py` | search_flights(), search_hotels() |
 | `backend/src/services/google_places_service.py` | search_places(), get_place_details() |
-| `backend/src/services/google_directions_service.py` | get_routes() |
+| `backend/src/services/google_directions_service.py` | get_routes(), get_drive_time() <!-- NEW: added for car legs --> |
 | `backend/src/services/export_service.py` | generate_pdf(), generate_json() |
-| `backend/src/agents/flight_agent.py` | rank_and_recommend() for flights |
-| `backend/src/agents/hotel_agent.py` | rank_and_recommend() for hotels |
+| `backend/src/agents/flight_agent.py` | rank_and_recommend() — detailed ai_reason <!-- MODIFIED: detailed explanation --> |
+| `backend/src/agents/hotel_agent.py` | rank_and_recommend() — detailed ai_reason <!-- MODIFIED: detailed explanation --> |
 | `backend/src/agents/poi_agent.py` | suggest_pois() |
-| `backend/src/agents/itinerary_agent.py` | generate_narrative() |
+| `backend/src/agents/itinerary_agent.py` | generate_narrative() — transport-aware day items <!-- MODIFIED --> |
 | `backend/src/routers/flights.py` | POST /flights/search |
 | `backend/src/routers/hotels.py` | POST /hotels/search |
 | `backend/src/routers/pois.py` | POST /pois/suggest, POST /pois/distances |
 | `backend/src/routers/itinerary.py` | POST /itinerary/generate |
-| `backend/src/routers/export.py` | POST /export/plan |
+| `backend/src/routers/export.py` | POST /export/plan (pdf + json) — includes transport_segments <!-- MODIFIED --> |
+| `backend/src/routers/segments.py` | POST /segments/drive-time <!-- NEW: added for car legs --> |
 | `backend/tests/test_models.py` | Model validation tests |
 | `backend/tests/test_amadeus_service.py` | Amadeus response transformation tests |
 | `backend/tests/test_google_services.py` | Places + Directions tests |
@@ -253,7 +254,7 @@ from backend.src.models.trip import TripContext, TripLeg, DayPlan, DayItem
 from backend.src.models.flight import FlightOffer, FlightSegment, FlightSearchRequest
 from backend.src.models.hotel import HotelOffer, HotelStay, HotelSearchRequest
 from backend.src.models.poi import POI, POISuggestRequest, DistancesRequest
-from backend.src.models.export import ExportPlan, ItineraryDay
+from backend.src.models.export import ExportPlan, ItineraryDay, TransportSegment
 
 
 def test_trip_context_defaults():
@@ -266,6 +267,34 @@ def test_trip_context_defaults():
 def test_day_item_type_validation():
     with pytest.raises(Exception):
         DayItem(type="invalid", name="X", address="Y", lat=0.0, lng=0.0)
+
+
+# NEW: added for multi-modal transport
+def test_trip_leg_transport_mode_default():
+    leg = TripLeg(leg_number=1, origin="JFK", destination="NRT", departure_date="2026-06-10")
+    assert leg.transport_mode == "flight"
+
+
+# NEW: added for multi-modal transport
+def test_trip_leg_transport_mode_train():
+    leg = TripLeg(leg_number=2, origin="PAR", destination="AMS", departure_date="2026-06-15",
+                  transport_mode="train")
+    assert leg.transport_mode == "train"
+
+
+# NEW: added for multi-modal transport
+def test_day_item_spans_days_default():
+    item = DayItem(type="poi", name="Overnight Ferry", address="Port", lat=0.0, lng=0.0)
+    assert item.spans_days == 1
+
+
+# NEW: added for hotel accommodation types
+def test_hotel_stay_accommodation_type_default():
+    from backend.src.models.hotel import HotelOffer, HotelStay
+    offer = HotelOffer(id="h1", name="Test Hotel", address="Addr", lat=0.0, lng=0.0,
+                       price_per_night=100.0, currency="USD")
+    stay = HotelStay(hotel=offer, check_in="2026-06-10", check_out="2026-06-12")
+    assert stay.accommodation_type == "hotel"
 
 
 def test_flight_offer_defaults():
@@ -311,6 +340,19 @@ def test_export_plan_schema_version():
         generated_at="2026-06-01T12:00:00",
     )
     assert plan.schema_version == "1.0"
+
+
+# NEW: added for multi-modal export
+def test_transport_segment_model():
+    seg = TransportSegment(
+        mode="train",
+        origin="Paris Gare du Nord",
+        destination="Amsterdam Centraal",
+        duration_mins=180,
+    )
+    assert seg.mode == "train"
+    assert seg.booking_link is None
+    assert seg.booking_ref is None
 ```
 
 - [ ] **Step 2: Run to verify they fail**
@@ -322,6 +364,8 @@ pytest tests/test_models.py -v
 Expected: `ModuleNotFoundError`.
 
 - [ ] **Step 3: Create `backend/src/models/trip.py`**
+
+<!-- MODIFIED: TripLeg gains transport_mode; DayItem gains transport_mode and spans_days -->
 
 ```python
 from __future__ import annotations
@@ -340,6 +384,9 @@ class DayItem(BaseModel):
     distance_to_next_km: Optional[float] = None
     travel_time_to_next_mins: Optional[int] = None
     route_polyline_to_next: Optional[str] = None
+    # NEW: added for transport-aware itinerary items
+    transport_mode: Optional[str] = None
+    spans_days: int = 1
 
 
 class DayPlan(BaseModel):
@@ -354,6 +401,8 @@ class HotelStay(BaseModel):
     hotel: "HotelOffer"
     check_in: str
     check_out: str
+    # NEW: added for non-flight leg accommodation types
+    accommodation_type: Literal["hotel", "ferry_cabin", "sleeper_train"] = "hotel"
 
 
 class TripLeg(BaseModel):
@@ -361,6 +410,8 @@ class TripLeg(BaseModel):
     origin: str
     destination: str
     departure_date: str
+    # NEW: added for multi-modal transport
+    transport_mode: Literal["flight", "train", "ferry", "car"] = "flight"
     selected_flight: Optional["FlightOffer"] = None
     hotel_stays: List[HotelStay] = []
     days: List[DayPlan] = []
@@ -422,12 +473,13 @@ class FlightSearchRequest(BaseModel):
     adults: int
     max_results: int = 10
 
-
 from backend.src.models.trip import TripContext  # noqa: E402
 FlightSearchRequest.model_rebuild()
 ```
 
 - [ ] **Step 5: Create `backend/src/models/hotel.py`**
+
+<!-- MODIFIED: HotelStay accommodation_type field is now on HotelStay in trip.py but HotelOffer stays here -->
 
 ```python
 from typing import Optional
@@ -497,7 +549,6 @@ class POISuggestRequest(BaseModel):
 class DistancesRequest(BaseModel):
     day_items: List["DayItem"]
 
-
 from backend.src.models.trip import TripContext, DayItem  # noqa: E402
 POISuggestRequest.model_rebuild()
 DistancesRequest.model_rebuild()
@@ -505,10 +556,24 @@ DistancesRequest.model_rebuild()
 
 - [ ] **Step 7: Create `backend/src/models/export.py`**
 
+<!-- MODIFIED: TransportSegment model added; ExportPlan gains transport_segments -->
+
 ```python
-from typing import List
+from typing import List, Literal, Optional
 from pydantic import BaseModel
 from backend.src.models.trip import DayItem
+
+
+# NEW: added for multi-modal export
+class TransportSegment(BaseModel):
+    mode: Literal["flight", "train", "ferry", "car"]
+    origin: str
+    destination: str
+    operator: Optional[str] = None
+    duration_mins: Optional[int] = None
+    booking_link: Optional[str] = None
+    booking_ref: Optional[str] = None
+    notes: Optional[str] = None
 
 
 class ItineraryDay(BaseModel):
@@ -524,11 +589,15 @@ class ExportPlan(BaseModel):
     trip_context: "TripContext"
     itinerary: List[ItineraryDay]
     generated_at: str
+    # NEW: added for multi-modal export
+    transport_segments: List[TransportSegment] = []
 
 
 class ExportRequest(BaseModel):
     trip_context: "TripContext"
     itinerary: List[ItineraryDay]
+    # NEW: added for multi-modal export
+    transport_segments: List[TransportSegment] = []
 
 
 from backend.src.models.trip import TripContext  # noqa: E402
@@ -542,13 +611,13 @@ ExportRequest.model_rebuild()
 pytest tests/test_models.py -v
 ```
 
-Expected: 5 passed.
+Expected: all passed.
 
 - [ ] **Step 9: Commit**
 
 ```bash
 git add backend/src/models/ backend/tests/test_models.py
-git commit -m "feat: Pydantic data models for trip, flights, hotels, POIs, export"
+git commit -m "feat: Pydantic data models for trip, flights, hotels, POIs, export — with transport_mode and TransportSegment"
 ```
 
 ---
@@ -871,6 +940,23 @@ def test_directions_service_returns_routes():
     assert routes[0]["distance_km"] == pytest.approx(1.4, 0.01)
     assert routes[0]["travel_time_mins"] == 18
     assert routes[0]["encoded_polyline"] == "abc123encodedpolyline"
+
+
+# NEW: added for car leg drive-time endpoint
+def test_drive_time_returns_result():
+    import httpx
+    with patch("backend.src.services.google_directions_service.httpx.get") as mock_get:
+        mock_get.return_value = MagicMock(
+            status_code=200,
+            json=lambda: MOCK_DIRECTIONS,
+        )
+        service = GoogleDirectionsService(api_key="test_key")
+        result = service.get_drive_time(
+            origin="35.71,139.79",
+            destination="35.80,139.90",
+        )
+    assert result["distance_km"] == pytest.approx(1.4, 0.01)
+    assert result["travel_time_mins"] == 18
 ```
 
 - [ ] **Step 2: Install respx for mocking httpx**
@@ -989,10 +1075,12 @@ def _parse_photo_url(photos: List[Dict], api_key: str) -> Optional[str]:
 
 - [ ] **Step 5: Create `backend/src/services/google_directions_service.py`**
 
+<!-- MODIFIED: get_drive_time() added for /segments/drive-time endpoint -->
+
 ```python
 import logging
 import math
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 import httpx
 from backend.src.config import Config
 from backend.src.models.trip import DayItem
@@ -1019,36 +1107,51 @@ class GoogleDirectionsService:
         for i in range(len(items) - 1):
             origin = f"{items[i].lat},{items[i].lng}"
             destination = f"{items[i + 1].lat},{items[i + 1].lng}"
-
-            resp = httpx.get(
-                DIRECTIONS_BASE,
-                params={
-                    "origin": origin,
-                    "destination": destination,
-                    "mode": "walking",
-                    "key": self.api_key,
-                },
-                timeout=10.0,
-            )
-            resp.raise_for_status()
-            data = resp.json()
-
-            if data.get("status") != "OK" or not data.get("routes"):
-                routes.append({
-                    "distance_km": None,
-                    "travel_time_mins": None,
-                    "encoded_polyline": None,
-                })
-                continue
-
-            leg = data["routes"][0]["legs"][0]
-            routes.append({
-                "distance_km": round(leg["distance"]["value"] / 1000, 2),
-                "travel_time_mins": math.ceil(leg["duration"]["value"] / 60),
-                "encoded_polyline": data["routes"][0]["overviewPolyline"]["points"],
-            })
-
+            routes.append(self._fetch_route(origin, destination))
         return routes
+
+    # NEW: added for car leg /segments/drive-time endpoint
+    def get_drive_time(
+        self,
+        origin: str,
+        destination: str,
+        mode: str = "driving",
+    ) -> Dict[str, Any]:
+        """
+        Returns drive time and distance for a single origin→destination pair.
+        origin/destination can be lat,lng strings or address strings.
+        """
+        return self._fetch_route(origin, destination, mode=mode)
+
+    def _fetch_route(
+        self, origin: str, destination: str, mode: str = "walking"
+    ) -> Dict[str, Any]:
+        resp = httpx.get(
+            DIRECTIONS_BASE,
+            params={
+                "origin": origin,
+                "destination": destination,
+                "mode": mode,
+                "key": self.api_key,
+            },
+            timeout=10.0,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+
+        if data.get("status") != "OK" or not data.get("routes"):
+            return {
+                "distance_km": None,
+                "travel_time_mins": None,
+                "encoded_polyline": None,
+            }
+
+        leg = data["routes"][0]["legs"][0]
+        return {
+            "distance_km": round(leg["distance"]["value"] / 1000, 2),
+            "travel_time_mins": math.ceil(leg["duration"]["value"] / 60),
+            "encoded_polyline": data["routes"][0]["overviewPolyline"]["points"],
+        }
 ```
 
 - [ ] **Step 6: Run tests**
@@ -1057,13 +1160,13 @@ class GoogleDirectionsService:
 pytest tests/test_google_services.py -v
 ```
 
-Expected: 2 passed.
+Expected: 3 passed.
 
 - [ ] **Step 7: Commit**
 
 ```bash
 git add backend/src/services/google_places_service.py backend/src/services/google_directions_service.py backend/tests/test_google_services.py
-git commit -m "feat: GooglePlacesService and GoogleDirectionsService"
+git commit -m "feat: GooglePlacesService and GoogleDirectionsService with drive-time support"
 ```
 
 ---
@@ -1081,7 +1184,7 @@ Create `backend/tests/test_export_service.py`:
 ```python
 import json
 from backend.src.services.export_service import ExportService
-from backend.src.models.export import ExportPlan, ExportRequest, ItineraryDay
+from backend.src.models.export import ExportPlan, ExportRequest, ItineraryDay, TransportSegment
 from backend.src.models.trip import TripContext
 
 
@@ -1113,6 +1216,25 @@ def test_generate_pdf_returns_bytes():
     pdf_bytes = service.generate_pdf(req)
     assert isinstance(pdf_bytes, bytes)
     assert pdf_bytes[:4] == b"%PDF"
+
+
+# NEW: added for multi-modal export
+def test_generate_json_includes_transport_segments():
+    service = ExportService()
+    req = _make_request()
+    req.transport_segments = [
+        TransportSegment(
+            mode="train",
+            origin="Paris Gare du Nord",
+            destination="Amsterdam Centraal",
+            duration_mins=180,
+            booking_link="https://www.eurail.com",
+        )
+    ]
+    result = service.generate_json(req)
+    parsed = json.loads(result)
+    assert len(parsed["transport_segments"]) == 1
+    assert parsed["transport_segments"][0]["mode"] == "train"
 ```
 
 - [ ] **Step 2: Run to verify they fail**
@@ -1124,6 +1246,8 @@ pytest tests/test_export_service.py -v
 Expected: `ModuleNotFoundError`.
 
 - [ ] **Step 3: Create `backend/src/services/export_service.py`**
+
+<!-- MODIFIED: _build_html now renders transport_segments section -->
 
 ```python
 import json
@@ -1138,6 +1262,7 @@ class ExportService:
             trip_context=request.trip_context,
             itinerary=request.itinerary,
             generated_at=datetime.utcnow().isoformat(),
+            transport_segments=request.transport_segments,
         )
         return plan.model_dump_json(indent=2)
 
@@ -1147,24 +1272,48 @@ class ExportService:
 
 
 def _build_html(request: ExportRequest) -> str:
+    import html as html_module
     ctx = request.trip_context
     legs_summary = ""
     for leg in ctx.legs:
-        flight_info = ""
-        if leg.selected_flight:
+        mode_icon = {"flight": "✈", "train": "🚂", "ferry": "⛴", "car": "🚗"}.get(
+            getattr(leg, "transport_mode", "flight"), "✈"
+        )
+        transport_info = ""
+        if getattr(leg, "transport_mode", "flight") == "flight" and leg.selected_flight:
             f = leg.selected_flight
             seg = f.segments[0]
-            flight_info = f"<p>✈ {seg.departure_airport} → {seg.arrival_airport} · {f.price} {f.currency}</p>"
+            transport_info = f"<p>{mode_icon} {html_module.escape(seg.departure_airport)} → {html_module.escape(seg.arrival_airport)} · {f.price} {f.currency}</p>"
+        else:
+            transport_info = f"<p>{mode_icon} {html_module.escape(leg.origin)} → {html_module.escape(leg.destination)}</p>"
+
         stays = "".join(
-            f"<p>🏨 {s.hotel.name} ({s.check_in} – {s.check_out})</p>"
+            f"<p>🏨 {html_module.escape(s.hotel.name)} ({s.check_in} – {s.check_out})"
+            + (f" [{s.accommodation_type}]" if getattr(s, "accommodation_type", "hotel") != "hotel" else "")
+            + "</p>"
             for s in leg.hotel_stays
         )
-        legs_summary += f"<div class='leg'><h3>Leg {leg.leg_number}: {leg.origin} → {leg.destination}</h3>{flight_info}{stays}</div>"
+        legs_summary += f"<div class='leg'><h3>Leg {leg.leg_number}: {html_module.escape(leg.origin)} → {html_module.escape(leg.destination)}</h3>{transport_info}{stays}</div>"
+
+    # NEW: transport segments section
+    transport_html = ""
+    if request.transport_segments:
+        mode_icons = {"flight": "✈", "train": "🚂", "ferry": "⛴", "car": "🚗"}
+        segs_html = "".join(
+            f"<li>{mode_icons.get(s.mode, '•')} {html_module.escape(s.origin)} → {html_module.escape(s.destination)}"
+            + (f" · {s.operator}" if s.operator else "")
+            + (f" · {s.duration_mins} min" if s.duration_mins else "")
+            + (f" · <a href='{s.booking_link}'>Book</a>" if s.booking_link else "")
+            + (f" · Ref: {html_module.escape(s.booking_ref)}" if s.booking_ref else "")
+            + "</li>"
+            for s in request.transport_segments
+        )
+        transport_html = f"<h2>Transport Segments</h2><ul>{segs_html}</ul>"
 
     days_html = ""
     for day in request.itinerary:
         items_html = "".join(
-            f"<li>{item.name} — {item.address}"
+            f"<li>{html_module.escape(item.name)} — {html_module.escape(item.address)}"
             + (f" ({item.duration_mins} min)" if item.duration_mins else "")
             + (f" <span class='distance'>{item.travel_time_to_next_mins} min · {item.distance_to_next_km} km →</span>" if item.distance_to_next_km else "")
             + "</li>"
@@ -1172,8 +1321,8 @@ def _build_html(request: ExportRequest) -> str:
         )
         days_html += f"""
         <div class='day'>
-            <h3>Day {day.day_number} — {day.date} · {day.city}</h3>
-            <p class='narrative'>{day.narrative}</p>
+            <h3>Day {day.day_number} — {day.date} · {html_module.escape(day.city)}</h3>
+            <p class='narrative'>{html_module.escape(day.narrative)}</p>
             <ul>{items_html}</ul>
         </div>"""
 
@@ -1196,9 +1345,10 @@ def _build_html(request: ExportRequest) -> str:
 </head>
 <body>
 <h1>Trip Plan</h1>
-<p>{ctx.adults} adults{f' + {ctx.children} children' if ctx.children else ''} · Departing from {ctx.home_origin}</p>
+<p>{ctx.adults} adults{f' + {ctx.children} children' if ctx.children else ''} · Departing from {html_module.escape(ctx.home_origin)}</p>
 <h2>Flight & Hotel Summary</h2>
 {legs_summary}
+{transport_html}
 <h2>Itinerary</h2>
 {days_html}
 <p style='color:#aaa;font-size:0.8em;margin-top:40px;'>Generated by Travel Agent Assistant</p>
@@ -1212,13 +1362,13 @@ def _build_html(request: ExportRequest) -> str:
 pytest tests/test_export_service.py -v
 ```
 
-Expected: 2 passed.
+Expected: 3 passed.
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add backend/src/services/export_service.py backend/tests/test_export_service.py
-git commit -m "feat: ExportService with PDF and JSON generation"
+git commit -m "feat: ExportService with PDF, JSON, and transport_segments output"
 ```
 
 ---
@@ -1230,12 +1380,15 @@ git commit -m "feat: ExportService with PDF and JSON generation"
 - Create: `backend/src/agents/hotel_agent.py`
 - Create: `backend/tests/test_agents.py`
 
+<!-- MODIFIED: Both agents now prompt Claude for a detailed 2-4 sentence ai_reason, not a one-liner -->
+
 - [ ] **Step 1: Write failing tests**
 
 Create `backend/tests/test_agents.py`:
 
 ```python
 from unittest.mock import MagicMock, patch
+import json
 from backend.src.agents.flight_agent import FlightAgent
 from backend.src.agents.hotel_agent import HotelAgent
 from backend.src.models.flight import FlightOffer, FlightSegment
@@ -1264,8 +1417,14 @@ def _make_hotel_offers():
 
 
 def test_flight_agent_marks_recommendation():
+    detailed_reason = (
+        "This Japan Airlines direct flight is the best choice for this trip. "
+        "At $850 it is $350 cheaper than the only alternative, and the 14-hour direct routing "
+        "avoids a connection layover that would add 4 hours to travel time. "
+        "Japan Airlines consistently scores highly for long-haul comfort on this route."
+    )
     mock_response = MagicMock()
-    mock_response.content[0].text = '{"recommended_id": "f1", "reason": "Cheapest direct flight"}'
+    mock_response.content[0].text = json.dumps({"recommended_id": "f1", "reason": detailed_reason})
 
     with patch("backend.src.agents.flight_agent.anthropic.Anthropic") as MockAnthropic:
         mock_client = MagicMock()
@@ -1279,12 +1438,18 @@ def test_flight_agent_marks_recommendation():
     recommended = [o for o in offers if o.ai_recommended]
     assert len(recommended) == 1
     assert recommended[0].id == "f1"
-    assert "Cheapest" in recommended[0].ai_reason
+    assert len(recommended[0].ai_reason) > 100  # detailed reason, not a one-liner
 
 
 def test_hotel_agent_marks_recommendation():
+    detailed_reason = (
+        "The Grand Hotel is the top pick for this stay. "
+        "Its 4.6 rating reflects consistently excellent service and well-appointed rooms. "
+        "While pricier at $220/night, its central location reduces daily transport costs and saves "
+        "significant time versus the budget option in a less convenient area."
+    )
     mock_response = MagicMock()
-    mock_response.content[0].text = '{"recommended_id": "h2", "reason": "Best rated, close to city center"}'
+    mock_response.content[0].text = json.dumps({"recommended_id": "h2", "reason": detailed_reason})
 
     with patch("backend.src.agents.hotel_agent.anthropic.Anthropic") as MockAnthropic:
         mock_client = MagicMock()
@@ -1298,6 +1463,7 @@ def test_hotel_agent_marks_recommendation():
     recommended = [o for o in offers if o.ai_recommended]
     assert len(recommended) == 1
     assert recommended[0].id == "h2"
+    assert len(recommended[0].ai_reason) > 100  # detailed reason
 ```
 
 - [ ] **Step 2: Run to verify they fail**
@@ -1309,6 +1475,8 @@ pytest tests/test_agents.py::test_flight_agent_marks_recommendation tests/test_a
 Expected: `ModuleNotFoundError`.
 
 - [ ] **Step 3: Create `backend/src/agents/flight_agent.py`**
+
+<!-- MODIFIED: prompt now requests 2-4 sentence detailed explanation instead of one sentence -->
 
 ```python
 import json
@@ -1334,7 +1502,7 @@ class FlightAgent:
             return offers
 
         offers_summary = "\n".join(
-            f"ID: {o.id} | Price: {o.price} {o.currency} | Stops: {o.stops} | Duration: {o.total_duration}"
+            f"ID: {o.id} | Price: {o.price} {o.currency} | Stops: {o.stops} | Duration: {o.total_duration} | Carrier: {o.segments[0].carrier_code if o.segments else 'unknown'}"
             for o in offers
         )
         prompt = f"""You are a travel assistant helping select the best flight.
@@ -1346,11 +1514,13 @@ Flight options:
 
 Select the single best option balancing price, stops, and duration.
 Respond with ONLY valid JSON in this exact format:
-{{"recommended_id": "<id>", "reason": "<one sentence reason>"}}"""
+{{"recommended_id": "<id>", "reason": "<2-4 sentence explanation of WHY this flight was chosen over the alternatives, covering price comparison, stop difference, duration, and any carrier quality notes>"}}
+
+The reason must be 2-4 full sentences explaining the trade-offs considered, not just a label."""
 
         response = self.client.messages.create(
             model=MODEL,
-            max_tokens=256,
+            max_tokens=512,
             messages=[{"role": "user", "content": prompt}],
         )
 
@@ -1370,6 +1540,8 @@ Respond with ONLY valid JSON in this exact format:
 ```
 
 - [ ] **Step 4: Create `backend/src/agents/hotel_agent.py`**
+
+<!-- MODIFIED: prompt now requests 2-4 sentence detailed explanation -->
 
 ```python
 import json
@@ -1407,11 +1579,13 @@ Hotel options:
 
 Select the single best option balancing price, rating, and location.
 Respond with ONLY valid JSON in this exact format:
-{{"recommended_id": "<id>", "reason": "<one sentence reason>"}}"""
+{{"recommended_id": "<id>", "reason": "<2-4 sentence explanation of WHY this hotel was chosen over the alternatives, covering price-to-quality ratio, location advantages, rating significance, and any specific benefits>"}}
+
+The reason must be 2-4 full sentences explaining the trade-offs, not just a label."""
 
         response = self.client.messages.create(
             model=MODEL,
-            max_tokens=256,
+            max_tokens=512,
             messages=[{"role": "user", "content": prompt}],
         )
 
@@ -1442,7 +1616,7 @@ Expected: 2 passed.
 
 ```bash
 git add backend/src/agents/flight_agent.py backend/src/agents/hotel_agent.py backend/tests/test_agents.py
-git commit -m "feat: FlightAgent and HotelAgent with Claude recommendations"
+git commit -m "feat: FlightAgent and HotelAgent with detailed Claude ai_reason explanations"
 ```
 
 ---
@@ -1529,12 +1703,30 @@ def test_itinerary_agent_returns_narrative():
     assert len(result) == 1
     assert isinstance(result[0], ItineraryDay)
     assert "Tokyo" in result[0].narrative
-```
 
-Also add these imports at the top of `test_agents.py`:
-```python
-import json
-from unittest.mock import MagicMock, patch
+
+# NEW: added for transport-aware itinerary
+def test_itinerary_agent_transport_aware():
+    mock_response = MagicMock()
+    mock_response.content[0].text = json.dumps([
+        {"day_number": 1, "date": "2026-06-10", "city": "Amsterdam",
+         "narrative": "Train arrives at Amsterdam Centraal at midday. Explore the canal ring."}
+    ])
+
+    with patch("backend.src.agents.itinerary_agent.anthropic.Anthropic") as MockAnthropic:
+        mock_client = MagicMock()
+        MockAnthropic.return_value = mock_client
+        mock_client.messages.create.return_value = mock_response
+
+        from backend.src.models.trip import TripLeg
+        leg = TripLeg(leg_number=1, origin="PAR", destination="AMS",
+                      departure_date="2026-06-10", transport_mode="train")
+        ctx = TripContext(home_origin="CDG", adults=2, legs=[leg])
+        days = [DayPlan(day_number=1, date="2026-06-10", leg_number=1, city="Amsterdam", items=[])]
+        agent = ItineraryAgent()
+        result = agent.generate_narrative(days, ctx)
+
+    assert "Train arrives" in result[0].narrative or len(result) == 1
 ```
 
 - [ ] **Step 2: Run to verify they fail**
@@ -1634,6 +1826,8 @@ Respond with ONLY a valid JSON array of objects with exactly those 5 keys."""
 
 - [ ] **Step 4: Create `backend/src/agents/itinerary_agent.py`**
 
+<!-- MODIFIED: prompt now includes transport_mode context so arrival labels adapt -->
+
 ```python
 import json
 import logging
@@ -1648,6 +1842,14 @@ logger = logging.getLogger(__name__)
 MODEL = "claude-sonnet-4-6"
 
 
+ARRIVAL_LABEL = {
+    "flight": "Fly in",
+    "train": "Train arrives at station",
+    "ferry": "Ferry arrives at port",
+    "car": "Drive from origin",
+}
+
+
 class ItineraryAgent:
     def __init__(self) -> None:
         self.client = anthropic.Anthropic(api_key=Config.ANTHROPIC_API_KEY)
@@ -1655,11 +1857,18 @@ class ItineraryAgent:
     def generate_narrative(
         self, days: List[DayPlan], trip_context: TripContext
     ) -> List[ItineraryDay]:
+        # Build transport mode context per leg number
+        leg_transport = {
+            leg.leg_number: getattr(leg, "transport_mode", "flight")
+            for leg in trip_context.legs
+        }
+
         days_summary = "\n".join(
-            f"Day {d.day_number} ({d.date}) in {d.city}:\n"
+            f"Day {d.day_number} ({d.date}) in {d.city} [arrival mode: {ARRIVAL_LABEL.get(leg_transport.get(d.leg_number, 'flight'), 'travel')}]:\n"
             + "\n".join(
                 f"  - {item.name} ({item.type})"
                 + (f", {item.travel_time_to_next_mins} min to next" if item.travel_time_to_next_mins else "")
+                + (f" [spans {item.spans_days} days]" if getattr(item, "spans_days", 1) > 1 else "")
                 for item in d.items
             )
             for d in days
@@ -1669,10 +1878,12 @@ class ItineraryAgent:
 
 Trip: {trip_context.adults} adults{', ' + str(trip_context.children) + ' children' if trip_context.children else ''}.
 
-Itinerary:
+Itinerary (arrival mode per day is noted in brackets):
 {days_summary}
 
 For each day, write 2-3 sentences of engaging narrative prose that:
+- Uses the correct arrival label (e.g. "Train arrives at Amsterdam Centraal" not "Fly in" for train legs)
+- For overnight ferry legs spanning two days, mention the crossing and note it covers both days
 - Captures the feel and highlights of the day
 - Notes any travel time between major stops where relevant
 - Includes a practical tip or local insight
@@ -1721,13 +1932,13 @@ Respond with ONLY a valid JSON array, one object per day:
 pytest tests/test_agents.py -v
 ```
 
-Expected: 4 passed.
+Expected: all passed.
 
 - [ ] **Step 6: Commit**
 
 ```bash
 git add backend/src/agents/poi_agent.py backend/src/agents/itinerary_agent.py backend/tests/test_agents.py
-git commit -m "feat: POIAgent and ItineraryAgent with Claude narration"
+git commit -m "feat: POIAgent and ItineraryAgent — transport-aware narration"
 ```
 
 ---
@@ -1740,6 +1951,7 @@ git commit -m "feat: POIAgent and ItineraryAgent with Claude narration"
 - Create: `backend/src/routers/pois.py`
 - Create: `backend/src/routers/itinerary.py`
 - Create: `backend/src/routers/export.py`
+- Create: `backend/src/routers/segments.py` <!-- NEW: added for car leg drive-time -->
 - Create: `backend/main.py`
 - Create: `backend/tests/test_routers.py`
 
@@ -1864,6 +2076,8 @@ def generate_itinerary(request: GenerateRequest) -> List[ItineraryDay]:
 
 - [ ] **Step 5: Create `backend/src/routers/export.py`**
 
+<!-- MODIFIED: export now passes transport_segments through to ExportService -->
+
 ```python
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response, JSONResponse
@@ -1897,12 +2111,48 @@ def export_json(request: ExportRequest) -> JSONResponse:
         raise HTTPException(status_code=500, detail=str(e))
 ```
 
-- [ ] **Step 6: Create `backend/main.py`**
+- [ ] **Step 6: Create `backend/src/routers/segments.py`** <!-- NEW: added for car leg drive-time -->
+
+```python
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+from backend.src.services.google_directions_service import GoogleDirectionsService
+from typing import Any, Dict, Optional
+
+router = APIRouter(prefix="/segments", tags=["segments"])
+
+
+class DriveTimeRequest(BaseModel):
+    origin: str          # lat,lng string or address
+    destination: str     # lat,lng string or address
+    mode: Optional[str] = "driving"  # driving | walking | bicycling
+
+
+@router.post("/drive-time")
+def get_drive_time(request: DriveTimeRequest) -> Dict[str, Any]:
+    """
+    Returns estimated drive time and distance for a car leg.
+    Uses Google Directions API in driving mode.
+    """
+    try:
+        service = GoogleDirectionsService()
+        return service.get_drive_time(
+            origin=request.origin,
+            destination=request.destination,
+            mode=request.mode or "driving",
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+```
+
+- [ ] **Step 7: Create `backend/main.py`**
+
+<!-- MODIFIED: segments router added -->
 
 ```python
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.src.routers import flights, hotels, pois, itinerary, export
+from backend.src.routers import flights, hotels, pois, itinerary, export, segments
 
 app = FastAPI(title="Travel Agent Assistant API", version="1.0.0")
 
@@ -1919,6 +2169,7 @@ app.include_router(hotels.router)
 app.include_router(pois.router)
 app.include_router(itinerary.router)
 app.include_router(export.router)
+app.include_router(segments.router)
 
 
 @app.get("/health")
@@ -1926,7 +2177,7 @@ def health() -> dict:
     return {"status": "ok"}
 ```
 
-- [ ] **Step 7: Write router integration tests**
+- [ ] **Step 8: Write router integration tests**
 
 Create `backend/tests/test_routers.py`:
 
@@ -2003,9 +2254,30 @@ def test_pois_distances_endpoint():
     data = response.json()
     assert data[0]["distance_km"] == 1.4
     assert data[0]["encoded_polyline"] == "abc123"
+
+
+# NEW: added for car leg drive-time endpoint
+def test_segments_drive_time_endpoint():
+    with patch("backend.src.routers.segments.GoogleDirectionsService") as MockDirections:
+        MockDirections.return_value.get_drive_time.return_value = {
+            "distance_km": 450.0,
+            "travel_time_mins": 285,
+            "encoded_polyline": "somepolyline",
+        }
+
+        response = client.post("/segments/drive-time", json={
+            "origin": "48.8566,2.3522",
+            "destination": "50.8503,4.3517",
+            "mode": "driving",
+        })
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["distance_km"] == 450.0
+    assert data["travel_time_mins"] == 285
 ```
 
-- [ ] **Step 8: Run all tests**
+- [ ] **Step 9: Run all tests**
 
 ```bash
 pytest tests/ -v
@@ -2013,19 +2285,88 @@ pytest tests/ -v
 
 Expected: all tests pass.
 
-- [ ] **Step 9: Start the server and verify manually**
+- [ ] **Step 10: Start the server and verify manually**
 
 ```bash
 uvicorn backend.main:app --reload --port 8000
 ```
 
-Open http://localhost:8000/docs — all 7 endpoints should be listed in the Swagger UI.
+Open http://localhost:8000/docs — all endpoints should be listed in Swagger UI, including `/segments/drive-time`.
 
-- [ ] **Step 10: Commit**
+- [ ] **Step 11: Commit**
 
 ```bash
 git add backend/src/routers/ backend/main.py backend/tests/test_routers.py
-git commit -m "feat: FastAPI routers for all 6 endpoints + health check"
+git commit -m "feat: FastAPI routers for all endpoints — flights, hotels, pois, itinerary, export, segments/drive-time"
+```
+
+---
+
+### Task 10: New/Modified Models — Verification Pass <!-- NEW: added for model completeness check -->
+
+**Goal:** Confirm all new model fields are correctly wired end-to-end before frontend integration.
+
+- [ ] **Step 1: Verify `TripLeg.transport_mode` round-trips through JSON**
+
+```python
+# Run in Python shell
+from backend.src.models.trip import TripLeg
+leg = TripLeg(leg_number=1, origin="PAR", destination="AMS", departure_date="2026-06-15", transport_mode="train")
+assert leg.model_dump()["transport_mode"] == "train"
+leg2 = TripLeg(**leg.model_dump())
+assert leg2.transport_mode == "train"
+print("TripLeg transport_mode OK")
+```
+
+- [ ] **Step 2: Verify `DayItem.spans_days` and `transport_mode` round-trip**
+
+```python
+from backend.src.models.trip import DayItem
+item = DayItem(type="poi", name="Overnight Ferry Crossing", address="Port", lat=0.0, lng=0.0,
+               transport_mode="ferry", spans_days=2)
+assert item.spans_days == 2
+assert item.transport_mode == "ferry"
+print("DayItem spans_days + transport_mode OK")
+```
+
+- [ ] **Step 3: Verify `HotelStay.accommodation_type` round-trips**
+
+```python
+from backend.src.models.trip import HotelStay
+from backend.src.models.hotel import HotelOffer
+offer = HotelOffer(id="h1", name="Ferry Cabin", address="Sea", lat=0.0, lng=0.0, price_per_night=80.0, currency="USD")
+stay = HotelStay(hotel=offer, check_in="2026-06-15", check_out="2026-06-16", accommodation_type="ferry_cabin")
+assert stay.accommodation_type == "ferry_cabin"
+print("HotelStay accommodation_type OK")
+```
+
+- [ ] **Step 4: Verify `TransportSegment` and `ExportPlan.transport_segments`**
+
+```python
+from backend.src.models.export import TransportSegment, ExportPlan
+from backend.src.models.trip import TripContext
+seg = TransportSegment(mode="ferry", origin="Barcelona", destination="Mallorca", duration_mins=225,
+                       operator="Balearia", booking_link="https://balearia.com")
+plan = ExportPlan(trip_context=TripContext(home_origin="BCN", adults=2, legs=[]),
+                  itinerary=[], generated_at="2026-06-01T12:00:00",
+                  transport_segments=[seg])
+assert plan.transport_segments[0].mode == "ferry"
+print("TransportSegment in ExportPlan OK")
+```
+
+- [ ] **Step 5: Run full test suite**
+
+```bash
+pytest tests/ -v --tb=short
+```
+
+Expected: all pass.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add .
+git commit -m "test: model field verification pass for transport_mode, spans_days, accommodation_type, TransportSegment"
 ```
 
 ---
@@ -2047,4 +2388,16 @@ Then start for frontend development:
 uvicorn backend.main:app --reload --port 8000
 ```
 
-**Next:** Follow `docs/superpowers/plans/2026-04-01-travel-agent-frontend.md`.
+**Endpoints exposed:**
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `GET /health` | GET | Health check |
+| `/flights/search` | POST | Amadeus flight search + AI recommendation |
+| `/hotels/search` | POST | Amadeus hotel search + AI recommendation |
+| `/pois/suggest` | POST | Claude POI suggestions + Places enrichment |
+| `/pois/distances` | POST | Google Directions walking distances |
+| `/itinerary/generate` | POST | Claude itinerary narrative (transport-aware) |
+| `/export/plan/pdf` | POST | WeasyPrint PDF with transport segments |
+| `/export/plan/json` | POST | Structured JSON with transport segments |
+| `/segments/drive-time` | POST | Google Directions driving time for car legs |

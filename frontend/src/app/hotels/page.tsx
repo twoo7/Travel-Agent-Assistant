@@ -8,6 +8,26 @@ import { HotelSearchForm } from "@/components/hotels/HotelSearchForm";
 import { HotelCard } from "@/components/hotels/HotelCard";
 import type { HotelOffer } from "@/types/trip";
 
+// Common airport → Amadeus city code mapping
+const AIRPORT_TO_CITY: Record<string, string> = {
+  CDG: "PAR", ORY: "PAR", BVA: "PAR",
+  LHR: "LON", LGW: "LON", STN: "LON", LTN: "LON", LCY: "LON",
+  JFK: "NYC", LGA: "NYC", EWR: "NYC",
+  LAX: "LAX", SFO: "SFO", ORD: "CHI", MDW: "CHI",
+  NRT: "TYO", HND: "TYO",
+  HKG: "HKG", SIN: "SIN", BKK: "BKK", DXB: "DXB",
+  FCO: "ROM", CIA: "ROM",
+  MAD: "MAD", BCN: "BCN",
+  AMS: "AMS", BRU: "BRU", FRA: "FRA", MUC: "MUC",
+  SYD: "SYD", MEL: "MEL",
+  GRU: "SAO", GIG: "RIO",
+  YYZ: "YTO", YVR: "YVR",
+};
+
+function toCityCode(iata: string): string {
+  return AIRPORT_TO_CITY[iata.toUpperCase()] ?? iata;
+}
+
 export default function HotelsPage() {
   const router = useRouter();
   const { state, dispatch } = useTripContext();
@@ -125,7 +145,7 @@ export default function HotelsPage() {
           ))}
 
           <HotelSearchForm
-            defaultCityCode={leg.destination}
+            defaultCityCode={toCityCode(leg.destination)}
             onSearch={(params) => handleSearch(leg.leg_number, params)}
             loading={loading[leg.leg_number] ?? false}
           />

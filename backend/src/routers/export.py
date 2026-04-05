@@ -17,8 +17,8 @@ def export_plan(
     format: str = Query(default="json", pattern="^(json|pdf)$"),
 ) -> Response:
     if format == "pdf":
-        pdf_bytes = _service.generate_pdf(req.trip_context, req.itinerary)
+        pdf_bytes = _service.generate_pdf(req)
         return Response(content=pdf_bytes, media_type="application/pdf")
 
-    data = _service.generate_json(req.trip_context, req.itinerary)
+    data = _service.generate_json(req)
     return JSONResponse(content=data)

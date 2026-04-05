@@ -83,8 +83,18 @@ class AmadeusService:
         adults: int,
     ) -> List[HotelOffer]:
         try:
-            response = self.client.shopping.hotel_offers_search.get(
+            # Step 1: Get hotel IDs for the city (v3 API requires hotel IDs, not cityCode)
+            hotels_response = self.client.reference_data.locations.hotels.by_city.get(
                 cityCode=city_code,
+            )
+            hotel_ids = [h["hotelId"] for h in hotels_response.data[:20]]
+            if not hotel_ids:
+                logger.warning("No hotels found in city %s", city_code)
+                return []
+
+            # Step 2: Search offers for those hotel IDs
+            response = self.client.shopping.hotel_offers_search.get(
+                hotelIds=hotel_ids,
                 checkInDate=check_in,
                 checkOutDate=check_out,
                 adults=adults,
