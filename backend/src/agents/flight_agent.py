@@ -57,13 +57,16 @@ class FlightAgent:
             f"recommend the single best offer balancing price, duration, and convenience.\n\n"
             f"Flight offers (JSON):\n{json.dumps(offers_summary, indent=2)}\n\n"
             f"Respond with ONLY a JSON object in this exact format:\n"
-            f'  {{"recommended_id": "<offer id>", "reason": "<one sentence reason>"}}'
+            f'  {{"recommended_id": "<offer id>", "reason_bullets": ["<bullet 1>", "<bullet 2>", "<bullet 3>", "<bullet 4>"]}}\n\n'
+            f"Each bullet must be one short sentence (max 12 words) with an emoji prefix. "
+            f"Cover these 4 aspects in order: price value (💰), duration/stops (⏱), carrier reliability (✈), timing (⏰). "
+            f"Example bullet: '💰 Best value: $850/person — $120 cheaper than next option'"
         )
 
         try:
             message = self.client.messages.create(
                 model="claude-sonnet-4-6",
-                max_tokens=256,
+                max_tokens=512,
                 messages=[{"role": "user", "content": prompt}],
             )
             raw = message.content[0].text.strip()
@@ -74,17 +77,20 @@ class FlightAgent:
                     raw = raw[4:]
             result = json.loads(raw)
             recommended_id = result["recommended_id"]
-            reason = result.get("reason", "")
+            reason_bullets = result.get("reason_bullets", [])
+            if not isinstance(reason_bullets, list):
+                reason_bullets = []
         except Exception as exc:
             logger.warning("FlightAgent failed to get recommendation: %s", exc)
             # Fall back: mark the cheapest offer
             recommended_id = min(offers, key=lambda o: o.price).id
-            reason = "Selected as lowest price (AI recommendation unavailable)."
+            reason_bullets = []
 
         for offer in offers:
             if offer.id == recommended_id:
                 offer.ai_recommended = True
-                offer.ai_reason = reason
+                offer.ai_reason_bullets = reason_bullets
+                offer.ai_reason = " ".join(reason_bullets)
             else:
                 offer.ai_recommended = False
 

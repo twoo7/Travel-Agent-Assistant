@@ -77,10 +77,10 @@ def _make_trip_context() -> TripContext:
     return TripContext(home_origin="JFK", adults=2, children=0)
 
 
-def _mock_anthropic_response(recommended_id: str, reason: str) -> MagicMock:
+def _mock_anthropic_response(recommended_id: str, reason_bullets: list[str]) -> MagicMock:
     """Return a mock that mimics anthropic.Anthropic().messages.create(...)."""
     content_block = MagicMock()
-    content_block.text = json.dumps({"recommended_id": recommended_id, "reason": reason})
+    content_block.text = json.dumps({"recommended_id": recommended_id, "reason_bullets": reason_bullets})
     message = MagicMock()
     message.content = [content_block]
     mock_client = MagicMock()
@@ -95,7 +95,8 @@ def _mock_anthropic_response(recommended_id: str, reason: str) -> MagicMock:
 class TestFlightAgent:
     def test_recommended_offer_is_marked(self):
         """The offer with the id returned by Claude gets ai_recommended=True."""
-        mock_client = _mock_anthropic_response("F1", "Best value non-stop flight.")
+        bullets = ["💰 Best value non-stop flight."]
+        mock_client = _mock_anthropic_response("F1", bullets)
 
         with patch("backend.src.agents.flight_agent.Config") as mock_cfg, \
              patch("backend.src.agents.flight_agent.anthropic.Anthropic", return_value=mock_client):
@@ -109,13 +110,14 @@ class TestFlightAgent:
         not_recommended = [o for o in result if not o.ai_recommended]
         assert len(recommended) == 1
         assert recommended[0].id == "F1"
-        assert recommended[0].ai_reason == "Best value non-stop flight."
+        assert recommended[0].ai_reason_bullets == bullets
+        assert recommended[0].ai_reason == "💰 Best value non-stop flight."
         assert len(not_recommended) == 1
         assert not_recommended[0].id == "F2"
 
     def test_other_offers_are_not_recommended(self):
         """Only the picked offer has ai_recommended=True; others are explicitly False."""
-        mock_client = _mock_anthropic_response("F2", "Cheapest option.")
+        mock_client = _mock_anthropic_response("F2", ["💰 Cheapest option."])
 
         with patch("backend.src.agents.flight_agent.Config") as mock_cfg, \
              patch("backend.src.agents.flight_agent.anthropic.Anthropic", return_value=mock_client):
@@ -163,7 +165,7 @@ class TestFlightAgent:
 
     def test_claude_is_called_with_model(self):
         """Verify the correct model is passed to messages.create."""
-        mock_client = _mock_anthropic_response("F1", "Good pick.")
+        mock_client = _mock_anthropic_response("F1", ["💰 Good pick."])
 
         with patch("backend.src.agents.flight_agent.Config") as mock_cfg, \
              patch("backend.src.agents.flight_agent.anthropic.Anthropic", return_value=mock_client):
@@ -183,7 +185,8 @@ class TestFlightAgent:
 class TestHotelAgent:
     def test_recommended_hotel_is_marked(self):
         """The hotel with the id returned by Claude gets ai_recommended=True."""
-        mock_client = _mock_anthropic_response("H1", "Highly rated centrally located hotel.")
+        bullets = ["⭐ Highly rated centrally located hotel."]
+        mock_client = _mock_anthropic_response("H1", bullets)
 
         with patch("backend.src.agents.hotel_agent.Config") as mock_cfg, \
              patch("backend.src.agents.hotel_agent.anthropic.Anthropic", return_value=mock_client):
@@ -196,11 +199,12 @@ class TestHotelAgent:
         recommended = [o for o in result if o.ai_recommended]
         assert len(recommended) == 1
         assert recommended[0].id == "H1"
-        assert recommended[0].ai_reason == "Highly rated centrally located hotel."
+        assert recommended[0].ai_reason_bullets == bullets
+        assert recommended[0].ai_reason == "⭐ Highly rated centrally located hotel."
 
     def test_other_hotels_are_not_recommended(self):
         """Non-selected hotels explicitly have ai_recommended=False."""
-        mock_client = _mock_anthropic_response("H2", "Best price.")
+        mock_client = _mock_anthropic_response("H2", ["💰 Best price."])
 
         with patch("backend.src.agents.hotel_agent.Config") as mock_cfg, \
              patch("backend.src.agents.hotel_agent.anthropic.Anthropic", return_value=mock_client):
@@ -246,7 +250,7 @@ class TestHotelAgent:
 
     def test_claude_is_called_with_model(self):
         """Verify the correct model is passed to messages.create."""
-        mock_client = _mock_anthropic_response("H1", "Great choice.")
+        mock_client = _mock_anthropic_response("H1", ["💰 Great choice."])
 
         with patch("backend.src.agents.hotel_agent.Config") as mock_cfg, \
              patch("backend.src.agents.hotel_agent.anthropic.Anthropic", return_value=mock_client):
