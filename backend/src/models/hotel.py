@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional
+from typing import List, Optional
 from pydantic import BaseModel
 
 
@@ -14,12 +14,14 @@ class HotelOffer(BaseModel):
     rating: Optional[float] = None
     ai_recommended: bool = False
     ai_reason: Optional[str] = None
+    ai_reason_bullets: List[str] = []
 
 
 class HotelStay(BaseModel):
     hotel: HotelOffer
     check_in: str
     check_out: str
+    accommodation_type: str = "hotel"  # "hotel" | "ferry_cabin" | "sleeper_train"
 
 
 class HotelSearchRequest(BaseModel):

@@ -22,6 +22,7 @@ class FlightOffer(BaseModel):
     stops: int
     ai_recommended: bool = False
     ai_reason: Optional[str] = None
+    ai_reason_bullets: List[str] = []
 
 
 class FlightSearchRequest(BaseModel):
