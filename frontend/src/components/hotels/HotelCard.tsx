@@ -1,8 +1,12 @@
+"use client";
+
+import { useState } from "react";
 import type { HotelOffer } from "@/types/trip";
 
 interface Props {
   offer: HotelOffer;
   selected: boolean;
+  confirmed: boolean;
   onSelect: (offer: HotelOffer) => void;
 }
 
@@ -17,23 +21,34 @@ function StarRating({ rating }: { rating?: number }) {
   );
 }
 
-export function HotelCard({ offer, selected, onSelect }: Props) {
+export function HotelCard({ offer, selected, confirmed, onSelect }: Props) {
+  const [expanded, setExpanded] = useState(false);
+  const hasBullets = offer.ai_reason_bullets && offer.ai_reason_bullets.length > 0;
+
   return (
     <div
-      onClick={() => onSelect(offer)}
-      className={`relative border rounded-xl p-4 cursor-pointer transition-all ${
-        selected
-          ? "border-blue-500 bg-blue-50 ring-2 ring-blue-500"
-          : "border-gray-200 bg-white hover:border-blue-300 hover:shadow-sm"
+      onClick={() => { if (!confirmed) onSelect(offer); }}
+      className={`relative border rounded-xl p-4 transition-all ${
+        confirmed
+          ? "border-green-500 bg-green-50 ring-2 ring-green-500 cursor-default"
+          : selected
+          ? "border-blue-500 bg-blue-50 ring-2 ring-blue-500 cursor-pointer"
+          : "border-gray-200 bg-white hover:border-blue-300 hover:shadow-sm cursor-pointer"
       }`}
     >
       {offer.ai_recommended && (
-        <span className="absolute top-3 right-3 bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+        <span className="absolute top-3 right-3 bg-indigo-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
           ✨ AI Pick
         </span>
       )}
 
-      <div className="flex items-start justify-between pr-20">
+      {confirmed && (
+        <span className="absolute top-3 left-3 text-xs font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
+          ✓ Stay Confirmed
+        </span>
+      )}
+
+      <div className={`flex items-start justify-between ${confirmed ? "pl-28" : ""} pr-20`}>
         <div className="flex-1">
           <h3 className="font-semibold text-gray-900">{offer.name}</h3>
           <p className="text-xs text-gray-500 mt-0.5">{offer.address}</p>
@@ -49,10 +64,39 @@ export function HotelCard({ offer, selected, onSelect }: Props) {
         </div>
       </div>
 
-      {offer.ai_reason && (
-        <p className="mt-3 text-xs text-blue-600 italic border-t border-blue-100 pt-2">
-          ✨ {offer.ai_reason}
-        </p>
+      {offer.ai_recommended && (hasBullets || offer.ai_reason) && (
+        <div className="mt-3 border-t border-indigo-100 pt-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setExpanded((prev) => !prev);
+            }}
+            className="text-xs text-indigo-600 font-medium hover:text-indigo-800 transition-colors flex items-center gap-1"
+          >
+            <span>✨ Why AI picked this</span>
+            <span
+              className="inline-block transition-transform duration-200"
+              style={{ transform: expanded ? "rotate(90deg)" : "rotate(0deg)" }}
+            >
+              ›
+            </span>
+          </button>
+          {expanded && (
+            <div className="mt-2 bg-indigo-50 border border-indigo-100 rounded-lg p-3">
+              {hasBullets ? (
+                <ul className="space-y-1">
+                  {offer.ai_reason_bullets!.map((bullet, idx) => (
+                    <li key={idx} className="text-sm text-indigo-800 leading-snug">
+                      {bullet}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-indigo-800">{offer.ai_reason}</p>
+              )}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
