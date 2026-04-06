@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { TripContextProvider } from "@/context/TripContext";
-import { Stepper } from "@/components/Stepper";
+import { Sidebar } from "@/components/Sidebar";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -16,8 +16,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className={`${inter.className} bg-gray-50 min-h-screen`}>
         <TripContextProvider>
-          <Stepper />
-          <main className="max-w-7xl mx-auto px-4 py-8">{children}</main>
+          <Sidebar />
+          <main className="min-h-screen pl-11 transition-all duration-300">{children}</main>
         </TripContextProvider>
       </body>
     </html>

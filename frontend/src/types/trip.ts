@@ -2,6 +2,10 @@
 
 export type DayItemType = "poi" | "hotel" | "airport";
 
+export type TransportMode = "flight" | "train" | "ferry" | "car";
+
+export type AccommodationType = "hotel" | "ferry_cabin" | "sleeper_train";
+
 export interface DayItem {
   id?: string;
   type: DayItemType;
@@ -14,6 +18,8 @@ export interface DayItem {
   distance_to_next_km?: number;
   travel_time_to_next_mins?: number;
   route_polyline_to_next?: string;
+  transport_mode?: TransportMode;
+  spans_days?: number;
 }
 
 export interface DayPlan {
@@ -35,12 +41,14 @@ export interface HotelOffer {
   rating?: number;
   ai_recommended: boolean;
   ai_reason?: string;
+  ai_reason_bullets?: string[];
 }
 
 export interface HotelStay {
   hotel: HotelOffer;
   check_in: string;
   check_out: string;
+  accommodation_type?: AccommodationType;
 }
 
 export interface FlightSegment {
@@ -62,6 +70,7 @@ export interface FlightOffer {
   stops: number;
   ai_recommended: boolean;
   ai_reason?: string;
+  ai_reason_bullets?: string[];
 }
 
 export interface TripLeg {
@@ -69,6 +78,7 @@ export interface TripLeg {
   origin: string;
   destination: string;
   departure_date: string;
+  transport_mode?: TransportMode;
   selected_flight?: FlightOffer;
   hotel_stays: HotelStay[];
   days: DayPlan[];
@@ -113,9 +123,23 @@ export interface ItineraryDay {
   items: DayItem[];
 }
 
+export interface TransportSegment {
+  leg_number: number;
+  mode: TransportMode;
+  origin: string;
+  destination: string;
+  departure_date: string;
+  operator?: string;
+  duration_mins?: number;
+  booking_link?: string;
+  booking_ref?: string;
+  notes?: string;
+}
+
 export interface ExportRequest {
   trip_context: TripContext;
   itinerary: ItineraryDay[];
+  transport_segments?: TransportSegment[];
 }
 
 export interface RouteSegment {

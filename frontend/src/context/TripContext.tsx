@@ -9,15 +9,18 @@ import type {
   DayPlan,
   POI,
   ItineraryDay,
+  TransportMode,
 } from "@/types/trip";
 
 interface TripState {
   tripContext: TripContextType;
   itinerary: ItineraryDay[];
+  staleSteps: string[];
 }
 
 type TripAction =
   | { type: "INIT_TRIP"; payload: Pick<TripContextType, "home_origin" | "adults" | "children"> }
+  | { type: "UPDATE_TRIP_META"; payload: Pick<TripContextType, "home_origin" | "adults" | "children"> }
   | { type: "ADD_LEG"; payload: TripLeg }
   | { type: "UPDATE_LEG"; payload: TripLeg }
   | { type: "REMOVE_LEG"; payload: { leg_number: number } }
@@ -30,6 +33,9 @@ type TripAction =
   | { type: "SAVE_POI"; payload: { poi_id: string } }
   | { type: "RESTORE_POI"; payload: { poi_id: string } }
   | { type: "SET_ITINERARY"; payload: ItineraryDay[] }
+  | { type: "SET_TRANSPORT_MODE"; payload: { leg_number: number; mode: TransportMode } }
+  | { type: "MARK_STALE"; payload: { keys: string[] } }
+  | { type: "CLEAR_STALE"; payload: { key: string } }
   | { type: "RESET" };
 
 const EMPTY_CONTEXT: TripContextType = {
@@ -44,6 +50,7 @@ const EMPTY_CONTEXT: TripContextType = {
 const INITIAL_STATE: TripState = {
   tripContext: EMPTY_CONTEXT,
   itinerary: [],
+  staleSteps: [],
 };
 
 function reducer(state: TripState, action: TripAction): TripState {
@@ -54,6 +61,13 @@ function reducer(state: TripState, action: TripAction): TripState {
       return {
         ...state,
         tripContext: { ...EMPTY_CONTEXT, ...action.payload },
+        staleSteps: [],
+      };
+
+    case "UPDATE_TRIP_META":
+      return {
+        ...state,
+        tripContext: { ...ctx, ...action.payload },
       };
 
     case "ADD_LEG":
@@ -102,7 +116,15 @@ function reducer(state: TripState, action: TripAction): TripState {
           ...ctx,
           legs: ctx.legs.map((l) =>
             l.leg_number === action.payload.leg_number
-              ? { ...l, hotel_stays: [...l.hotel_stays, action.payload.stay] }
+              ? {
+                  ...l,
+                  hotel_stays: [
+                    ...l.hotel_stays.filter(
+                      (s) => s.hotel.id !== action.payload.stay.hotel.id
+                    ),
+                    action.payload.stay,
+                  ],
+                }
               : l
           ),
         },
@@ -195,6 +217,31 @@ function reducer(state: TripState, action: TripAction): TripState {
 
     case "SET_ITINERARY":
       return { ...state, itinerary: action.payload };
+
+    case "SET_TRANSPORT_MODE":
+      return {
+        ...state,
+        tripContext: {
+          ...ctx,
+          legs: ctx.legs.map((l) =>
+            l.leg_number === action.payload.leg_number
+              ? { ...l, transport_mode: action.payload.mode }
+              : l
+          ),
+        },
+      };
+
+    case "MARK_STALE": {
+      const existing = new Set(state.staleSteps);
+      for (const k of action.payload.keys) existing.add(k);
+      return { ...state, staleSteps: Array.from(existing) };
+    }
+
+    case "CLEAR_STALE":
+      return {
+        ...state,
+        staleSteps: state.staleSteps.filter((k) => k !== action.payload.key),
+      };
 
     case "RESET":
       return INITIAL_STATE;

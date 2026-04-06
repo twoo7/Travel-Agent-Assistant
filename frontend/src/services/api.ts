@@ -78,4 +78,16 @@ export const api = {
     if (!res.ok) throw new Error(`JSON export failed: ${res.status}`);
     return res.json();
   },
+
+  getDriveTime: (params: {
+    origin: string;
+    destination: string;
+    departure_date: string;
+  }): Promise<{
+    origin: string;
+    destination: string;
+    distance_km: number | null;
+    duration_mins: number | null;
+    maps_url: string;
+  }> => post("/segments/drive-time", params),
 };
