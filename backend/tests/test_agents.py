@@ -261,3 +261,98 @@ class TestHotelAgent:
 
         call_kwargs = mock_client.messages.create.call_args
         assert call_kwargs.kwargs.get("model") == "claude-sonnet-4-6"
+
+
+# ---------------------------------------------------------------------------
+# Bullet-point parsing tests (ai_reason_bullets field)
+# ---------------------------------------------------------------------------
+
+class TestFlightAgentBullets:
+    def test_reason_bullets_populated_from_claude_response(self):
+        bullets = [
+            "💰 Best value: $850/person",
+            "⏱ Nonstop 14h",
+            "✈ Japan Airlines reliable carrier",
+            "⏰ Morning departure",
+        ]
+        mock_client = _mock_anthropic_response("F1", bullets)
+
+        with patch("backend.src.agents.flight_agent.Config") as mock_cfg, \
+             patch("backend.src.agents.flight_agent.anthropic.Anthropic", return_value=mock_client):
+            mock_cfg.ANTHROPIC_API_KEY = "test-key"
+            from backend.src.agents.flight_agent import FlightAgent
+            agent = FlightAgent()
+            result = agent.rank_and_recommend(_make_flight_offers(), _make_trip_context())
+
+        recommended = next(o for o in result if o.ai_recommended)
+        assert recommended.ai_reason_bullets == bullets
+        assert "💰 Best value" in recommended.ai_reason
+
+    def test_reason_bullets_empty_on_claude_failure(self):
+        mock_client = MagicMock()
+        mock_client.messages.create.side_effect = Exception("API error")
+
+        with patch("backend.src.agents.flight_agent.Config") as mock_cfg, \
+             patch("backend.src.agents.flight_agent.anthropic.Anthropic", return_value=mock_client):
+            mock_cfg.ANTHROPIC_API_KEY = "test-key"
+            from backend.src.agents.flight_agent import FlightAgent
+            agent = FlightAgent()
+            result = agent.rank_and_recommend(_make_flight_offers(), _make_trip_context())
+
+        recommended = next(o for o in result if o.ai_recommended)
+        assert recommended.ai_reason_bullets == []
+
+    def test_reason_bullets_empty_on_missing_key(self):
+        content_block = MagicMock()
+        content_block.text = json.dumps({"recommended_id": "F1"})
+        message = MagicMock()
+        message.content = [content_block]
+        mock_client = MagicMock()
+        mock_client.messages.create.return_value = message
+
+        with patch("backend.src.agents.flight_agent.Config") as mock_cfg, \
+             patch("backend.src.agents.flight_agent.anthropic.Anthropic", return_value=mock_client):
+            mock_cfg.ANTHROPIC_API_KEY = "test-key"
+            from backend.src.agents.flight_agent import FlightAgent
+            agent = FlightAgent()
+            result = agent.rank_and_recommend(_make_flight_offers(), _make_trip_context())
+
+        recommended = next(o for o in result if o.ai_recommended)
+        assert recommended.ai_reason_bullets == []
+        assert recommended.ai_reason == ""
+
+
+class TestHotelAgentBullets:
+    def test_reason_bullets_populated_from_claude_response(self):
+        bullets = [
+            "💰 Best value: $180/night",
+            "⭐ Highest rated at 4.5 stars",
+            "📍 Central location",
+            "✨ Award-winning breakfast",
+        ]
+        mock_client = _mock_anthropic_response("H1", bullets)
+
+        with patch("backend.src.agents.hotel_agent.Config") as mock_cfg, \
+             patch("backend.src.agents.hotel_agent.anthropic.Anthropic", return_value=mock_client):
+            mock_cfg.ANTHROPIC_API_KEY = "test-key"
+            from backend.src.agents.hotel_agent import HotelAgent
+            agent = HotelAgent()
+            result = agent.rank_and_recommend(_make_hotel_offers(), _make_trip_context())
+
+        recommended = next(o for o in result if o.ai_recommended)
+        assert recommended.ai_reason_bullets == bullets
+        assert "💰 Best value" in recommended.ai_reason
+
+    def test_reason_bullets_empty_on_failure(self):
+        mock_client = MagicMock()
+        mock_client.messages.create.side_effect = Exception("API error")
+
+        with patch("backend.src.agents.hotel_agent.Config") as mock_cfg, \
+             patch("backend.src.agents.hotel_agent.anthropic.Anthropic", return_value=mock_client):
+            mock_cfg.ANTHROPIC_API_KEY = "test-key"
+            from backend.src.agents.hotel_agent import HotelAgent
+            agent = HotelAgent()
+            result = agent.rank_and_recommend(_make_hotel_offers(), _make_trip_context())
+
+        recommended = next(o for o in result if o.ai_recommended)
+        assert recommended.ai_reason_bullets == []
