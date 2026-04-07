@@ -64,13 +64,21 @@ export default function SegmentsPage() {
     }
   }
 
-  // Auto-fire search on mount for flight-mode legs with complete data and no selection yet
+  // Auto-fire search on mount for flight-mode legs; clear stale for non-flight legs
   useEffect(() => {
     for (const leg of tripContext.legs) {
       const mode = leg.transport_mode ?? "flight";
-      if (mode !== "flight") continue;
+      if (mode !== "flight") {
+        // Non-flight legs are auto-confirmed — clear stale immediately
+        dispatch({ type: "CLEAR_STALE", payload: { key: `segments-${leg.leg_number}` } });
+        continue;
+      }
       if (!leg.origin || !leg.destination || !leg.departure_date) continue;
-      if (leg.selected_flight) continue;
+      if (leg.selected_flight) {
+        // Already has a selection — clear stale
+        dispatch({ type: "CLEAR_STALE", payload: { key: `segments-${leg.leg_number}` } });
+        continue;
+      }
       if (autoFiredRef.current.has(leg.leg_number)) continue;
 
       autoFiredRef.current.add(leg.leg_number);
@@ -85,6 +93,7 @@ export default function SegmentsPage() {
 
   function handleSelectFlight(leg_number: number, offer: FlightOffer) {
     dispatch({ type: "SET_FLIGHT", payload: { leg_number, flight: offer } });
+    dispatch({ type: "CLEAR_STALE", payload: { key: `segments-${leg_number}` } });
   }
 
   function handleAddLeg() {

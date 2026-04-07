@@ -60,4 +60,4 @@ def test_export_plan_schema_version():
         itinerary=[],
         generated_at="2026-06-01T12:00:00",
     )
-    assert plan.schema_version == "1.0"
+    assert plan.schema_version == "1.1"

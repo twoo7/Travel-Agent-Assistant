@@ -23,7 +23,7 @@ def test_generate_json_is_valid():
     req = _make_request()
     result = service.generate_json(req)
     parsed = json.loads(result)
-    assert parsed["schema_version"] == "1.0"
+    assert parsed["schema_version"] == "1.1"
     assert parsed["trip_context"]["home_origin"] == "JFK"
     assert len(parsed["itinerary"]) == 1
     assert parsed["itinerary"][0]["narrative"] == "A wonderful first day in Tokyo."

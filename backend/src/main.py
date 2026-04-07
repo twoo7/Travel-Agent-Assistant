@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.src.routers import export, flights, hotels, itinerary, pois
+from backend.src.routers import export, flights, hotels, itinerary, pois, segments
 
 app = FastAPI(
     title="Travel Agent API",
@@ -22,6 +22,7 @@ app.include_router(hotels.router)
 app.include_router(pois.router)
 app.include_router(itinerary.router)
 app.include_router(export.router)
+app.include_router(segments.router)
 
 
 @app.get("/health")

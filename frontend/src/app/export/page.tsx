@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useTripContext } from "@/context/TripContext";
 import { ItinerarySummary } from "@/components/export/ItinerarySummary";
 import { ExportButtons } from "@/components/export/ExportButtons";
+import type { TransportSegment } from "@/types/trip";
 
 export default function ExportPage() {
   const router = useRouter();
@@ -21,9 +22,30 @@ export default function ExportPage() {
     );
   }
 
+  // Build transport segments from legs
+  const transportSegments: TransportSegment[] = tripContext.legs.map((leg) => ({
+    leg_number: leg.leg_number,
+    mode: leg.transport_mode ?? "flight",
+    origin: leg.origin,
+    destination: leg.destination,
+    departure_date: leg.departure_date,
+    booking_ref: leg.selected_flight
+      ? `${leg.selected_flight.segments[0]?.carrier_code}${leg.selected_flight.segments[0]?.flight_number}`
+      : undefined,
+    notes:
+      leg.transport_mode === "ferry"
+        ? "Book via ferry operator website"
+        : leg.transport_mode === "train"
+        ? "Book via Trainline, Eurail, or national rail"
+        : leg.transport_mode === "car"
+        ? "Self-drive or hire car"
+        : undefined,
+  }));
+
   const exportRequest = {
     trip_context: tripContext,
     itinerary: itinerary.length > 0 ? itinerary : [],
+    transport_segments: transportSegments,
   };
 
   return (

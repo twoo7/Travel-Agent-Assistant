@@ -17,6 +17,13 @@ const TYPE_ICON: Record<string, string> = {
   airport: "✈️",
 };
 
+const TRANSPORT_ICON: Record<string, string> = {
+  flight: "✈️",
+  train: "🚂",
+  ferry: "⛴",
+  car: "🚗",
+};
+
 const TYPE_COLOR: Record<string, string> = {
   poi: "border-blue-200 bg-white",
   hotel: "border-purple-200 bg-purple-50",
@@ -48,9 +55,16 @@ export function DayItemCard({ item, itemId, onRemove, isDragging }: Props) {
       </div>
 
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5">
-          <span className="text-sm">{TYPE_ICON[item.type]}</span>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-sm">
+            {item.transport_mode ? TRANSPORT_ICON[item.transport_mode] : TYPE_ICON[item.type]}
+          </span>
           <span className="text-sm font-medium text-gray-900 truncate">{item.name}</span>
+          {item.spans_days && item.spans_days > 1 && (
+            <span className="text-xs bg-sky-100 text-sky-700 px-1.5 py-0.5 rounded font-medium shrink-0">
+              spans {item.spans_days} days
+            </span>
+          )}
         </div>
         {item.address && (
           <p className="text-xs text-gray-400 truncate mt-0.5">{item.address}</p>

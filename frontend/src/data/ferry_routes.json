@@ -1,0 +1,222 @@
+[
+  {
+    "id": "dover-calais",
+    "from_countries": ["GB"],
+    "to_countries": ["FR"],
+    "from_cities": ["London", "Dover", "Folkestone"],
+    "to_cities": ["Paris", "Calais", "Dunkirk", "Coquelles"],
+    "operators": ["P&O Ferries", "DFDS", "Eurotunnel Le Shuttle"],
+    "crossing_mins": 90,
+    "notes": "Drive-on ferry. Dover–Calais or Folkestone–Coquelles via Eurotunnel. Most frequent cross-Channel crossing; sailings every 30–60 min at peak."
+  },
+  {
+    "id": "north-sea-uk-nl",
+    "from_countries": ["GB"],
+    "to_countries": ["NL"],
+    "from_cities": ["London", "Harwich"],
+    "to_cities": ["Amsterdam", "Hook of Holland"],
+    "operators": ["Stena Line", "DFDS"],
+    "crossing_mins": 420,
+    "notes": "Harwich–Hook of Holland overnight crossing (~7h). DFDS also operates Newcastle–Amsterdam. Ideal for car travellers exploring the Netherlands."
+  },
+  {
+    "id": "north-sea-uk-dk",
+    "from_countries": ["GB"],
+    "to_countries": ["DK"],
+    "from_cities": ["Newcastle"],
+    "to_cities": ["Copenhagen", "Amsterdam"],
+    "operators": ["DFDS"],
+    "crossing_mins": 1080,
+    "notes": "Newcastle–Amsterdam (DFDS, ~18h) with onward connections to Copenhagen. Overnight cabin available. Car ferry."
+  },
+  {
+    "id": "ireland-uk",
+    "from_countries": ["GB"],
+    "to_countries": ["IE"],
+    "from_cities": ["London", "Holyhead", "Fishguard", "Pembroke", "Liverpool", "Cairnryan"],
+    "to_cities": ["Dublin", "Rosslare", "Belfast"],
+    "operators": ["Irish Ferries", "Stena Line"],
+    "crossing_mins": 195,
+    "notes": "Multiple routes: Holyhead–Dublin (~3h15), Fishguard–Rosslare (~3h30), Pembroke–Rosslare (~4h), Liverpool–Dublin (~8h overnight), Cairnryan–Belfast (~2h15). Frequent departures."
+  },
+  {
+    "id": "scandinavia-oslo-copenhagen",
+    "from_countries": ["NO"],
+    "to_countries": ["DK"],
+    "from_cities": ["Oslo"],
+    "to_cities": ["Copenhagen"],
+    "operators": ["DFDS"],
+    "crossing_mins": 960,
+    "notes": "Overnight ferry Oslo–Copenhagen (~16h). Departs evening, arrives morning. Cabin accommodation available. DFDS Crown Seaways."
+  },
+  {
+    "id": "scandinavia-oslo-amsterdam",
+    "from_countries": ["NO"],
+    "to_countries": ["NL"],
+    "from_cities": ["Oslo"],
+    "to_cities": ["Amsterdam"],
+    "operators": ["DFDS"],
+    "crossing_mins": 1080,
+    "notes": "Overnight ferry Oslo–Amsterdam (~18h). DFDS Pearl Seaways departs Oslo in the afternoon, arrives Amsterdam next morning."
+  },
+  {
+    "id": "scandinavia-stockholm-helsinki",
+    "from_countries": ["SE"],
+    "to_countries": ["FI"],
+    "from_cities": ["Stockholm"],
+    "to_cities": ["Helsinki", "Turku"],
+    "operators": ["Viking Line", "Tallink Silja"],
+    "crossing_mins": 1020,
+    "notes": "Overnight ferry Stockholm–Helsinki (~17h) or Stockholm–Turku (~11h). Viking Line and Tallink Silja operate daily sailings with cabin and entertainment options."
+  },
+  {
+    "id": "scandinavia-stockholm-tallinn",
+    "from_countries": ["SE"],
+    "to_countries": ["EE"],
+    "from_cities": ["Stockholm"],
+    "to_cities": ["Tallinn"],
+    "operators": ["Tallink Silja"],
+    "crossing_mins": 960,
+    "notes": "Overnight ferry Stockholm–Tallinn (~16h). Tallink Silja departs evening, arrives morning. Popular route with onboard shopping and dining."
+  },
+  {
+    "id": "adriatic-italy-greece",
+    "from_countries": ["IT"],
+    "to_countries": ["GR"],
+    "from_cities": ["Ancona", "Bari", "Brindisi", "Venice"],
+    "to_cities": ["Patras", "Igoumenitsa", "Corfu", "Athens"],
+    "operators": ["Grimaldi Lines", "Anek Lines", "Minoan Lines"],
+    "crossing_mins": 1200,
+    "notes": "Multiple Italian ports to Greece. Ancona–Patras ~22h, Bari–Patras ~17h, Brindisi–Igoumenitsa ~8h. Car ferry with cabins. Corfu stop available on many routes."
+  },
+  {
+    "id": "adriatic-italy-croatia",
+    "from_countries": ["IT"],
+    "to_countries": ["HR"],
+    "from_cities": ["Ancona", "Venice", "Pescara"],
+    "to_cities": ["Split", "Dubrovnik", "Zadar", "Stari Grad"],
+    "operators": ["Jadrolinija", "Snav"],
+    "crossing_mins": 540,
+    "notes": "Ancona–Split ~10h overnight (Jadrolinija). Ancona–Zadar ~7h. Seasonal high-speed catamaran services also available."
+  },
+  {
+    "id": "mediterranean-barcelona-mallorca",
+    "from_countries": ["ES"],
+    "to_countries": ["ES"],
+    "from_cities": ["Barcelona", "Valencia"],
+    "to_cities": ["Palma de Mallorca", "Ibiza", "Menorca"],
+    "operators": ["Trasmediterranea", "Baleàlia", "GNV"],
+    "crossing_mins": 480,
+    "notes": "Barcelona–Palma ~8h overnight or 4.5h day ferry. Valencia–Palma ~8h. Frequent sailings; Baleàlia and Trasmediterranea operate the route."
+  },
+  {
+    "id": "mediterranean-italy-sicily",
+    "from_countries": ["IT"],
+    "to_countries": ["IT"],
+    "from_cities": ["Villa San Giovanni", "Reggio Calabria"],
+    "to_cities": ["Messina"],
+    "operators": ["Caronte & Tourist", "Bluferries", "Ferrovie dello Stato"],
+    "crossing_mins": 20,
+    "notes": "Very short crossing (~20 min) across the Strait of Messina. Ferries run almost continuously 24/7. Drive-on car ferry. Also train-ferry connection via Ferrovie dello Stato."
+  },
+  {
+    "id": "mediterranean-naples-sardinia",
+    "from_countries": ["IT"],
+    "to_countries": ["IT"],
+    "from_cities": ["Naples", "Salerno"],
+    "to_cities": ["Cagliari", "Palermo"],
+    "operators": ["Tirrenia", "GNV"],
+    "crossing_mins": 720,
+    "notes": "Naples–Cagliari ~12h overnight (Tirrenia). Seasonal routes also connect Salerno with Sardinian ports."
+  },
+  {
+    "id": "mediterranean-civitavecchia-sardinia",
+    "from_countries": ["IT"],
+    "to_countries": ["IT"],
+    "from_cities": ["Rome", "Civitavecchia", "Livorno", "Genova"],
+    "to_cities": ["Cagliari", "Olbia", "Porto Torres"],
+    "operators": ["Tirrenia", "Grimaldi Lines", "Moby"],
+    "crossing_mins": 660,
+    "notes": "Civitavecchia–Cagliari ~11h, Civitavecchia–Olbia ~7h. Genova and Livorno also serve Sardinia with overnight crossings. Multiple operators with car ferry options."
+  },
+  {
+    "id": "aegean-athens-islands",
+    "from_countries": ["GR"],
+    "to_countries": ["GR"],
+    "from_cities": ["Athens", "Piraeus", "Rafina"],
+    "to_cities": ["Mykonos", "Santorini", "Rhodes", "Crete", "Heraklion", "Paros", "Naxos", "Ios", "Corfu"],
+    "operators": ["Blue Star Ferries", "SeaJets", "Hellenic Seaways", "Minoan Lines"],
+    "crossing_mins": 240,
+    "notes": "Piraeus (Athens port) is the main hub. Piraeus–Mykonos ~5h, Piraeus–Santorini ~8h (Blue Star), ~5h (fast ferry), Piraeus–Heraklion ~9h overnight. Extensive network."
+  },
+  {
+    "id": "canary-islands",
+    "from_countries": ["ES"],
+    "to_countries": ["ES"],
+    "from_cities": ["Cadiz", "Huelva"],
+    "to_cities": ["Las Palmas", "Tenerife", "Lanzarote", "Fuerteventura"],
+    "operators": ["Trasmediterranea", "Armas"],
+    "crossing_mins": 2400,
+    "notes": "Cadiz–Las Palmas ~40h. Inter-island ferries (Fred. Olsen, Naviera Armas) are much shorter: e.g. Fuerteventura–Lanzarote ~25 min. Long-haul mainland crossings are overnight."
+  },
+  {
+    "id": "taiwan-strait",
+    "from_countries": ["TW"],
+    "to_countries": ["CN"],
+    "from_cities": ["Taipei", "Kinmen", "Matsu"],
+    "to_cities": ["Xiamen", "Fuzhou"],
+    "operators": ["Various"],
+    "crossing_mins": 60,
+    "notes": "Limited direct routes. Kinmen–Xiamen ~30 min (small passenger ferry). Matsu–Fuzhou ~2h. Visa and political restrictions apply; check current status before travel."
+  },
+  {
+    "id": "japan-korea",
+    "from_countries": ["JP"],
+    "to_countries": ["KR"],
+    "from_cities": ["Osaka", "Fukuoka", "Shimonoseki"],
+    "to_cities": ["Busan", "Seoul"],
+    "operators": ["Camelia Line", "Panstar Cruise", "Beetle (JR Kyushu)"],
+    "crossing_mins": 180,
+    "notes": "Fukuoka–Busan ~3h by Beetle hydrofoil or ~6h by overnight ferry. Osaka–Busan ~18h overnight (Panstar). Shimonoseki–Busan ~14h overnight (Camelia Line)."
+  },
+  {
+    "id": "hong-kong-macau",
+    "from_countries": ["HK"],
+    "to_countries": ["MO"],
+    "from_cities": ["Hong Kong"],
+    "to_cities": ["Macau", "Taipa"],
+    "operators": ["TurboJet", "Cotai Water Jet"],
+    "crossing_mins": 60,
+    "notes": "Frequent high-speed ferries run 24/7 (~1h). TurboJet from Hong Kong–Macau Outer Harbour; Cotai Water Jet from Taipa. Fares ~HK$165–220. Book ahead at peak times."
+  },
+  {
+    "id": "vancouver-victoria",
+    "from_countries": ["CA"],
+    "to_countries": ["CA"],
+    "from_cities": ["Vancouver", "Tsawwassen", "Horseshoe Bay"],
+    "to_cities": ["Victoria", "Swartz Bay", "Nanaimo"],
+    "operators": ["BC Ferries"],
+    "crossing_mins": 95,
+    "notes": "BC Ferries operates multiple routes: Tsawwassen–Swartz Bay (Victoria) ~1h35, Horseshoe Bay–Nanaimo ~1h35. Scenic sailing through Gulf Islands. Cars and foot passengers welcome."
+  },
+  {
+    "id": "alaska-marine",
+    "from_countries": ["US"],
+    "to_countries": ["US"],
+    "from_cities": ["Bellingham", "Seattle", "Juneau", "Ketchikan", "Sitka"],
+    "to_cities": ["Juneau", "Ketchikan", "Sitka", "Skagway", "Haines", "Petersburg"],
+    "operators": ["Alaska Marine Highway System"],
+    "crossing_mins": 1440,
+    "notes": "State-operated ferry system connecting Southeast Alaska communities. Bellingham–Juneau ~60h (full Inside Passage). Essential transport in roadless communities. Cabins available."
+  },
+  {
+    "id": "argentina-uruguay",
+    "from_countries": ["AR"],
+    "to_countries": ["UY"],
+    "from_cities": ["Buenos Aires"],
+    "to_cities": ["Montevideo", "Colonia del Sacramento"],
+    "operators": ["Buquebus", "Colonia Express", "Seacat"],
+    "crossing_mins": 60,
+    "notes": "Buenos Aires–Colonia del Sacramento ~1h (fast ferry) or ~3h (Buquebus slow). Buenos Aires–Montevideo ~2h15 (fast) or ~3h (slow). Frequent departures. Car ferry available on some routes."
+  }
+]

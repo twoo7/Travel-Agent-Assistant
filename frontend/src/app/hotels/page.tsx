@@ -92,6 +92,7 @@ export default function HotelsPage() {
         },
       },
     });
+    dispatch({ type: "CLEAR_STALE", payload: { key: `hotels-${legNumber}` } });
   }
 
   function handleRemoveStay(legNumber: number, hotelId: string) {
