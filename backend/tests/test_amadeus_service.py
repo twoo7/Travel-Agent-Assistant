@@ -71,6 +71,9 @@ def test_search_flights_returns_flight_offers():
 
 
 def test_search_hotels_returns_hotel_offers():
+    # Two-step search: first fetch hotel IDs by city, then search offers
+    mock_hotel_ids = [{"hotelId": "TKYOGRAND"}]
+
     with patch("backend.src.services.amadeus_service.Config") as MockConfig, \
          patch("backend.src.services.amadeus_service.Client") as MockClient:
         MockConfig.validate.return_value = None
@@ -78,6 +81,9 @@ def test_search_hotels_returns_hotel_offers():
         MockConfig.AMADEUS_API_SECRET = "test"
         mock_client = MagicMock()
         MockClient.return_value = mock_client
+        # Step 1: hotel IDs by city
+        mock_client.reference_data.locations.hotels.by_city.get.return_value.data = mock_hotel_ids
+        # Step 2: hotel offers for those IDs
         mock_client.shopping.hotel_offers_search.get.return_value.data = MOCK_HOTEL_RESPONSE["data"]
 
         service = AmadeusService()

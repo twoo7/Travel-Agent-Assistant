@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(bash \"C:/Users/Timothy/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.7/skills/brainstorming/scripts/start-server.sh\" --project-dir \"C:/Users/Timothy/Documents/GitHub/travel-agent-claude\")",
-      "Bash(cat \"C:/Users/Timothy/Documents/GitHub/travel-agent-claude/.superpowers/brainstorm/\"*/state/server-info)"
-    ]
-  }
-}

@@ -1,0 +1,348 @@
+"""FastAPI router integration tests — all services and agents mocked."""
+from __future__ import annotations
+
+import json
+from unittest.mock import MagicMock, patch
+
+import pytest
+from fastapi.testclient import TestClient
+
+from backend.src.models.flight import FlightOffer, FlightSegment
+from backend.src.models.hotel import HotelOffer
+from backend.src.models.poi import POI
+from backend.src.models.trip import DayItem, DayPlan, TripContext, TripLeg
+
+# ---------------------------------------------------------------------------
+# Fixtures
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def client():
+    from backend.src.main import app
+    return TestClient(app)
+
+
+def _base_trip_context() -> dict:
+    return {"home_origin": "JFK", "adults": 2, "children": 0, "legs": [], "unscheduled_pois": [], "saved_pois": []}
+
+
+def _flight_offer_dict(offer_id: str = "F1") -> dict:
+    return {
+        "id": offer_id,
+        "price": 350.0,
+        "currency": "USD",
+        "segments": [
+            {
+                "departure_airport": "JFK",
+                "arrival_airport": "CDG",
+                "departure_time": "2025-06-01T08:00:00",
+                "arrival_time": "2025-06-01T20:00:00",
+                "duration": "PT7H",
+                "carrier_code": "AF",
+                "flight_number": "AF006",
+            }
+        ],
+        "total_duration": "PT7H",
+        "stops": 0,
+        "ai_recommended": False,
+        "ai_reason": None,
+    }
+
+
+def _hotel_offer_dict(offer_id: str = "H1") -> dict:
+    return {
+        "id": offer_id,
+        "name": "Grand Paris Hotel",
+        "address": "1 Rue de Rivoli",
+        "lat": 48.8566,
+        "lng": 2.3522,
+        "price_per_night": 200.0,
+        "currency": "EUR",
+        "rating": 4.5,
+        "ai_recommended": False,
+        "ai_reason": None,
+    }
+
+
+def _poi_dict(poi_id: str = "P1") -> dict:
+    return {
+        "id": poi_id,
+        "name": "Eiffel Tower",
+        "category": "landmark",
+        "address": "Champ de Mars, Paris",
+        "lat": 48.8584,
+        "lng": 2.2945,
+        "opening_hours": None,
+        "booking_required": False,
+        "indoor_outdoor": None,
+        "busy_times": None,
+        "typical_visit_duration_mins": None,
+        "price_level": None,
+        "rating": 4.7,
+        "review_count": None,
+        "photo_url": None,
+        "nearest_transit": None,
+        "claude_note": "Iconic Paris landmark.",
+        "claude_best_time": "Sunset",
+        "claude_booking_tip": "Book ahead.",
+    }
+
+
+# ---------------------------------------------------------------------------
+# Health check
+# ---------------------------------------------------------------------------
+
+def test_health(client):
+    resp = client.get("/health")
+    assert resp.status_code == 200
+    assert resp.json() == {"status": "ok"}
+
+
+# ---------------------------------------------------------------------------
+# CORS
+# ---------------------------------------------------------------------------
+
+def test_cors_header_present(client):
+    resp = client.options(
+        "/health",
+        headers={"Origin": "http://localhost:3000", "Access-Control-Request-Method": "GET"},
+    )
+    assert resp.headers.get("access-control-allow-origin") == "http://localhost:3000"
+
+
+# ---------------------------------------------------------------------------
+# POST /flights/search
+# ---------------------------------------------------------------------------
+
+def test_flights_search_returns_offers(client):
+    offer = FlightOffer(**{**_flight_offer_dict(), "ai_recommended": True, "ai_reason": "Best deal."})
+
+    with patch("backend.src.routers.flights.AmadeusService") as MockSvc, \
+         patch("backend.src.routers.flights.FlightAgent") as MockAgent:
+        MockSvc.return_value.search_flights.return_value = [offer]
+        MockAgent.return_value.rank_and_recommend.return_value = [offer]
+
+        resp = client.post(
+            "/flights/search",
+            json={
+                "trip_context": _base_trip_context(),
+                "leg_number": 1,
+                "origin": "JFK",
+                "destination": "CDG",
+                "departure_date": "2025-06-01",
+                "adults": 2,
+                "max_results": 5,
+            },
+        )
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert isinstance(data, list)
+    assert data[0]["id"] == "F1"
+    assert data[0]["ai_recommended"] is True
+
+
+def test_flights_search_502_on_service_error(client):
+    with patch("backend.src.routers.flights.AmadeusService") as MockSvc:
+        MockSvc.return_value.search_flights.side_effect = RuntimeError("Amadeus down")
+
+        resp = client.post(
+            "/flights/search",
+            json={
+                "trip_context": _base_trip_context(),
+                "leg_number": 1,
+                "origin": "JFK",
+                "destination": "CDG",
+                "departure_date": "2025-06-01",
+                "adults": 2,
+            },
+        )
+
+    assert resp.status_code == 502
+    assert "Flight search failed" in resp.json()["detail"]
+
+
+# ---------------------------------------------------------------------------
+# POST /hotels/search
+# ---------------------------------------------------------------------------
+
+def test_hotels_search_returns_offers(client):
+    offer = HotelOffer(**{**_hotel_offer_dict(), "ai_recommended": True, "ai_reason": "Best rated."})
+
+    with patch("backend.src.routers.hotels.AmadeusService") as MockSvc, \
+         patch("backend.src.routers.hotels.HotelAgent") as MockAgent:
+        MockSvc.return_value.search_hotels.return_value = [offer]
+        MockAgent.return_value.rank_and_recommend.return_value = [offer]
+
+        resp = client.post(
+            "/hotels/search",
+            json={
+                "trip_context": _base_trip_context(),
+                "leg_number": 1,
+                "city_code": "PAR",
+                "check_in": "2025-06-01",
+                "check_out": "2025-06-05",
+                "adults": 2,
+            },
+        )
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data[0]["id"] == "H1"
+    assert data[0]["ai_recommended"] is True
+
+
+def test_hotels_search_502_on_service_error(client):
+    with patch("backend.src.routers.hotels.AmadeusService") as MockSvc:
+        MockSvc.return_value.search_hotels.side_effect = RuntimeError("Amadeus down")
+
+        resp = client.post(
+            "/hotels/search",
+            json={
+                "trip_context": _base_trip_context(),
+                "leg_number": 1,
+                "city_code": "PAR",
+                "check_in": "2025-06-01",
+                "check_out": "2025-06-05",
+                "adults": 2,
+            },
+        )
+
+    assert resp.status_code == 502
+
+
+# ---------------------------------------------------------------------------
+# POST /pois/suggest
+# ---------------------------------------------------------------------------
+
+def test_pois_suggest_returns_pois(client):
+    poi = POI(**_poi_dict())
+
+    with patch("backend.src.routers.pois.POIAgent") as MockAgent:
+        MockAgent.return_value.suggest.return_value = [poi]
+
+        resp = client.post(
+            "/pois/suggest",
+            json={"trip_context": _base_trip_context(), "leg_number": 1},
+        )
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data[0]["name"] == "Eiffel Tower"
+    assert data[0]["claude_note"] == "Iconic Paris landmark."
+
+
+# ---------------------------------------------------------------------------
+# POST /pois/distances
+# ---------------------------------------------------------------------------
+
+def test_pois_distances_returns_routes(client):
+    routes = [{"distance_km": 1.2, "travel_time_mins": 15, "encoded_polyline": "abc123"}]
+
+    with patch("backend.src.routers.pois.GoogleDirectionsService") as MockSvc:
+        MockSvc.return_value.get_routes.return_value = routes
+
+        resp = client.post(
+            "/pois/distances",
+            json={
+                "day_items": [
+                    {"type": "poi", "name": "Eiffel Tower", "address": "Paris", "lat": 48.8584, "lng": 2.2945},
+                    {"type": "poi", "name": "Louvre", "address": "Paris", "lat": 48.8606, "lng": 2.3376},
+                ]
+            },
+        )
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data[0]["distance_km"] == 1.2
+    assert data[0]["encoded_polyline"] == "abc123"
+
+
+def test_pois_distances_empty_for_single_item(client):
+    with patch("backend.src.routers.pois.GoogleDirectionsService") as MockSvc:
+        MockSvc.return_value.get_routes.return_value = []
+
+        resp = client.post(
+            "/pois/distances",
+            json={
+                "day_items": [
+                    {"type": "poi", "name": "Eiffel Tower", "address": "Paris", "lat": 48.8584, "lng": 2.2945},
+                ]
+            },
+        )
+
+    assert resp.status_code == 200
+    assert resp.json() == []
+
+
+# ---------------------------------------------------------------------------
+# POST /itinerary/generate
+# ---------------------------------------------------------------------------
+
+def test_itinerary_generate_returns_narratives(client):
+    narratives = {"day_1": "Start at the Eiffel Tower.", "day_2": "Explore Montmartre."}
+
+    with patch("backend.src.routers.itinerary.ItineraryAgent") as MockAgent:
+        MockAgent.return_value.generate.return_value = narratives
+
+        resp = client.post("/itinerary/generate", json=_base_trip_context())
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["day_1"] == "Start at the Eiffel Tower."
+    assert data["day_2"] == "Explore Montmartre."
+
+
+# ---------------------------------------------------------------------------
+# POST /export/plan
+# ---------------------------------------------------------------------------
+
+def _export_request_body() -> dict:
+    return {
+        "trip_context": _base_trip_context(),
+        "itinerary": [
+            {
+                "day_number": 1,
+                "date": "2025-06-01",
+                "city": "Paris",
+                "narrative": "A wonderful day.",
+                "items": [],
+            }
+        ],
+    }
+
+
+def test_export_plan_json(client):
+    exported = {
+        "schema_version": "1.0",
+        "trip_context": _base_trip_context(),
+        "itinerary": [],
+        "generated_at": "2025-06-01T00:00:00+00:00",
+    }
+
+    with patch("backend.src.routers.export._service") as mock_svc:
+        mock_svc.generate_json.return_value = exported
+
+        resp = client.post("/export/plan?format=json", json=_export_request_body())
+
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("application/json")
+    assert resp.json()["schema_version"] == "1.0"
+
+
+def test_export_plan_pdf(client):
+    pdf_bytes = b"%PDF-1.4 fake pdf content"
+
+    with patch("backend.src.routers.export._service") as mock_svc:
+        mock_svc.generate_pdf.return_value = pdf_bytes
+
+        resp = client.post("/export/plan?format=pdf", json=_export_request_body())
+
+    assert resp.status_code == 200
+    assert resp.headers["content-type"] == "application/pdf"
+    assert resp.content == pdf_bytes
+
+
+def test_export_plan_invalid_format(client):
+    resp = client.post("/export/plan?format=xml", json=_export_request_body())
+    assert resp.status_code == 422

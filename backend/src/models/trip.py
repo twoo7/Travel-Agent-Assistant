@@ -2,6 +2,8 @@ from __future__ import annotations
 from typing import Dict, List, Literal, Optional
 from pydantic import BaseModel
 
+TransportMode = Literal["flight", "train", "ferry", "car"]
+
 
 class DayItem(BaseModel):
     id: Optional[str] = None
@@ -15,6 +17,9 @@ class DayItem(BaseModel):
     distance_to_next_km: Optional[float] = None
     travel_time_to_next_mins: Optional[int] = None
     route_polyline_to_next: Optional[str] = None
+    # Transport-aware fields
+    transport_mode: Optional[TransportMode] = None
+    spans_days: int = 1  # >1 for overnight ferry/sleeper train
 
 
 class DayPlan(BaseModel):
@@ -30,6 +35,7 @@ class TripLeg(BaseModel):
     origin: str
     destination: str
     departure_date: str
+    transport_mode: TransportMode = "flight"
     selected_flight: Optional["FlightOffer"] = None
     hotel_stays: List["HotelStay"] = []
     days: List[DayPlan] = []
