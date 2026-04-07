@@ -1,5 +1,6 @@
 .env
-./claude/settings.local.json
-./playwright-mcp
-./superpowers/brainstorm
-./PlaywrightTests
+claude/settings.local.json
+playwright-mcp
+superpowers/brainstorm
+PlaywrightTests
+Feedback
