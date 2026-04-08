@@ -44,7 +44,7 @@ function TripSummary({ staleSteps }: { staleSteps: string[] }) {
   return (
     <div className="space-y-2">
       {routeLabel && (
-        <p className="font-medium text-slate-200 truncate">{routeLabel}</p>
+        <p className="font-medium text-slate-200 truncate whitespace-nowrap">{routeLabel}</p>
       )}
 
       {tripContext.legs.map((leg) => {
@@ -62,7 +62,7 @@ function TripSummary({ staleSteps }: { staleSteps: string[] }) {
           return (
             <p
               key={`flight-${leg.leg_number}`}
-              className={`truncate ${legIsStale ? "text-amber-400" : "text-green-400"}`}
+              className={`truncate whitespace-nowrap ${legIsStale ? "text-amber-400" : "text-green-400"}`}
             >
               {transportIcon} {flightNum} · {f.currency} {f.price.toLocaleString()}
             </p>
@@ -74,7 +74,7 @@ function TripSummary({ staleSteps }: { staleSteps: string[] }) {
           return (
             <p
               key={`hotel-${stay.hotel.id}`}
-              className={`truncate ${legIsStale ? "text-amber-300" : "text-slate-300"}`}
+              className={`truncate whitespace-nowrap ${legIsStale ? "text-amber-300" : "text-slate-300"}`}
             >
               🏨 {stay.hotel.name}
             </p>
@@ -90,7 +90,7 @@ function TripSummary({ staleSteps }: { staleSteps: string[] }) {
       })}
 
       {totalCost > 0 && (
-        <p className="text-blue-400 font-semibold pt-1 border-t border-slate-700">
+        <p className="text-blue-400 font-semibold pt-1 border-t border-slate-700 whitespace-nowrap">
           Total ~{tripContext.legs[0]?.selected_flight?.currency ?? "USD"}{" "}
           {totalCost.toLocaleString()}
         </p>
@@ -157,7 +157,7 @@ export function Sidebar() {
     <nav
       className={`
         fixed left-0 top-0 h-full z-50 flex flex-col bg-slate-900
-        transition-all duration-300 overflow-hidden
+        transition-[width] duration-200 overflow-hidden
         ${expanded ? "w-56" : "w-12"}
       `}
       onMouseEnter={handleMouseEnter}
@@ -187,25 +187,23 @@ export function Sidebar() {
                 tabIndex={isLocked ? -1 : 0}
                 aria-current={isActive ? "page" : undefined}
               >
-                {/* Icon cell — stacked number+icon in collapsed, square in expanded */}
-                <span
-                  className={`
-                    w-9 shrink-0 rounded-lg flex flex-col items-center justify-center gap-0.5
-                    relative transition-colors
-                    ${expanded ? "h-9" : "h-14"}
-                  `}
-                >
+                {/* Icon cell — always square with status bar at bottom */}
+                <span className="w-9 h-9 shrink-0 rounded-lg flex items-center justify-center relative">
+                  <span className="text-base leading-none">{step.icon}</span>
                   {!expanded && (
-                    <span className="text-[10px] font-bold leading-none">
-                      {i + 1}
-                    </span>
-                  )}
-                  <span className="text-base leading-none">
-                    {isDone ? "✓" : step.icon}
-                  </span>
-                  {/* Amber dot overlay for stale in collapsed view */}
-                  {isStale && !expanded && (
-                    <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-400" />
+                    <>
+                      <span className="absolute -top-0.5 -left-0.5 text-[8px] font-bold text-slate-400 leading-none">
+                        {i + 1}
+                      </span>
+                      <span
+                        className={`absolute bottom-0 left-1 right-1 h-[3px] rounded-full ${
+                          isActive ? "bg-indigo-500" :
+                          isDone ? "bg-green-500" :
+                          isStale ? "bg-amber-400 animate-pulse" :
+                          "bg-slate-700"
+                        }`}
+                      />
+                    </>
                   )}
                 </span>
 
@@ -224,12 +222,14 @@ export function Sidebar() {
         })}
       </ul>
 
-      {/* Trip summary — expanded only */}
-      {expanded && (
-        <div className="px-3 py-2 border-t border-slate-700 text-xs text-slate-300">
-          <TripSummary staleSteps={staleSteps} />
-        </div>
-      )}
+      {/* Trip summary — fade in after width transition */}
+      <div
+        className={`px-3 py-2 border-t border-slate-700 text-xs text-slate-300
+          transition-opacity duration-150
+          ${expanded ? "opacity-100 delay-100" : "opacity-0 pointer-events-none h-0 p-0 border-0 overflow-hidden"}`}
+      >
+        <TripSummary staleSteps={staleSteps} />
+      </div>
 
       {/* Pin toggle */}
       <button
@@ -317,7 +317,7 @@ export function Sidebar() {
                   tabIndex={isLocked ? -1 : 0}
                 >
                   <span className="w-9 h-9 shrink-0 rounded-lg flex items-center justify-center text-lg">
-                    {isDone ? "✓" : step.icon}
+                    {step.icon}
                   </span>
                   <span className="whitespace-nowrap text-sm font-medium flex-1">
                     {i + 1}. {step.label}
