@@ -24,6 +24,7 @@ class AmadeusService:
         adults: int,
         max_results: int = 10,
         return_date: str | None = None,
+        currency_code: str | None = None,
     ) -> List[FlightOffer]:
         try:
             params: dict = {
@@ -35,6 +36,8 @@ class AmadeusService:
             }
             if return_date:
                 params["returnDate"] = return_date
+            if currency_code:
+                params["currencyCode"] = currency_code
 
             response = self.client.shopping.flight_offers_search.get(**params)
             offers: List[FlightOffer] = []
@@ -81,6 +84,7 @@ class AmadeusService:
         check_in: str,
         check_out: str,
         adults: int,
+        currency_code: str | None = None,
     ) -> List[HotelOffer]:
         try:
             # Step 1: Get hotel IDs for the city (v3 API requires hotel IDs, not cityCode)
@@ -93,12 +97,15 @@ class AmadeusService:
                 return []
 
             # Step 2: Search offers for those hotel IDs
-            response = self.client.shopping.hotel_offers_search.get(
-                hotelIds=hotel_ids,
-                checkInDate=check_in,
-                checkOutDate=check_out,
-                adults=adults,
-            )
+            search_params: dict = {
+                "hotelIds": hotel_ids,
+                "checkInDate": check_in,
+                "checkOutDate": check_out,
+                "adults": adults,
+            }
+            if currency_code:
+                search_params["currency"] = currency_code
+            response = self.client.shopping.hotel_offers_search.get(**search_params)
             offers: List[HotelOffer] = []
             for raw in response.data:
                 hotel = raw["hotel"]

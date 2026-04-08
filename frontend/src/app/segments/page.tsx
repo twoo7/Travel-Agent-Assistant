@@ -93,6 +93,7 @@ export default function SegmentsPage() {
         destination: params.destination,
         departure_date: params.departure_date,
         adults: tripContext.adults,
+        currency: tripContext.currency,
       });
       setResults((prev) => ({ ...prev, [legNumber]: offers }));
       dispatch({ type: "SET_FLIGHT_RESULTS", payload: { leg_number: legNumber, results: offers } });

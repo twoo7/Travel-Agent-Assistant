@@ -75,6 +75,7 @@ export default function HotelsPage() {
         check_in: params.check_in,
         check_out: params.check_out,
         adults: tripContext.adults,
+        currency: tripContext.currency,
       });
       setResults((prev) => ({ ...prev, [legNumber]: offers }));
       dispatch({ type: "SET_HOTEL_RESULTS", payload: { leg_number: legNumber, results: offers } });

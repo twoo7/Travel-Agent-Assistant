@@ -21,6 +21,7 @@ def search_flights(req: FlightSearchRequest) -> List[FlightOffer]:
             departure_date=req.departure_date,
             adults=req.adults,
             max_results=req.max_results,
+            currency_code=req.currency or None,
         )
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Flight search failed: {exc}") from exc

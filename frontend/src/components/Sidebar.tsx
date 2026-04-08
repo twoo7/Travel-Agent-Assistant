@@ -91,7 +91,7 @@ function TripSummary({ staleSteps }: { staleSteps: string[] }) {
 
       {totalCost > 0 && (
         <p className="text-blue-400 font-semibold pt-1 border-t border-slate-700 whitespace-nowrap">
-          Total ~{tripContext.legs[0]?.selected_flight?.currency ?? "USD"}{" "}
+          Total ~{tripContext.currency ?? tripContext.legs[0]?.selected_flight?.currency ?? "USD"}{" "}
           {totalCost.toLocaleString()}
         </p>
       )}

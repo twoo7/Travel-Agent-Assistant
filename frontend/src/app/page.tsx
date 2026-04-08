@@ -33,6 +33,19 @@ const STALE_ACTIONS: Record<string, string> = {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
+const CURRENCIES = [
+  { code: "USD", label: "USD — US Dollar" },
+  { code: "EUR", label: "EUR — Euro" },
+  { code: "GBP", label: "GBP — British Pound" },
+  { code: "JPY", label: "JPY — Japanese Yen" },
+  { code: "AUD", label: "AUD — Australian Dollar" },
+  { code: "CAD", label: "CAD — Canadian Dollar" },
+  { code: "CHF", label: "CHF — Swiss Franc" },
+  { code: "SGD", label: "SGD — Singapore Dollar" },
+  { code: "HKD", label: "HKD — Hong Kong Dollar" },
+  { code: "NZD", label: "NZD — New Zealand Dollar" },
+];
+
 const MODE_META: Record<
   TransportMode,
   { icon: string; label: string; selectedClass: string; dotClass: string }
@@ -262,6 +275,9 @@ export default function TripSetupPage() {
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
 
+  // Currency
+  const [currency, setCurrency] = useState("USD");
+
   // Multi-destination
   const [multiMode, setMultiMode] = useState(false);
   const [legs, setLegs] = useState<LegDraft[]>([
@@ -396,13 +412,13 @@ export default function TripSetupPage() {
       // Editing an existing trip — preserve legs, just update meta
       dispatch({
         type: "UPDATE_TRIP_META",
-        payload: { home_origin: homeOrigin, adults, children },
+        payload: { home_origin: homeOrigin, adults, children, currency },
       });
     } else {
       // First-time setup — reset and add legs
       dispatch({
         type: "INIT_TRIP",
-        payload: { home_origin: homeOrigin, adults, children },
+        payload: { home_origin: homeOrigin, adults, children, currency },
       });
 
       const legsToDispatch: LegDraft[] = multiMode
@@ -707,6 +723,22 @@ export default function TripSetupPage() {
             </button>
           </div>
         )}
+
+        {/* ── Currency ── */}
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">
+            Currency
+          </label>
+          <select
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {CURRENCIES.map((c) => (
+              <option key={c.code} value={c.code}>{c.label}</option>
+            ))}
+          </select>
+        </div>
 
         {/* ── Submit ── */}
         <button
