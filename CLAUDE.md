@@ -9,7 +9,9 @@ All project planning and specifications are documented in:
 - **Backend:** [docs/superpowers/plans/2026-04-01-travel-agent-backend.md](docs/superpowers/plans/2026-04-01-travel-agent-backend.md)
 - **Frontend:** [docs/superpowers/plans/2026-04-01-travel-agent-frontend.md](docs/superpowers/plans/2026-04-01-travel-agent-frontend.md)
 
-Consult these before making architectural decisions or implementing new features.
+Consult these before making architectural decisions or implementing new features. Ensure these specifications are updated once the new features or changes have been implemented.
+
+Do not make any changes until you have 95% confidence in waht you need to build. Ask me follow-up questions until you reach that confidence.
 
 ## Commands
 
@@ -112,3 +114,8 @@ Agents use `claude-sonnet-4-6` directly via the Anthropic SDK. They expect Claud
 
 Router tests (`test_routers.py`) mock both the service and agent layers with `unittest.mock.patch`. Service tests mock the Amadeus/Google SDK clients. The config skips `load_dotenv` when `PYTEST_CURRENT_TEST` is set, so monkeypatching env vars in tests works reliably.
 
+All playwright screenshots should be stored in a single folder called "PlaywrightTests" with folders to separate each test session.
+
+### Applied Learning
+
+When something fails repeatedly, when Tim has to re-explain, or when a workaround is found for a platform/tool limitation, add a one-line bullet here. Keep each bullet under 15 words. No explanations. Only add things that will save time in future sessions.
