@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useTripContext } from "@/context/TripContext";
 import { api } from "@/services/api";
@@ -40,6 +40,16 @@ export default function SegmentsPage() {
     departure_date: "",
     transport_mode: "flight" as TripLeg["transport_mode"],
   });
+
+  const sortedResults = useMemo(() => {
+    const sorted: Record<number, FlightOffer[]> = {};
+    for (const [key, offers] of Object.entries(results)) {
+      sorted[Number(key)] = [...offers].sort((a, b) =>
+        a.ai_recommended === b.ai_recommended ? 0 : a.ai_recommended ? -1 : 1
+      );
+    }
+    return sorted;
+  }, [results]);
 
   async function handleSearch(
     legNumber: number,
@@ -206,12 +216,12 @@ export default function SegmentsPage() {
                   </p>
                 )}
 
-                {results[leg.leg_number] && results[leg.leg_number].length === 0 && (
+                {sortedResults[leg.leg_number] && sortedResults[leg.leg_number].length === 0 && (
                   <p className="text-sm text-gray-500 text-center py-4">No flights found.</p>
                 )}
 
                 <div className="space-y-2">
-                  {(results[leg.leg_number] ?? []).map((offer) => (
+                  {(sortedResults[leg.leg_number] ?? []).map((offer) => (
                     <FlightCard
                       key={offer.id}
                       offer={offer}
