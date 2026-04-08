@@ -39,12 +39,15 @@ class TripLeg(BaseModel):
     selected_flight: Optional["FlightOffer"] = None
     hotel_stays: List["HotelStay"] = []
     days: List[DayPlan] = []
+    flight_results: list = []
+    hotel_results: list = []
 
 
 class TripContext(BaseModel):
     home_origin: str
     adults: int
     children: int = 0
+    currency: str = "USD"
     legs: List[TripLeg] = []
     unscheduled_pois: List["POI"] = []
     saved_pois: List["POI"] = []

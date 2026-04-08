@@ -5,6 +5,7 @@ import type {
   TripContext as TripContextType,
   TripLeg,
   FlightOffer,
+  HotelOffer,
   HotelStay,
   DayPlan,
   POI,
@@ -19,8 +20,8 @@ interface TripState {
 }
 
 type TripAction =
-  | { type: "INIT_TRIP"; payload: Pick<TripContextType, "home_origin" | "adults" | "children"> }
-  | { type: "UPDATE_TRIP_META"; payload: Pick<TripContextType, "home_origin" | "adults" | "children"> }
+  | { type: "INIT_TRIP"; payload: Pick<TripContextType, "home_origin" | "adults" | "children" | "currency"> }
+  | { type: "UPDATE_TRIP_META"; payload: Pick<TripContextType, "home_origin" | "adults" | "children" | "currency"> }
   | { type: "ADD_LEG"; payload: TripLeg }
   | { type: "UPDATE_LEG"; payload: TripLeg }
   | { type: "REMOVE_LEG"; payload: { leg_number: number } }
@@ -34,6 +35,8 @@ type TripAction =
   | { type: "RESTORE_POI"; payload: { poi_id: string } }
   | { type: "SET_ITINERARY"; payload: ItineraryDay[] }
   | { type: "SET_TRANSPORT_MODE"; payload: { leg_number: number; mode: TransportMode } }
+  | { type: "SET_FLIGHT_RESULTS"; payload: { leg_number: number; results: FlightOffer[] } }
+  | { type: "SET_HOTEL_RESULTS"; payload: { leg_number: number; results: HotelOffer[] } }
   | { type: "MARK_STALE"; payload: { keys: string[] } }
   | { type: "CLEAR_STALE"; payload: { key: string } }
   | { type: "RESET" };
@@ -42,6 +45,7 @@ const EMPTY_CONTEXT: TripContextType = {
   home_origin: "",
   adults: 2,
   children: 0,
+  currency: "USD",
   legs: [],
   unscheduled_pois: [],
   saved_pois: [],
@@ -231,10 +235,52 @@ function reducer(state: TripState, action: TripAction): TripState {
         },
       };
 
+    case "SET_FLIGHT_RESULTS":
+      return {
+        ...state,
+        tripContext: {
+          ...ctx,
+          legs: ctx.legs.map((l) =>
+            l.leg_number === action.payload.leg_number
+              ? { ...l, flight_results: action.payload.results }
+              : l
+          ),
+        },
+      };
+
+    case "SET_HOTEL_RESULTS":
+      return {
+        ...state,
+        tripContext: {
+          ...ctx,
+          legs: ctx.legs.map((l) =>
+            l.leg_number === action.payload.leg_number
+              ? { ...l, hotel_results: action.payload.results }
+              : l
+          ),
+        },
+      };
+
     case "MARK_STALE": {
       const existing = new Set(state.staleSteps);
-      for (const k of action.payload.keys) existing.add(k);
-      return { ...state, staleSteps: Array.from(existing) };
+      const staleLegNumbers = new Set<number>();
+      for (const k of action.payload.keys) {
+        existing.add(k);
+        const match = k.match(/^(?:segments|hotels)-(\d+)$/);
+        if (match) staleLegNumbers.add(Number(match[1]));
+      }
+      return {
+        ...state,
+        staleSteps: Array.from(existing),
+        tripContext: {
+          ...ctx,
+          legs: ctx.legs.map((l) =>
+            staleLegNumbers.has(l.leg_number)
+              ? { ...l, flight_results: undefined, hotel_results: undefined }
+              : l
+          ),
+        },
+      };
     }
 
     case "CLEAR_STALE":
