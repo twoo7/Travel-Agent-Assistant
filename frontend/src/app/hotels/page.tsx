@@ -258,6 +258,8 @@ export default function HotelsPage() {
                   selected={pendingOffers[leg.leg_number]?.id === offer.id}
                   confirmed={leg.hotel_stays.some((s) => s.hotel.id === offer.id)}
                   onSelect={(o) => handleSelectHotel(leg.leg_number, o)}
+                  checkIn={pendingDates[leg.leg_number]?.check_in ?? getDatesForLeg(legIndex).check_in}
+                  checkOut={pendingDates[leg.leg_number]?.check_out ?? getDatesForLeg(legIndex).check_out}
                 />
               ))}
             </div>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import { useTripContext } from "@/context/TripContext";
+import { calcNights } from "@/utils/dateUtils";
 import type { TransportMode } from "@/types/trip";
 
 const STEPS = [
@@ -70,7 +71,8 @@ function TripSummary({ staleSteps }: { staleSteps: string[] }) {
         })() : null;
 
         const hotelLines = leg.hotel_stays.map((stay) => {
-          totalCost += stay.hotel.price_per_night;
+          const nights = calcNights(stay.check_in, stay.check_out);
+          totalCost += stay.hotel.price_per_night * nights;
           return (
             <p
               key={`hotel-${stay.hotel.id}`}

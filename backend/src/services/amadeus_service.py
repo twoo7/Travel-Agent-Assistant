@@ -91,44 +91,60 @@ class AmadeusService:
             hotels_response = self.client.reference_data.locations.hotels.by_city.get(
                 cityCode=city_code,
             )
-            hotel_ids = [h["hotelId"] for h in hotels_response.data[:20]]
-            if not hotel_ids:
-                logger.warning("No hotels found in city %s", city_code)
+        except ResponseError as e:
+            logger.error("Amadeus hotel lookup error: %s", e)
+            raise
+
+        hotel_ids = [h["hotelId"] for h in hotels_response.data if h.get("hotelId")][:10]
+        if not hotel_ids:
+            logger.warning("No hotels found in city %s", city_code)
+            return []
+
+        # Step 2: Search offers for those hotel IDs
+        search_params: dict = {
+            "hotelIds": hotel_ids,
+            "checkInDate": check_in,
+            "checkOutDate": check_out,
+            "adults": adults,
+        }
+        if currency_code:
+            search_params["currency"] = currency_code
+
+        try:
+            response = self.client.shopping.hotel_offers_search.get(**search_params)
+        except ResponseError as e:
+            retry_count = min(5, len(hotel_ids))
+            logger.warning(
+                "Hotel offers search failed with %d IDs, retrying with %d: %s",
+                len(hotel_ids), retry_count, e,
+            )
+            search_params["hotelIds"] = hotel_ids[:retry_count]
+            try:
+                response = self.client.shopping.hotel_offers_search.get(**search_params)
+            except ResponseError:
+                logger.error("Hotel offers retry also failed for %s", city_code)
                 return []
 
-            # Step 2: Search offers for those hotel IDs
-            search_params: dict = {
-                "hotelIds": hotel_ids,
-                "checkInDate": check_in,
-                "checkOutDate": check_out,
-                "adults": adults,
-            }
-            if currency_code:
-                search_params["currency"] = currency_code
-            response = self.client.shopping.hotel_offers_search.get(**search_params)
-            offers: List[HotelOffer] = []
-            for raw in response.data:
-                hotel = raw["hotel"]
-                if not raw.get("offers"):
-                    logger.warning("Skipping hotel %s: no offers", hotel.get("hotelId"))
-                    continue
-                price = float(raw["offers"][0]["price"]["total"])
-                currency = raw["offers"][0]["price"]["currency"]
-                address_lines = hotel.get("address", {}).get("lines", [])
-                offers.append(
-                    HotelOffer(
-                        id=hotel["hotelId"],
-                        name=hotel["name"],
-                        address=", ".join(address_lines),
-                        lat=hotel.get("latitude", 0.0),
-                        lng=hotel.get("longitude", 0.0),
-                        price_per_night=price,
-                        currency=currency,
-                        rating=float(hotel["rating"]) if hotel.get("rating") else None,
-                    )
+        offers: List[HotelOffer] = []
+        for raw in response.data:
+            hotel = raw["hotel"]
+            if not raw.get("offers"):
+                logger.warning("Skipping hotel %s: no offers", hotel.get("hotelId"))
+                continue
+            price = float(raw["offers"][0]["price"]["total"])
+            currency = raw["offers"][0]["price"]["currency"]
+            address_lines = hotel.get("address", {}).get("lines", [])
+            offers.append(
+                HotelOffer(
+                    id=hotel["hotelId"],
+                    name=hotel["name"],
+                    address=", ".join(address_lines),
+                    lat=hotel.get("latitude", 0.0),
+                    lng=hotel.get("longitude", 0.0),
+                    price_per_night=price,
+                    currency=currency,
+                    rating=float(hotel["rating"]) if hotel.get("rating") else None,
                 )
-            logger.info("Found %d hotel offers for %s", len(offers), city_code)
-            return offers
-        except ResponseError as e:
-            logger.error("Amadeus hotel search error: %s", e)
-            raise
+            )
+        logger.info("Found %d hotel offers for %s", len(offers), city_code)
+        return offers

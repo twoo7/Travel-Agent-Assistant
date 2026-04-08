@@ -133,6 +133,44 @@ def test_search_flights_raises_on_response_error():
                                    departure_date="2026-06-10", adults=2)
 
 
+def test_search_hotels_retries_on_response_error():
+    """When hotel_offers_search fails with full batch, retry with half."""
+    with patch("backend.src.services.amadeus_service.Config") as MockConfig, \
+         patch("backend.src.services.amadeus_service.Client") as MockClient:
+        MockConfig.validate.return_value = None
+        MockConfig.AMADEUS_API_KEY = "test"
+        MockConfig.AMADEUS_API_SECRET = "test"
+        mock_client = MagicMock()
+        MockClient.return_value = mock_client
+
+        by_city_resp = MagicMock()
+        by_city_resp.data = [{"hotelId": f"HOTEL{i:04d}"} for i in range(10)]
+        mock_client.reference_data.locations.hotels.by_city.get.return_value = by_city_resp
+
+        mock_error = AmadeusResponseError(MagicMock(status_code=502, body="{}"))
+        success_resp = MagicMock()
+        success_resp.data = [{
+            "hotel": {
+                "hotelId": "HOTEL0000",
+                "name": "Test Hotel",
+                "address": {"lines": ["123 Test St"]},
+                "latitude": 48.85,
+                "longitude": 2.35,
+            },
+            "offers": [{"price": {"total": "150.00", "currency": "USD"}}],
+        }]
+        mock_client.shopping.hotel_offers_search.get.side_effect = [mock_error, success_resp]
+
+        service = AmadeusService()
+        results = service.search_hotels("PAR", "2025-06-01", "2025-06-05", 2)
+
+    assert len(results) == 1
+    assert results[0].name == "Test Hotel"
+    assert mock_client.shopping.hotel_offers_search.get.call_count == 2
+    second_call_kwargs = mock_client.shopping.hotel_offers_search.get.call_args_list[1]
+    assert len(second_call_kwargs.kwargs.get("hotelIds", [])) == 5
+
+
 def test_search_flights_skips_offer_with_no_itineraries():
     bad_offer = {"id": "bad", "price": {"grandTotal": "100.00", "currency": "USD"}, "itineraries": []}
     good_offer = MOCK_FLIGHT_RESPONSE["data"][0]

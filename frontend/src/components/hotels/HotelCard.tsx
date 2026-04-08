@@ -2,12 +2,15 @@
 
 import { useState } from "react";
 import type { HotelOffer } from "@/types/trip";
+import { calcNights } from "@/utils/dateUtils";
 
 interface Props {
   offer: HotelOffer;
   selected: boolean;
   confirmed: boolean;
   onSelect: (offer: HotelOffer) => void;
+  checkIn?: string;
+  checkOut?: string;
 }
 
 function StarRating({ rating }: { rating?: number }) {
@@ -21,7 +24,7 @@ function StarRating({ rating }: { rating?: number }) {
   );
 }
 
-export function HotelCard({ offer, selected, confirmed, onSelect }: Props) {
+export function HotelCard({ offer, selected, confirmed, onSelect, checkIn, checkOut }: Props) {
   const [expanded, setExpanded] = useState(false);
   const hasBullets = offer.ai_reason_bullets && offer.ai_reason_bullets.length > 0;
 
@@ -61,6 +64,14 @@ export function HotelCard({ offer, selected, confirmed, onSelect }: Props) {
             {offer.currency} {offer.price_per_night.toLocaleString()}
           </div>
           <div className="text-xs text-gray-500">per night</div>
+          {checkIn && checkOut && (() => {
+            const nights = calcNights(checkIn, checkOut);
+            return (
+              <div className="text-sm text-slate-400 mt-0.5">
+                {offer.currency} {(offer.price_per_night * nights).toLocaleString()} total ({nights} night{nights !== 1 ? "s" : ""})
+              </div>
+            );
+          })()}
         </div>
       </div>
 
