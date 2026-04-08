@@ -20,8 +20,8 @@ interface TripState {
 }
 
 type TripAction =
-  | { type: "INIT_TRIP"; payload: Pick<TripContextType, "home_origin" | "adults" | "children" | "currency"> }
-  | { type: "UPDATE_TRIP_META"; payload: Pick<TripContextType, "home_origin" | "adults" | "children" | "currency"> }
+  | { type: "INIT_TRIP"; payload: Pick<TripContextType, "home_origin" | "adults" | "children"> & { currency?: string } }
+  | { type: "UPDATE_TRIP_META"; payload: Partial<Pick<TripContextType, "home_origin" | "adults" | "children" | "currency">> }
   | { type: "ADD_LEG"; payload: TripLeg }
   | { type: "UPDATE_LEG"; payload: TripLeg }
   | { type: "REMOVE_LEG"; payload: { leg_number: number } }
