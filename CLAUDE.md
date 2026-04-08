@@ -114,8 +114,12 @@ Agents use `claude-sonnet-4-6` directly via the Anthropic SDK. They expect Claud
 
 Router tests (`test_routers.py`) mock both the service and agent layers with `unittest.mock.patch`. Service tests mock the Amadeus/Google SDK clients. The config skips `load_dotenv` when `PYTEST_CURRENT_TEST` is set, so monkeypatching env vars in tests works reliably.
 
-All playwright screenshots should be stored in a single folder called "PlaywrightTests" with folders to separate each test session.
+All playwright screenshots should be stored in a single folder called "PlaywrightTests" with folders to separate each test session. PlayWright End to End testing is located under `/frontend/e2e`. They should be updated as new features are added and tested.
 
 ### Applied Learning
 
 When something fails repeatedly, when Tim has to re-explain, or when a workaround is found for a platform/tool limitation, add a one-line bullet here. Keep each bullet under 15 words. No explanations. Only add things that will save time in future sessions.
+
+- Writing large data files in one shot triggers content filtering; scope to only needed entries.
+- All task commits must go in the main repo root.
+- Run pytest via `backend/venv/Scripts/python -m pytest` from repo root; plain `python -m pytest` lacks dependencies.
