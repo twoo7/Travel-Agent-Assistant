@@ -5,3 +5,4 @@
 /PlayWrightTests
 /Feedback
 .pytest_cache/
+.worktrees/
