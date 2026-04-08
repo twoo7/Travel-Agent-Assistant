@@ -283,6 +283,8 @@ export default function TripSetupPage() {
   const [legs, setLegs] = useState<LegDraft[]>([
     { origin: "", destination: "", date: "", transport_mode: "flight" },
   ]);
+  const [addReturnLeg, setAddReturnLeg] = useState(false);
+  const [multiReturnDate, setMultiReturnDate] = useState("");
 
   // ── Sync home origin into first leg ────────────────────────────────────────
   const handleHomeOriginChange = useCallback(
@@ -442,6 +444,24 @@ export default function TripSetupPage() {
               })(),
             },
           ];
+
+      if (!multiMode && returnDate) {
+        legsToDispatch.push({
+          origin: singleDest,
+          destination: homeOrigin,
+          date: returnDate,
+          transport_mode: "flight" as TransportMode,
+        });
+      }
+
+      if (multiMode && addReturnLeg && multiReturnDate && legs.length > 0) {
+        legsToDispatch.push({
+          origin: legs[legs.length - 1].destination,
+          destination: homeOrigin,
+          date: multiReturnDate,
+          transport_mode: "flight" as TransportMode,
+        });
+      }
 
       legsToDispatch.forEach((leg, i) => {
         dispatch({
@@ -721,6 +741,35 @@ export default function TripSetupPage() {
             >
               + Add destination
             </button>
+
+            <div className="flex items-center gap-3 mt-1">
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={addReturnLeg}
+                  onChange={(e) => setAddReturnLeg(e.target.checked)}
+                  className="rounded border-gray-300"
+                />
+                Add return flight home
+              </label>
+            </div>
+
+            {addReturnLeg && (
+              <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+                <p className="text-sm text-gray-600">
+                  {legs[legs.length - 1]?.destination || "Last destination"} → {homeOrigin}
+                </p>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Return Date</label>
+                  <input
+                    type="date"
+                    value={multiReturnDate}
+                    onChange={(e) => setMultiReturnDate(e.target.value)}
+                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         )}
 
