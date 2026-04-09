@@ -1,5 +1,5 @@
-import type { TripContext, ItineraryDay } from "@/types/trip";
-import { Plane, Hotel, MapPin, Sparkles, Calendar } from "lucide-react";
+import type { TripContext, ItineraryDay, TransportMode } from "@/types/trip";
+import { Plane, Train, Ship, Car, Hotel, MapPin, Sparkles, Calendar } from "lucide-react";
 import { iataToCityName } from "@/utils/airportNames";
 import { formatPrice } from "@/utils/formatPrice";
 import { calcNights } from "@/utils/dateUtils";
@@ -11,6 +11,13 @@ interface Props {
 
 function formatDuration(iso: string) {
   return iso.replace("PT", "").replace("H", "h ").replace("M", "m").trim();
+}
+
+function TransportIcon({ mode }: { mode?: TransportMode }) {
+  if (mode === "train") return <Train size={16} className="text-accent" />;
+  if (mode === "ferry") return <Ship size={16} className="text-accent" />;
+  if (mode === "car") return <Car size={16} className="text-accent" />;
+  return <Plane size={16} className="text-accent" />;
 }
 
 function ItemIcon({ type }: { type: string }) {
@@ -36,12 +43,12 @@ export function ItinerarySummary({ tripContext, itinerary }: Props) {
         </p>
       </div>
 
-      {/* Flight summary */}
+      {/* Transportation summary */}
       {tripContext.legs.some((l) => l.selected_flight) && (
         <div>
           <h3 className="text-base font-semibold text-charcoal mb-3 flex items-center gap-2 font-body">
             <Plane size={16} className="text-accent" />
-            Flights
+            Transportation
           </h3>
           <div className="space-y-2">
             {tripContext.legs.map((leg) =>
@@ -50,7 +57,9 @@ export function ItinerarySummary({ tripContext, itinerary }: Props) {
                   key={leg.leg_number}
                   className="bg-white border border-gray-100 shadow-card rounded-xl px-4 py-3 flex items-center justify-between"
                 >
-                  <div>
+                  <div className="flex items-center gap-2">
+                    <TransportIcon mode={leg.transport_mode} />
+                    <div>
                     <span className="font-medium text-charcoal font-body">
                       {iataToCityName(leg.origin)} → {iataToCityName(leg.destination)}
                     </span>
@@ -61,6 +70,7 @@ export function ItinerarySummary({ tripContext, itinerary }: Props) {
                         AI Pick
                       </span>
                     )}
+                    </div>
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-primary font-display">
