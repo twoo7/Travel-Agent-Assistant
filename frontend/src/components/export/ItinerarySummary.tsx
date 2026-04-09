@@ -1,5 +1,8 @@
-import type { TripContext, ItineraryDay } from "@/types/trip";
-import { Plane, Hotel, MapPin, Sparkles, Calendar } from "lucide-react";
+import type { TripContext, ItineraryDay, TransportMode } from "@/types/trip";
+import { Plane, Train, Ship, Car, Hotel, MapPin, Sparkles, Calendar } from "lucide-react";
+import { iataToCityName } from "@/utils/airportNames";
+import { formatPrice } from "@/utils/formatPrice";
+import { calcNights } from "@/utils/dateUtils";
 
 interface Props {
   tripContext: TripContext;
@@ -10,21 +13,47 @@ function formatDuration(iso: string) {
   return iso.replace("PT", "").replace("H", "h ").replace("M", "m").trim();
 }
 
+function TransportIcon({ mode }: { mode?: TransportMode }) {
+  if (mode === "train") return <Train size={16} className="text-accent" />;
+  if (mode === "ferry") return <Ship size={16} className="text-accent" />;
+  if (mode === "car") return <Car size={16} className="text-accent" />;
+  return <Plane size={16} className="text-accent" />;
+}
+
 function ItemIcon({ type }: { type: string }) {
   if (type === "airport") return <Plane size={13} className="text-accent" />;
   if (type === "hotel") return <Hotel size={13} className="text-primary" />;
   return <MapPin size={13} className="text-muted" />;
 }
 
+function buildTotals(tripContext: TripContext): Record<string, number> {
+  const totals: Record<string, number> = {};
+  for (const leg of tripContext.legs) {
+    if (leg.selected_flight) {
+      const cur = leg.selected_flight.currency;
+      totals[cur] = (totals[cur] ?? 0) + leg.selected_flight.price;
+    }
+    for (const stay of leg.hotel_stays) {
+      const cur = stay.hotel.currency;
+      const nights = calcNights(stay.check_in, stay.check_out);
+      totals[cur] = (totals[cur] ?? 0) + stay.hotel.price_per_night * nights;
+    }
+  }
+  return totals;
+}
+
 export function ItinerarySummary({ tripContext, itinerary }: Props) {
+  const totals = buildTotals(tripContext);
+  const hasTotals = Object.keys(totals).length > 0;
+
   return (
     <div className="space-y-8">
       {/* Trip header */}
       <div className="bg-gradient-to-br from-primary to-primary-dark rounded-2xl p-7 text-white">
         <p className="text-xs font-body uppercase tracking-widest opacity-70 mb-2">Your Journey</p>
         <h2 className="font-display text-3xl font-bold leading-tight">
-          {tripContext.home_origin} →{" "}
-          {tripContext.legs.map((l) => l.destination).join(" → ")}
+          {iataToCityName(tripContext.home_origin)} →{" "}
+          {tripContext.legs.map((l) => iataToCityName(l.destination)).join(" → ")}
         </h2>
         <p className="mt-2 text-sm font-body opacity-75">
           {tripContext.adults} adult{tripContext.adults > 1 ? "s" : ""}
@@ -33,12 +62,12 @@ export function ItinerarySummary({ tripContext, itinerary }: Props) {
         </p>
       </div>
 
-      {/* Flight summary */}
+      {/* Transportation summary */}
       {tripContext.legs.some((l) => l.selected_flight) && (
         <div>
           <h3 className="text-base font-semibold text-charcoal mb-3 flex items-center gap-2 font-body">
             <Plane size={16} className="text-accent" />
-            Flights
+            Transportation
           </h3>
           <div className="space-y-2">
             {tripContext.legs.map((leg) =>
@@ -47,9 +76,11 @@ export function ItinerarySummary({ tripContext, itinerary }: Props) {
                   key={leg.leg_number}
                   className="bg-white border border-gray-100 shadow-card rounded-xl px-4 py-3 flex items-center justify-between"
                 >
-                  <div>
+                  <div className="flex items-center gap-2">
+                    <TransportIcon mode={leg.transport_mode} />
+                    <div>
                     <span className="font-medium text-charcoal font-body">
-                      {leg.origin} → {leg.destination}
+                      {iataToCityName(leg.origin)} → {iataToCityName(leg.destination)}
                     </span>
                     <span className="text-sm text-muted ml-2 font-body">{leg.departure_date}</span>
                     {leg.selected_flight.ai_recommended && (
@@ -58,10 +89,11 @@ export function ItinerarySummary({ tripContext, itinerary }: Props) {
                         AI Pick
                       </span>
                     )}
+                    </div>
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-primary font-display">
-                      {leg.selected_flight.currency} {leg.selected_flight.price.toLocaleString()}
+                      {formatPrice(leg.selected_flight.price, leg.selected_flight.currency)}
                     </p>
                     <p className="text-xs text-muted font-body">
                       {formatDuration(leg.selected_flight.total_duration)} ·{" "}
@@ -99,10 +131,14 @@ export function ItinerarySummary({ tripContext, itinerary }: Props) {
                     )}
                     <p className="text-xs text-muted mt-0.5 font-body">{stay.check_in} → {stay.check_out}</p>
                   </div>
-                  <p className="font-semibold text-primary font-display">
-                    {stay.hotel.currency} {stay.hotel.price_per_night.toLocaleString()}
-                    <span className="text-xs text-muted font-body font-normal">/night</span>
-                  </p>
+                  <div className="text-right">
+                    <p className="font-semibold text-primary font-display">
+                      {formatPrice(stay.hotel.price_per_night * calcNights(stay.check_in, stay.check_out), stay.hotel.currency)}
+                    </p>
+                    <p className="text-xs text-muted font-body">
+                      {formatPrice(stay.hotel.price_per_night, stay.hotel.currency)}/night · {calcNights(stay.check_in, stay.check_out)} night{calcNights(stay.check_in, stay.check_out) !== 1 ? "s" : ""}
+                    </p>
+                  </div>
                 </div>
               ))
             )}
@@ -145,6 +181,26 @@ export function ItinerarySummary({ tripContext, itinerary }: Props) {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Grand total */}
+      {hasTotals && (
+        <div className="bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20 rounded-2xl p-6">
+          <h3 className="text-base font-semibold text-charcoal mb-3 font-body">Estimated Total</h3>
+          <div className="space-y-1">
+            {Object.entries(totals).map(([currency, amount]) => (
+              <div key={currency} className="flex items-center justify-between">
+                <span className="text-sm text-muted font-body">{currency}</span>
+                <span className="text-2xl font-bold text-primary font-display">
+                  {formatPrice(amount, currency)}
+                </span>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-muted mt-3 font-body">
+            Flights + accommodation · excludes activities and meals
+          </p>
         </div>
       )}
     </div>

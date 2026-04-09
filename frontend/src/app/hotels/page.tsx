@@ -16,6 +16,7 @@ import type { HotelOffer, AccommodationType } from "@/types/trip";
 import {
   Check, AlertTriangle, ArrowRight, ArrowLeft, Ship, Train, X, Hotel,
 } from "lucide-react";
+import { iataToCityName } from "@/utils/airportNames";
 
 const HOTEL_SORT_OPTIONS: SortOption[] = [
   { key: "ai", label: "AI Pick" },
@@ -148,14 +149,16 @@ export default function HotelsPage() {
     dispatch({ type: "REMOVE_HOTEL_STAY", payload: { leg_number: legNumber, hotel_id: hotelId } });
   }
 
-  const confirmedLegs = tripContext.legs.filter((l) => l.hotel_stays.length > 0).length;
-  const totalLegs = tripContext.legs.length;
+  const isReturnLeg = (l: { destination: string }) => l.destination === tripContext.home_origin;
+  const requiredLegs = tripContext.legs.filter((l) => !isReturnLeg(l));
+  const confirmedLegs = requiredLegs.filter((l) => l.hotel_stays.length > 0).length;
+  const totalLegs = requiredLegs.length;
   const allLegsHaveHotels = totalLegs > 0 && confirmedLegs === totalLegs;
   const progressPct = totalLegs > 0 ? (confirmedLegs / totalLegs) * 100 : 0;
 
-  const validationIssues = tripContext.legs
+  const validationIssues = requiredLegs
     .filter((l) => l.hotel_stays.length === 0)
-    .map((l) => `Leg ${l.leg_number} (${l.origin} → ${l.destination}): search and confirm a hotel`);
+    .map((l) => `Leg ${l.leg_number} (${iataToCityName(l.origin)} → ${iataToCityName(l.destination)}): search and confirm a hotel`);
 
   if (tripContext.legs.length === 0) {
     return (
@@ -184,13 +187,26 @@ export default function HotelsPage() {
         {tripContext.legs.map((leg, legIndex) => {
           const { check_in, check_out } = getDatesForLeg(legIndex);
 
+          const returnLeg = isReturnLeg(leg);
+
           return (
             <div key={leg.leg_number} className="space-y-3">
-              <h2 className="font-semibold text-charcoal font-body flex items-center gap-2">
+              <h2 className="font-semibold text-charcoal font-body flex items-center gap-2 flex-wrap">
                 <Hotel size={15} className="text-accent" />
                 Leg {leg.leg_number}:{" "}
-                <span className="font-mono text-sm">{leg.origin} → {leg.destination}</span>
+                <span className="font-mono text-sm">{iataToCityName(leg.origin)} → {iataToCityName(leg.destination)}</span>
+                {returnLeg && (
+                  <span className="text-xs font-body font-normal text-muted bg-gray-100 border border-gray-200 px-2 py-0.5 rounded-full">
+                    Return home — no hotel needed
+                  </span>
+                )}
               </h2>
+
+              {returnLeg && (
+                <p className="text-sm text-muted font-body italic">
+                  This leg returns you to {iataToCityName(tripContext.home_origin)}. No hotel booking required.
+                </p>
+              )}
 
               {/* Overnight ferry notice */}
               {leg.transport_mode === "ferry" && (
@@ -263,6 +279,16 @@ export default function HotelsPage() {
                 <div className="flex items-start gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3 font-body">
                   <AlertTriangle size={15} className="shrink-0 mt-0.5" />
                   <span>{error[leg.leg_number]}</span>
+                  <button
+                    onClick={() => handleSearch(leg.leg_number, {
+                      city_code: toCityCode(leg.destination),
+                      check_in: pendingDates[leg.leg_number]?.check_in ?? check_in ?? "",
+                      check_out: pendingDates[leg.leg_number]?.check_out ?? check_out ?? "",
+                    })}
+                    className="ml-auto shrink-0 text-xs font-medium underline hover:no-underline"
+                  >
+                    Retry
+                  </button>
                 </div>
               )}
 

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import type { HotelOffer } from "@/types/trip";
 import { calcNights } from "@/utils/dateUtils";
+import { formatPrice } from "@/utils/formatPrice";
 import { Sparkles, ChevronRight, Check } from "lucide-react";
 
 interface Props {
@@ -75,14 +76,14 @@ export function HotelCard({ offer, selected, confirmed, onSelect, checkIn, check
         </div>
         <div className="text-right ml-4 shrink-0">
           <div className="text-xl font-bold text-primary font-display">
-            {offer.currency} {offer.price_per_night.toLocaleString()}
+            {formatPrice(offer.price_per_night, offer.currency)}
           </div>
           <div className="text-xs text-muted font-body">per night</div>
           {checkIn && checkOut && (() => {
             const nights = calcNights(checkIn, checkOut);
             return (
               <div className="text-xs text-muted font-body mt-0.5">
-                {offer.currency} {(offer.price_per_night * nights).toLocaleString()} total ({nights} night{nights !== 1 ? "s" : ""})
+                {formatPrice(offer.price_per_night * nights, offer.currency)} total ({nights} night{nights !== 1 ? "s" : ""})
               </div>
             );
           })()}

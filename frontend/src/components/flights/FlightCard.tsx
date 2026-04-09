@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import type { FlightOffer } from "@/types/trip";
 import { Sparkles, ChevronRight, Check } from "lucide-react";
+import { formatPrice } from "@/utils/formatPrice";
 
 interface Props {
   offer: FlightOffer;
@@ -82,7 +83,7 @@ export function FlightCard({ offer, selected, onSelect, index = 0 }: Props) {
 
         <div className="text-right ml-4 min-w-[88px]">
           <div className="text-xl font-bold text-primary font-display">
-            {offer.currency} {offer.price.toLocaleString()}
+            {formatPrice(offer.price, offer.currency)}
           </div>
           <div className="text-xs text-muted font-body">per person</div>
           <div className="text-xs text-subtle mt-0.5 font-mono">{seg.carrier_code}{seg.flight_number}</div>

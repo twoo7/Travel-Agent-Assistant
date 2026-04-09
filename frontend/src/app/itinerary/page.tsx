@@ -10,6 +10,7 @@ import { TripMap } from "@/components/itinerary/TripMap";
 import { Button } from "@/components/ui/Button";
 import type { DayPlan, DayItem, POI, TripContext } from "@/types/trip";
 import { Sparkles, ArrowLeft, ArrowRight } from "lucide-react";
+import { iataToCityName } from "@/utils/airportNames";
 
 function buildInitialDays(tripContext: TripContext): DayPlan[] {
   const days: DayPlan[] = [];
@@ -151,6 +152,7 @@ export default function ItineraryPage() {
       router.push("/export");
     } catch (e) {
       console.error("Itinerary generation failed:", e);
+    } finally {
       setGeneratingItinerary(false);
     }
   }
@@ -180,7 +182,7 @@ export default function ItineraryPage() {
         <div>
           <h1 className="text-3xl font-bold text-primary font-display">Itinerary Builder</h1>
           <p className="text-muted text-sm mt-0.5 font-body">
-            Add places, arrange your days, then generate your narrative.
+            Add places, arrange your days, then generate your final itinerary.
           </p>
         </div>
 
@@ -198,7 +200,7 @@ export default function ItineraryPage() {
                       : "text-charcoal/70 hover:bg-white hover:shadow-sm"
                   }`}
                 >
-                  {leg.destination}
+                  {iataToCityName(leg.destination)}
                 </button>
               ))}
             </div>
@@ -211,7 +213,9 @@ export default function ItineraryPage() {
             loading={loadingPois}
             icon={<Sparkles size={13} />}
           >
-            {loadingPois ? "Loading…" : "Get AI Suggestions"}
+            {loadingPois
+              ? "Loading…"
+              : `Suggest places in ${iataToCityName(tripContext.legs[currentLeg - 1]?.destination ?? "")}`}
           </Button>
         </div>
       </div>
@@ -237,7 +241,7 @@ export default function ItineraryPage() {
 
         {/* Right: Map */}
         <div className="w-80 shrink-0 hidden lg:flex flex-col">
-          <TripMap days={days} />
+          <TripMap days={days} currentLeg={currentLeg} />
         </div>
       </div>
 
