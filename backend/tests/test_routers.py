@@ -258,6 +258,21 @@ def test_pois_suggest_returns_pois(client):
     assert data[0]["claude_note"] == "Iconic Paris landmark."
 
 
+def test_pois_suggest_with_user_prompt(client):
+    import unittest.mock
+    poi = POI(**_poi_dict())
+    with patch("backend.src.routers.pois.POIAgent") as MockAgent:
+        MockAgent.return_value.suggest.return_value = [poi]
+        resp = client.post(
+            "/pois/suggest",
+            json={"trip_context": _base_trip_context(), "leg_number": 1, "user_prompt": "more museums"},
+        )
+    assert resp.status_code == 200
+    MockAgent.return_value.suggest.assert_called_once_with(
+        unittest.mock.ANY, 1, user_prompt="more museums"
+    )
+
+
 # ---------------------------------------------------------------------------
 # POST /pois/distances
 # ---------------------------------------------------------------------------

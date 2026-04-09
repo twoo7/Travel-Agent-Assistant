@@ -14,7 +14,7 @@ router = APIRouter(prefix="/pois", tags=["pois"])
 @router.post("/suggest", response_model=List[POI])
 def suggest_pois(req: POISuggestRequest) -> List[POI]:
     agent = POIAgent()
-    return agent.suggest(req.trip_context, req.leg_number)
+    return agent.suggest(req.trip_context, req.leg_number, user_prompt=req.user_prompt)
 
 
 @router.post("/distances", response_model=List[Dict[str, Any]])

@@ -28,6 +28,7 @@ class POI(BaseModel):
 class POISuggestRequest(BaseModel):
     trip_context: "TripContext"
     leg_number: int
+    user_prompt: Optional[str] = None
 
 
 class DistancesRequest(BaseModel):

@@ -115,8 +115,8 @@ class TestPOIAgent:
         mock_places = MagicMock()
         mock_places.search_places.return_value = [_SAMPLE_GOOGLE_PLACE]
 
-        with patch("backend.src.agents.poi_agent.Config") as mock_cfg, \
-             patch("backend.src.agents.poi_agent.anthropic.Anthropic", return_value=mock_claude):
+        with patch("backend.src.agents.base.Config") as mock_cfg, \
+             patch("backend.src.agents.base.anthropic.Anthropic", return_value=mock_claude):
             mock_cfg.ANTHROPIC_API_KEY = "test-key"
             from backend.src.agents.poi_agent import POIAgent
             agent = POIAgent(places_service=mock_places)
@@ -135,8 +135,8 @@ class TestPOIAgent:
         mock_places = MagicMock()
         mock_places.search_places.return_value = []
 
-        with patch("backend.src.agents.poi_agent.Config") as mock_cfg, \
-             patch("backend.src.agents.poi_agent.anthropic.Anthropic", return_value=mock_claude):
+        with patch("backend.src.agents.base.Config") as mock_cfg, \
+             patch("backend.src.agents.base.anthropic.Anthropic", return_value=mock_claude):
             mock_cfg.ANTHROPIC_API_KEY = "test-key"
             from backend.src.agents.poi_agent import POIAgent
             agent = POIAgent(places_service=mock_places)
@@ -153,8 +153,8 @@ class TestPOIAgent:
         mock_client.messages.create.side_effect = Exception("API down")
         mock_places = MagicMock()
 
-        with patch("backend.src.agents.poi_agent.Config") as mock_cfg, \
-             patch("backend.src.agents.poi_agent.anthropic.Anthropic", return_value=mock_client):
+        with patch("backend.src.agents.base.Config") as mock_cfg, \
+             patch("backend.src.agents.base.anthropic.Anthropic", return_value=mock_client):
             mock_cfg.ANTHROPIC_API_KEY = "test-key"
             from backend.src.agents.poi_agent import POIAgent
             agent = POIAgent(places_service=mock_places)
@@ -168,8 +168,8 @@ class TestPOIAgent:
         mock_places = MagicMock()
         mock_places.search_places.return_value = []
 
-        with patch("backend.src.agents.poi_agent.Config") as mock_cfg, \
-             patch("backend.src.agents.poi_agent.anthropic.Anthropic", return_value=mock_claude):
+        with patch("backend.src.agents.base.Config") as mock_cfg, \
+             patch("backend.src.agents.base.anthropic.Anthropic", return_value=mock_claude):
             mock_cfg.ANTHROPIC_API_KEY = "test-key"
             from backend.src.agents.poi_agent import POIAgent
             agent = POIAgent(places_service=mock_places)
@@ -184,8 +184,8 @@ class TestPOIAgent:
         mock_places = MagicMock()
         mock_places.search_places.return_value = [_SAMPLE_GOOGLE_PLACE]
 
-        with patch("backend.src.agents.poi_agent.Config") as mock_cfg, \
-             patch("backend.src.agents.poi_agent.anthropic.Anthropic", return_value=mock_claude):
+        with patch("backend.src.agents.base.Config") as mock_cfg, \
+             patch("backend.src.agents.base.anthropic.Anthropic", return_value=mock_claude):
             mock_cfg.ANTHROPIC_API_KEY = "test-key"
             from backend.src.agents.poi_agent import POIAgent
             agent = POIAgent(places_service=mock_places)
@@ -210,8 +210,8 @@ class TestItineraryAgent:
         """Returns a dict with day_1, day_2 keys containing narrative strings."""
         mock_claude = _mock_claude_response(_SAMPLE_NARRATIVE)
 
-        with patch("backend.src.agents.itinerary_agent.Config") as mock_cfg, \
-             patch("backend.src.agents.itinerary_agent.anthropic.Anthropic", return_value=mock_claude):
+        with patch("backend.src.agents.base.Config") as mock_cfg, \
+             patch("backend.src.agents.base.anthropic.Anthropic", return_value=mock_claude):
             mock_cfg.ANTHROPIC_API_KEY = "test-key"
             from backend.src.agents.itinerary_agent import ItineraryAgent
             agent = ItineraryAgent()
@@ -226,8 +226,8 @@ class TestItineraryAgent:
         """TripContext with no day plans returns an empty dict."""
         ctx = TripContext(home_origin="JFK", adults=2)
 
-        with patch("backend.src.agents.itinerary_agent.Config") as mock_cfg, \
-             patch("backend.src.agents.itinerary_agent.anthropic.Anthropic") as mock_cls:
+        with patch("backend.src.agents.base.Config") as mock_cfg, \
+             patch("backend.src.agents.base.anthropic.Anthropic") as mock_cls:
             mock_cfg.ANTHROPIC_API_KEY = "test-key"
             from backend.src.agents.itinerary_agent import ItineraryAgent
             agent = ItineraryAgent()
@@ -241,8 +241,8 @@ class TestItineraryAgent:
         mock_client = MagicMock()
         mock_client.messages.create.side_effect = Exception("timeout")
 
-        with patch("backend.src.agents.itinerary_agent.Config") as mock_cfg, \
-             patch("backend.src.agents.itinerary_agent.anthropic.Anthropic", return_value=mock_client):
+        with patch("backend.src.agents.base.Config") as mock_cfg, \
+             patch("backend.src.agents.base.anthropic.Anthropic", return_value=mock_client):
             mock_cfg.ANTHROPIC_API_KEY = "test-key"
             from backend.src.agents.itinerary_agent import ItineraryAgent
             agent = ItineraryAgent()
@@ -257,8 +257,8 @@ class TestItineraryAgent:
         """ItineraryAgent calls claude-sonnet-4-6."""
         mock_claude = _mock_claude_response(_SAMPLE_NARRATIVE)
 
-        with patch("backend.src.agents.itinerary_agent.Config") as mock_cfg, \
-             patch("backend.src.agents.itinerary_agent.anthropic.Anthropic", return_value=mock_claude):
+        with patch("backend.src.agents.base.Config") as mock_cfg, \
+             patch("backend.src.agents.base.anthropic.Anthropic", return_value=mock_claude):
             mock_cfg.ANTHROPIC_API_KEY = "test-key"
             from backend.src.agents.itinerary_agent import ItineraryAgent
             agent = ItineraryAgent()
@@ -271,8 +271,8 @@ class TestItineraryAgent:
         """All values in the returned dict are plain strings."""
         mock_claude = _mock_claude_response(_SAMPLE_NARRATIVE)
 
-        with patch("backend.src.agents.itinerary_agent.Config") as mock_cfg, \
-             patch("backend.src.agents.itinerary_agent.anthropic.Anthropic", return_value=mock_claude):
+        with patch("backend.src.agents.base.Config") as mock_cfg, \
+             patch("backend.src.agents.base.anthropic.Anthropic", return_value=mock_claude):
             mock_cfg.ANTHROPIC_API_KEY = "test-key"
             from backend.src.agents.itinerary_agent import ItineraryAgent
             agent = ItineraryAgent()

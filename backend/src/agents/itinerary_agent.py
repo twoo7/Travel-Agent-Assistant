@@ -4,9 +4,7 @@ import json
 import logging
 from typing import Dict, List
 
-import anthropic
-
-from backend.src.config import Config
+from backend.src.agents.base import BaseAgent
 
 logger = logging.getLogger(__name__)
 
@@ -18,14 +16,11 @@ ARRIVAL_LABELS = {
 }
 
 
-class ItineraryAgent:
+class ItineraryAgent(BaseAgent):
     """
     Uses Claude to generate a day-by-day narrative itinerary from a TripContext
     that already has legs, hotels, and day plans populated.
     """
-
-    def __init__(self) -> None:
-        self.client = anthropic.Anthropic(api_key=Config.ANTHROPIC_API_KEY)
 
     def generate(
         self,
@@ -75,7 +70,7 @@ class ItineraryAgent:
         )
 
         try:
-            message = self.client.messages.create(
+            message = self._create_with_retry(
                 model="claude-sonnet-4-6",
                 max_tokens=2048,
                 messages=[{"role": "user", "content": prompt}],
