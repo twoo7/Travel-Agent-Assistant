@@ -1,5 +1,6 @@
 import type { TripContext, ItineraryDay } from "@/types/trip";
 import { Plane, Hotel, MapPin, Sparkles, Calendar } from "lucide-react";
+import { iataToCityName } from "@/utils/airportNames";
 
 interface Props {
   tripContext: TripContext;
@@ -23,8 +24,8 @@ export function ItinerarySummary({ tripContext, itinerary }: Props) {
       <div className="bg-gradient-to-br from-primary to-primary-dark rounded-2xl p-7 text-white">
         <p className="text-xs font-body uppercase tracking-widest opacity-70 mb-2">Your Journey</p>
         <h2 className="font-display text-3xl font-bold leading-tight">
-          {tripContext.home_origin} →{" "}
-          {tripContext.legs.map((l) => l.destination).join(" → ")}
+          {iataToCityName(tripContext.home_origin)} →{" "}
+          {tripContext.legs.map((l) => iataToCityName(l.destination)).join(" → ")}
         </h2>
         <p className="mt-2 text-sm font-body opacity-75">
           {tripContext.adults} adult{tripContext.adults > 1 ? "s" : ""}
@@ -49,7 +50,7 @@ export function ItinerarySummary({ tripContext, itinerary }: Props) {
                 >
                   <div>
                     <span className="font-medium text-charcoal font-body">
-                      {leg.origin} → {leg.destination}
+                      {iataToCityName(leg.origin)} → {iataToCityName(leg.destination)}
                     </span>
                     <span className="text-sm text-muted ml-2 font-body">{leg.departure_date}</span>
                     {leg.selected_flight.ai_recommended && (

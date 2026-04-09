@@ -19,6 +19,7 @@ import {
   Plane, Train, Ship, Car, Check, AlertTriangle, ArrowRight, ArrowLeft, Plus, X,
   type LucideIcon,
 } from "lucide-react";
+import { iataToCityName } from "@/utils/airportNames";
 
 const MODE_META: Record<string, { Icon: LucideIcon; label: string }> = {
   flight: { Icon: Plane,  label: "Flight"  },
@@ -179,7 +180,7 @@ export default function SegmentsPage() {
     .filter((leg) => !isLegConfirmed(leg))
     .map((leg) => {
       const mode = leg.transport_mode ?? "flight";
-      return `Leg ${leg.leg_number} (${leg.origin} → ${leg.destination}): ${
+      return `Leg ${leg.leg_number} (${iataToCityName(leg.origin)} → ${iataToCityName(leg.destination)}): ${
         mode === "flight" ? "search and select a flight" : "confirm your segment"
       }`;
     });
@@ -226,7 +227,7 @@ export default function SegmentsPage() {
                   <span className="text-gray-300 font-normal">·</span>
                   <span>
                     Leg {leg.leg_number}:{" "}
-                    <span className="font-mono text-sm">{leg.origin} → {leg.destination}</span>
+                    <span className="font-mono text-sm">{iataToCityName(leg.origin)} → {iataToCityName(leg.destination)}</span>
                   </span>
                   <span className="text-muted font-normal text-sm">{leg.departure_date}</span>
                 </h2>

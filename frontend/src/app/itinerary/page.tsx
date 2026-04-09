@@ -10,6 +10,7 @@ import { TripMap } from "@/components/itinerary/TripMap";
 import { Button } from "@/components/ui/Button";
 import type { DayPlan, DayItem, POI, TripContext } from "@/types/trip";
 import { Sparkles, ArrowLeft, ArrowRight } from "lucide-react";
+import { iataToCityName } from "@/utils/airportNames";
 
 function buildInitialDays(tripContext: TripContext): DayPlan[] {
   const days: DayPlan[] = [];
@@ -198,7 +199,7 @@ export default function ItineraryPage() {
                       : "text-charcoal/70 hover:bg-white hover:shadow-sm"
                   }`}
                 >
-                  {leg.destination}
+                  {iataToCityName(leg.destination)}
                 </button>
               ))}
             </div>

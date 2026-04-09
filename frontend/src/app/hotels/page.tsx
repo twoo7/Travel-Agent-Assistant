@@ -16,6 +16,7 @@ import type { HotelOffer, AccommodationType } from "@/types/trip";
 import {
   Check, AlertTriangle, ArrowRight, ArrowLeft, Ship, Train, X, Hotel,
 } from "lucide-react";
+import { iataToCityName } from "@/utils/airportNames";
 
 const HOTEL_SORT_OPTIONS: SortOption[] = [
   { key: "ai", label: "AI Pick" },
@@ -155,7 +156,7 @@ export default function HotelsPage() {
 
   const validationIssues = tripContext.legs
     .filter((l) => l.hotel_stays.length === 0)
-    .map((l) => `Leg ${l.leg_number} (${l.origin} → ${l.destination}): search and confirm a hotel`);
+    .map((l) => `Leg ${l.leg_number} (${iataToCityName(l.origin)} → ${iataToCityName(l.destination)}): search and confirm a hotel`);
 
   if (tripContext.legs.length === 0) {
     return (
@@ -189,7 +190,7 @@ export default function HotelsPage() {
               <h2 className="font-semibold text-charcoal font-body flex items-center gap-2">
                 <Hotel size={15} className="text-accent" />
                 Leg {leg.leg_number}:{" "}
-                <span className="font-mono text-sm">{leg.origin} → {leg.destination}</span>
+                <span className="font-mono text-sm">{iataToCityName(leg.origin)} → {iataToCityName(leg.destination)}</span>
               </h2>
 
               {/* Overnight ferry notice */}
@@ -263,6 +264,12 @@ export default function HotelsPage() {
                 <div className="flex items-start gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3 font-body">
                   <AlertTriangle size={15} className="shrink-0 mt-0.5" />
                   <span>{error[leg.leg_number]}</span>
+                  <button
+                    onClick={() => handleSearch(leg.leg_number)}
+                    className="ml-auto shrink-0 text-xs font-medium underline hover:no-underline"
+                  >
+                    Retry
+                  </button>
                 </div>
               )}
 
