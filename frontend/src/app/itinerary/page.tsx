@@ -152,6 +152,7 @@ export default function ItineraryPage() {
       router.push("/export");
     } catch (e) {
       console.error("Itinerary generation failed:", e);
+    } finally {
       setGeneratingItinerary(false);
     }
   }
@@ -181,7 +182,7 @@ export default function ItineraryPage() {
         <div>
           <h1 className="text-3xl font-bold text-primary font-display">Itinerary Builder</h1>
           <p className="text-muted text-sm mt-0.5 font-body">
-            Add places, arrange your days, then generate your narrative.
+            Add places, arrange your days, then generate your final itinerary.
           </p>
         </div>
 
@@ -212,7 +213,9 @@ export default function ItineraryPage() {
             loading={loadingPois}
             icon={<Sparkles size={13} />}
           >
-            {loadingPois ? "Loading…" : "Get AI Suggestions"}
+            {loadingPois
+              ? "Loading…"
+              : `Suggest places in ${iataToCityName(tripContext.legs[currentLeg - 1]?.destination ?? "")}`}
           </Button>
         </div>
       </div>

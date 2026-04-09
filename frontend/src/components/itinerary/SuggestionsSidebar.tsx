@@ -58,7 +58,7 @@ export function SuggestionsSidebar({ pois, addedIds, onAdd, loading }: Props) {
       </div>
 
       {/* Filter chips */}
-      <div className="flex gap-1.5 px-3 py-2 overflow-x-auto border-b border-gray-100 scrollbar-hide">
+      <div className="flex flex-wrap gap-1.5 px-3 py-2 border-b border-gray-100">
         {CATEGORIES.map((cat) => (
           <button
             key={cat}
