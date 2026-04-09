@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTripContext } from "@/context/TripContext";
 import AirportSearch from "@/components/AirportSearch";
@@ -305,6 +305,46 @@ export default function TripSetupPage() {
   const [addReturnLeg, setAddReturnLeg] = useState(false);
   const [multiReturnDate, setMultiReturnDate] = useState("");
 
+  // Rehydrate form from TripContext when user navigates back to setup
+  useEffect(() => {
+    if (tripContext.legs.length === 0) return;
+    setHomeOrigin(tripContext.home_origin);
+    setAdults(tripContext.adults);
+    setChildren(tripContext.children);
+    if (tripContext.currency) setCurrency(tripContext.currency);
+
+    const nonReturnLegs = tripContext.legs.filter(
+      (l) => l.destination !== tripContext.home_origin
+    );
+    const returnLeg = tripContext.legs.find(
+      (l) => l.destination === tripContext.home_origin && l.origin !== tripContext.home_origin
+    );
+
+    if (nonReturnLegs.length === 1) {
+      // Single-destination mode
+      setMultiMode(false);
+      setSingleDest(nonReturnLegs[0].destination);
+      setDepartureDate(nonReturnLegs[0].departure_date);
+      if (returnLeg) setReturnDate(returnLeg.departure_date);
+    } else if (nonReturnLegs.length > 1) {
+      // Multi-destination mode
+      setMultiMode(true);
+      setLegs(
+        nonReturnLegs.map((l) => ({
+          origin: l.origin,
+          destination: l.destination,
+          date: l.departure_date,
+          transport_mode: l.transport_mode ?? "flight",
+        }))
+      );
+      if (returnLeg) {
+        setAddReturnLeg(true);
+        setMultiReturnDate(returnLeg.departure_date);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleHomeOriginChange = useCallback(
     (iata: string) => {
       setHomeOrigin(iata);
@@ -411,72 +451,66 @@ export default function TripSetupPage() {
     e.preventDefault();
     if (!isValid) return;
 
-    if (tripContext.legs.length > 0) {
-      dispatch({
-        type: "UPDATE_TRIP_META",
-        payload: { home_origin: homeOrigin, adults, children, currency },
-      });
-    } else {
-      dispatch({
-        type: "INIT_TRIP",
-        payload: { home_origin: homeOrigin, adults, children, currency },
-      });
+    // Always reinitialize — replaces all existing legs
+    dispatch({
+      type: "INIT_TRIP",
+      payload: { home_origin: homeOrigin, adults, children, currency },
+    });
 
-      const legsToDispatch: LegDraft[] = multiMode
-        ? legs
-        : [
-            {
-              origin: homeOrigin,
-              destination: singleDest,
-              date: departureDate,
-              transport_mode: (() => {
-                if (!homeOrigin || !singleDest) return "flight";
-                const av = getTransportAvailability(
-                  homeOrigin,
-                  singleDest,
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  airportsData as any,
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  ferryRoutesData as any
-                );
-                return defaultMode(av.modes);
-              })(),
-            },
-          ];
-
-      if (!multiMode && returnDate) {
-        legsToDispatch.push({
-          origin: singleDest,
-          destination: homeOrigin,
-          date: returnDate,
-          transport_mode: "flight" as TransportMode,
-        });
-      }
-
-      if (multiMode && addReturnLeg && multiReturnDate && legs.length > 0) {
-        legsToDispatch.push({
-          origin: legs[legs.length - 1].destination,
-          destination: homeOrigin,
-          date: multiReturnDate,
-          transport_mode: "flight" as TransportMode,
-        });
-      }
-
-      legsToDispatch.forEach((leg, i) => {
-        dispatch({
-          type: "ADD_LEG",
-          payload: {
-            leg_number: i + 1,
-            origin: leg.origin,
-            destination: leg.destination,
-            departure_date: leg.date,
-            transport_mode: leg.transport_mode,
-            hotel_stays: [],
-            days: [],
+    const legsToDispatch: LegDraft[] = multiMode
+      ? legs
+      : [
+          {
+            origin: homeOrigin,
+            destination: singleDest,
+            date: departureDate,
+            transport_mode: (() => {
+              if (!homeOrigin || !singleDest) return "flight";
+              const av = getTransportAvailability(
+                homeOrigin,
+                singleDest,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                airportsData as any,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                ferryRoutesData as any
+              );
+              return defaultMode(av.modes);
+            })(),
           },
-        });
+        ];
+
+    if (!multiMode && returnDate) {
+      legsToDispatch.push({
+        origin: singleDest,
+        destination: homeOrigin,
+        date: returnDate,
+        transport_mode: "flight" as TransportMode,
       });
     }
+
+    if (multiMode && addReturnLeg && multiReturnDate && legs.length > 0) {
+      legsToDispatch.push({
+        origin: legs[legs.length - 1].destination,
+        destination: homeOrigin,
+        date: multiReturnDate,
+        transport_mode: "flight" as TransportMode,
+      });
+    }
+
+    legsToDispatch.forEach((leg, i) => {
+      dispatch({
+        type: "ADD_LEG",
+        payload: {
+          leg_number: i + 1,
+          origin: leg.origin,
+          destination: leg.destination,
+          departure_date: leg.date,
+          transport_mode: leg.transport_mode,
+          hotel_stays: [],
+          days: [],
+        },
+      });
+    });
 
     router.push("/segments");
   }
@@ -627,6 +661,11 @@ export default function TripSetupPage() {
                     onChange={(e) => setReturnDate(e.target.value)}
                     className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm font-body focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
                   />
+                  {returnDate && (
+                    <p className="text-xs text-muted mt-1 font-body">
+                      Adds a return leg: {singleDest || "destination"} → {homeOrigin || "home"}
+                    </p>
+                  )}
                 </div>
               </div>
             </>
