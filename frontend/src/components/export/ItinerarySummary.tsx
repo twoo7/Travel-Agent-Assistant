@@ -26,7 +26,26 @@ function ItemIcon({ type }: { type: string }) {
   return <MapPin size={13} className="text-muted" />;
 }
 
+function buildTotals(tripContext: TripContext): Record<string, number> {
+  const totals: Record<string, number> = {};
+  for (const leg of tripContext.legs) {
+    if (leg.selected_flight) {
+      const cur = leg.selected_flight.currency;
+      totals[cur] = (totals[cur] ?? 0) + leg.selected_flight.price;
+    }
+    for (const stay of leg.hotel_stays) {
+      const cur = stay.hotel.currency;
+      const nights = calcNights(stay.check_in, stay.check_out);
+      totals[cur] = (totals[cur] ?? 0) + stay.hotel.price_per_night * nights;
+    }
+  }
+  return totals;
+}
+
 export function ItinerarySummary({ tripContext, itinerary }: Props) {
+  const totals = buildTotals(tripContext);
+  const hasTotals = Object.keys(totals).length > 0;
+
   return (
     <div className="space-y-8">
       {/* Trip header */}
@@ -162,6 +181,26 @@ export function ItinerarySummary({ tripContext, itinerary }: Props) {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Grand total */}
+      {hasTotals && (
+        <div className="bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20 rounded-2xl p-6">
+          <h3 className="text-base font-semibold text-charcoal mb-3 font-body">Estimated Total</h3>
+          <div className="space-y-1">
+            {Object.entries(totals).map(([currency, amount]) => (
+              <div key={currency} className="flex items-center justify-between">
+                <span className="text-sm text-muted font-body">{currency}</span>
+                <span className="text-2xl font-bold text-primary font-display">
+                  {formatPrice(amount, currency)}
+                </span>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-muted mt-3 font-body">
+            Flights + accommodation · excludes activities and meals
+          </p>
         </div>
       )}
     </div>

@@ -63,14 +63,24 @@ export default function ExportPage() {
             <h1 className="text-3xl font-bold text-primary font-display">Your Trip Plan</h1>
             <p className="text-muted text-sm mt-0.5 font-body">Review your itinerary and download.</p>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.push("/itinerary")}
-            icon={<ArrowLeft size={14} />}
-          >
-            Edit Itinerary
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => router.push("/")}
+              icon={<RefreshCw size={14} />}
+            >
+              Plan another trip
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push("/itinerary")}
+              icon={<ArrowLeft size={14} />}
+            >
+              Edit Itinerary
+            </Button>
+          </div>
         </div>
 
         {/* Export buttons at top */}
@@ -86,17 +96,7 @@ export default function ExportPage() {
           <ExportButtons exportRequest={exportRequest} />
         </div>
 
-        {/* Bottom nav */}
-        <div className="flex justify-start pt-2 pb-6">
-          <Button
-            variant="ghost"
-            size="md"
-            onClick={() => router.push("/")}
-            icon={<RefreshCw size={14} />}
-          >
-            Plan another trip
-          </Button>
-        </div>
+        <div className="pb-6" />
       </div>
     </PageTransition>
   );
