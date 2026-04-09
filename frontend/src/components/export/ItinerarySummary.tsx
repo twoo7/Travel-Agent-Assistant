@@ -1,6 +1,8 @@
 import type { TripContext, ItineraryDay } from "@/types/trip";
 import { Plane, Hotel, MapPin, Sparkles, Calendar } from "lucide-react";
 import { iataToCityName } from "@/utils/airportNames";
+import { formatPrice } from "@/utils/formatPrice";
+import { calcNights } from "@/utils/dateUtils";
 
 interface Props {
   tripContext: TripContext;
@@ -62,7 +64,7 @@ export function ItinerarySummary({ tripContext, itinerary }: Props) {
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-primary font-display">
-                      {leg.selected_flight.currency} {leg.selected_flight.price.toLocaleString()}
+                      {formatPrice(leg.selected_flight.price, leg.selected_flight.currency)}
                     </p>
                     <p className="text-xs text-muted font-body">
                       {formatDuration(leg.selected_flight.total_duration)} ·{" "}
@@ -100,10 +102,14 @@ export function ItinerarySummary({ tripContext, itinerary }: Props) {
                     )}
                     <p className="text-xs text-muted mt-0.5 font-body">{stay.check_in} → {stay.check_out}</p>
                   </div>
-                  <p className="font-semibold text-primary font-display">
-                    {stay.hotel.currency} {stay.hotel.price_per_night.toLocaleString()}
-                    <span className="text-xs text-muted font-body font-normal">/night</span>
-                  </p>
+                  <div className="text-right">
+                    <p className="font-semibold text-primary font-display">
+                      {formatPrice(stay.hotel.price_per_night * calcNights(stay.check_in, stay.check_out), stay.hotel.currency)}
+                    </p>
+                    <p className="text-xs text-muted font-body">
+                      {formatPrice(stay.hotel.price_per_night, stay.hotel.currency)}/night · {calcNights(stay.check_in, stay.check_out)} night{calcNights(stay.check_in, stay.check_out) !== 1 ? "s" : ""}
+                    </p>
+                  </div>
                 </div>
               ))
             )}
