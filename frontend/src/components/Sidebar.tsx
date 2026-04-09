@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import { useTripContext } from "@/context/TripContext";
 import { calcNights } from "@/utils/dateUtils";
+import { formatPrice } from "@/utils/formatPrice";
 import type { TransportMode } from "@/types/trip";
 import {
   Plane,
@@ -82,7 +83,7 @@ function TripSummary({ staleSteps }: { staleSteps: string[] }) {
               className={`truncate flex items-center gap-1 ${legIsStale ? "text-amber-400" : "text-green-400"}`}
             >
               <span className="shrink-0">{transportIcon}</span>
-              <span>{flightNum} · {f.currency} {f.price.toLocaleString()}</span>
+              <span>{flightNum} · {formatPrice(f.price, f.currency)}</span>
             </p>
           );
         })() : null;
@@ -111,8 +112,7 @@ function TripSummary({ staleSteps }: { staleSteps: string[] }) {
 
       {totalCost > 0 && (
         <p className="text-accent font-semibold pt-1 border-t border-slate-700 text-xs">
-          Total ~{tripContext.currency ?? tripContext.legs[0]?.selected_flight?.currency ?? "USD"}{" "}
-          {totalCost.toLocaleString()}
+          Total ~{formatPrice(totalCost, tripContext.currency ?? tripContext.legs[0]?.selected_flight?.currency ?? "USD")}
         </p>
       )}
     </div>
