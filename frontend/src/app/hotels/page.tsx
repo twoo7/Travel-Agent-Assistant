@@ -149,12 +149,14 @@ export default function HotelsPage() {
     dispatch({ type: "REMOVE_HOTEL_STAY", payload: { leg_number: legNumber, hotel_id: hotelId } });
   }
 
-  const confirmedLegs = tripContext.legs.filter((l) => l.hotel_stays.length > 0).length;
-  const totalLegs = tripContext.legs.length;
+  const isReturnLeg = (l: { destination: string }) => l.destination === tripContext.home_origin;
+  const requiredLegs = tripContext.legs.filter((l) => !isReturnLeg(l));
+  const confirmedLegs = requiredLegs.filter((l) => l.hotel_stays.length > 0).length;
+  const totalLegs = requiredLegs.length;
   const allLegsHaveHotels = totalLegs > 0 && confirmedLegs === totalLegs;
   const progressPct = totalLegs > 0 ? (confirmedLegs / totalLegs) * 100 : 0;
 
-  const validationIssues = tripContext.legs
+  const validationIssues = requiredLegs
     .filter((l) => l.hotel_stays.length === 0)
     .map((l) => `Leg ${l.leg_number} (${iataToCityName(l.origin)} → ${iataToCityName(l.destination)}): search and confirm a hotel`);
 
@@ -185,13 +187,26 @@ export default function HotelsPage() {
         {tripContext.legs.map((leg, legIndex) => {
           const { check_in, check_out } = getDatesForLeg(legIndex);
 
+          const returnLeg = isReturnLeg(leg);
+
           return (
             <div key={leg.leg_number} className="space-y-3">
-              <h2 className="font-semibold text-charcoal font-body flex items-center gap-2">
+              <h2 className="font-semibold text-charcoal font-body flex items-center gap-2 flex-wrap">
                 <Hotel size={15} className="text-accent" />
                 Leg {leg.leg_number}:{" "}
                 <span className="font-mono text-sm">{iataToCityName(leg.origin)} → {iataToCityName(leg.destination)}</span>
+                {returnLeg && (
+                  <span className="text-xs font-body font-normal text-muted bg-gray-100 border border-gray-200 px-2 py-0.5 rounded-full">
+                    Return home — no hotel needed
+                  </span>
+                )}
               </h2>
+
+              {returnLeg && (
+                <p className="text-sm text-muted font-body italic">
+                  This leg returns you to {iataToCityName(tripContext.home_origin)}. No hotel booking required.
+                </p>
+              )}
 
               {/* Overnight ferry notice */}
               {leg.transport_mode === "ferry" && (
