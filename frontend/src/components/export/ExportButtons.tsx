@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { api } from "@/services/api";
 import type { ExportRequest } from "@/types/trip";
+import { Button } from "@/components/ui/Button";
+import { Download, FileJson, AlertTriangle } from "lucide-react";
 
 interface Props {
   exportRequest: ExportRequest;
@@ -53,33 +55,34 @@ export function ExportButtons({ exportRequest }: Props) {
   return (
     <div className="flex flex-col gap-3">
       {error && (
-        <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
+        <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2 flex items-center gap-2 font-body">
+          <AlertTriangle size={14} className="shrink-0" />
+          {error}
+        </p>
       )}
       <div className="flex gap-3">
-        <button
+        <Button
+          variant="primary"
+          size="md"
           onClick={handlePDF}
-          disabled={loadingPdf}
-          className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+          loading={loadingPdf}
+          icon={<Download size={15} />}
+          className="flex-1 justify-center"
         >
-          {loadingPdf ? (
-            <><span className="animate-spin">⟳</span> Generating PDF…</>
-          ) : (
-            <>📄 Download PDF</>
-          )}
-        </button>
-        <button
+          {loadingPdf ? "Generating PDF…" : "Download PDF"}
+        </Button>
+        <Button
+          variant="secondary"
+          size="md"
           onClick={handleJSON}
-          disabled={loadingJson}
-          className="flex-1 bg-white hover:bg-gray-50 border-2 border-gray-300 text-gray-700 font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+          loading={loadingJson}
+          icon={<FileJson size={15} />}
+          className="flex-1 justify-center"
         >
-          {loadingJson ? (
-            <><span className="animate-spin">⟳</span> Exporting…</>
-          ) : (
-            <>{ "{}" } Download JSON</>
-          )}
-        </button>
+          {loadingJson ? "Exporting…" : "Download JSON"}
+        </Button>
       </div>
-      <p className="text-xs text-gray-400 text-center">
+      <p className="text-xs text-subtle text-center font-body">
         PDF is polished and print-ready · JSON can be re-imported in a future session
       </p>
     </div>

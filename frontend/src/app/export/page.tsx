@@ -4,7 +4,10 @@ import { useRouter } from "next/navigation";
 import { useTripContext } from "@/context/TripContext";
 import { ItinerarySummary } from "@/components/export/ItinerarySummary";
 import { ExportButtons } from "@/components/export/ExportButtons";
+import { Button } from "@/components/ui/Button";
+import { PageTransition } from "@/components/ui/PageTransition";
 import type { TransportSegment } from "@/types/trip";
+import { ArrowLeft, RefreshCw } from "lucide-react";
 
 export default function ExportPage() {
   const router = useRouter();
@@ -14,8 +17,11 @@ export default function ExportPage() {
   if (tripContext.legs.length === 0) {
     return (
       <div className="max-w-3xl mx-auto text-center py-16">
-        <p className="text-gray-500">No trip to export yet.</p>
-        <button onClick={() => router.push("/")} className="mt-4 text-blue-600 hover:underline">
+        <p className="text-muted font-body">No trip to export yet.</p>
+        <button
+          onClick={() => router.push("/")}
+          className="mt-4 text-primary hover:text-primary-dark font-body text-sm underline underline-offset-2"
+        >
           ← Start planning
         </button>
       </div>
@@ -49,42 +55,49 @@ export default function ExportPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Your Trip Plan</h1>
-          <p className="text-gray-500 text-sm mt-1">Review your itinerary and download.</p>
+    <PageTransition>
+      <div className="max-w-3xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-primary font-display">Your Trip Plan</h1>
+            <p className="text-muted text-sm mt-0.5 font-body">Review your itinerary and download.</p>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push("/itinerary")}
+            icon={<ArrowLeft size={14} />}
+          >
+            Edit Itinerary
+          </Button>
         </div>
-        <button
-          onClick={() => router.push("/itinerary")}
-          className="text-gray-500 hover:text-gray-700 text-sm"
-        >
-          ← Edit Itinerary
-        </button>
-      </div>
 
-      {/* Export buttons at the top and bottom for convenience */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-5">
-        <h2 className="font-semibold text-gray-900 mb-3">Export Your Plan</h2>
-        <ExportButtons exportRequest={exportRequest} />
-      </div>
+        {/* Export buttons at top */}
+        <div className="bg-white border border-gray-100 shadow-card rounded-xl p-5">
+          <h2 className="font-semibold text-charcoal mb-3 font-body text-sm">Export Your Plan</h2>
+          <ExportButtons exportRequest={exportRequest} />
+        </div>
 
-      <ItinerarySummary tripContext={tripContext} itinerary={itinerary} />
+        <ItinerarySummary tripContext={tripContext} itinerary={itinerary} />
 
-      <div className="bg-white border border-gray-200 rounded-2xl p-5">
-        <ExportButtons exportRequest={exportRequest} />
-      </div>
+        {/* Export buttons at bottom */}
+        <div className="bg-white border border-gray-100 shadow-card rounded-xl p-5">
+          <ExportButtons exportRequest={exportRequest} />
+        </div>
 
-      <div className="flex justify-between pt-2">
-        <button
-          onClick={() => {
-            router.push("/");
-          }}
-          className="text-gray-500 hover:text-gray-700 text-sm"
-        >
-          ← Plan another trip
-        </button>
+        {/* Bottom nav */}
+        <div className="flex justify-start pt-2 pb-6">
+          <Button
+            variant="ghost"
+            size="md"
+            onClick={() => router.push("/")}
+            icon={<RefreshCw size={14} />}
+          >
+            Plan another trip
+          </Button>
+        </div>
       </div>
-    </div>
+    </PageTransition>
   );
 }

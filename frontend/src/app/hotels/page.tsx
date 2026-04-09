@@ -8,8 +8,14 @@ import { HotelSearchForm } from "@/components/hotels/HotelSearchForm";
 import { HotelCard } from "@/components/hotels/HotelCard";
 import { SortBar, SortOption } from "@/components/SortBar";
 import { FilterBar, HotelFilters } from "@/components/FilterBar";
+import { PageTransition } from "@/components/ui/PageTransition";
+import { Button } from "@/components/ui/Button";
+import { SkeletonCard } from "@/components/ui/Skeleton";
 import { toCityCode } from "@/utils/cityCodeMap";
 import type { HotelOffer, AccommodationType } from "@/types/trip";
+import {
+  Check, AlertTriangle, ArrowRight, ArrowLeft, Ship, Train, X, Hotel,
+} from "lucide-react";
 
 const HOTEL_SORT_OPTIONS: SortOption[] = [
   { key: "ai", label: "AI Pick" },
@@ -145,6 +151,7 @@ export default function HotelsPage() {
   const confirmedLegs = tripContext.legs.filter((l) => l.hotel_stays.length > 0).length;
   const totalLegs = tripContext.legs.length;
   const allLegsHaveHotels = totalLegs > 0 && confirmedLegs === totalLegs;
+  const progressPct = totalLegs > 0 ? (confirmedLegs / totalLegs) * 100 : 0;
 
   const validationIssues = tripContext.legs
     .filter((l) => l.hotel_stays.length === 0)
@@ -152,177 +159,211 @@ export default function HotelsPage() {
 
   if (tripContext.legs.length === 0) {
     return (
-      <div className="max-w-3xl mx-auto text-center py-16">
-        <p className="text-gray-500">No trip set up yet.</p>
-        <button onClick={() => router.push("/")} className="mt-4 text-blue-600 hover:underline">
+      <PageTransition className="max-w-3xl mx-auto text-center py-16">
+        <p className="text-muted font-body">No trip set up yet.</p>
+        <button
+          onClick={() => router.push("/")}
+          className="mt-4 text-primary hover:text-primary-dark font-body text-sm underline underline-offset-2"
+        >
           ← Go back to Trip Setup
         </button>
-      </div>
+      </PageTransition>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Hotel Stays</h1>
-        <p className="text-gray-500 mt-1">Find a hotel for each destination in your trip.</p>
-      </div>
+    <PageTransition>
+      <div className="max-w-3xl mx-auto space-y-8">
+        {/* Header */}
+        <div>
+          <h1 className="text-3xl font-bold text-primary font-display">Hotel Stays</h1>
+          <p className="text-muted mt-1 font-body">Find a hotel for each destination in your trip.</p>
+        </div>
 
-      {tripContext.legs.map((leg, legIndex) => {
-        const { check_in, check_out } = getDatesForLeg(legIndex);
+        {/* Leg sections */}
+        {tripContext.legs.map((leg, legIndex) => {
+          const { check_in, check_out } = getDatesForLeg(legIndex);
 
-        return (
-          <div key={leg.leg_number} className="space-y-3">
-            <h2 className="font-semibold text-gray-800">
-              Leg {leg.leg_number}: {leg.origin} → {leg.destination}
-            </h2>
+          return (
+            <div key={leg.leg_number} className="space-y-3">
+              <h2 className="font-semibold text-charcoal font-body flex items-center gap-2">
+                <Hotel size={15} className="text-accent" />
+                Leg {leg.leg_number}:{" "}
+                <span className="font-mono text-sm">{leg.origin} → {leg.destination}</span>
+              </h2>
 
-            {leg.transport_mode === "ferry" && (
-              <div className="bg-sky-50 border border-sky-200 rounded-xl p-5 space-y-1">
-                <p className="font-semibold text-sky-800">⛴ Overnight Ferry Leg</p>
-                <p className="text-sm text-sky-700">
-                  Your overnight ferry from {leg.origin} to {leg.destination} includes cabin
-                  accommodation. No hotel needed for this leg&apos;s departure night — you&apos;ll
-                  sleep on board.
-                </p>
-              </div>
-            )}
-
-            {leg.transport_mode === "train" && (
-              <div className="bg-sky-50 border border-sky-200 rounded-xl p-5 space-y-1">
-                <p className="font-semibold text-sky-800">🚂 Sleeper Train Leg</p>
-                <p className="text-sm text-sky-700">
-                  Your overnight sleeper train from {leg.origin} to {leg.destination} includes
-                  berth accommodation. No hotel needed for this leg&apos;s departure night.
-                </p>
-              </div>
-            )}
-
-            {leg.hotel_stays.map((stay) => (
-              <div
-                key={stay.hotel.id}
-                className="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl px-4 py-3"
-              >
-                <div>
-                  <span className="text-green-700 font-medium text-sm">✓ {stay.hotel.name}</span>
-                  <span className="text-gray-500 text-xs ml-2">
-                    {stay.check_in} → {stay.check_out}
-                  </span>
+              {/* Overnight ferry notice */}
+              {leg.transport_mode === "ferry" && (
+                <div className="flex items-start gap-3 bg-primary/5 border border-primary/15 rounded-xl p-4">
+                  <Ship size={16} className="text-primary shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-primary text-sm font-body">Overnight Ferry Leg</p>
+                    <p className="text-sm text-charcoal/70 font-body mt-0.5">
+                      Your overnight ferry from {leg.origin} to {leg.destination} includes cabin
+                      accommodation. No hotel needed for this leg&apos;s departure night — you&apos;ll
+                      sleep on board.
+                    </p>
+                  </div>
                 </div>
-                <button
-                  onClick={() => handleRemoveStay(leg.leg_number, stay.hotel.id)}
-                  className="text-xs text-red-500 hover:text-red-700"
-                >
-                  Remove
-                </button>
-              </div>
-            ))}
 
-            <HotelSearchForm
-              defaultIata={leg.destination}
-              defaultCheckIn={check_in}
-              defaultCheckOut={check_out}
-              onSearch={(params) => handleSearch(leg.leg_number, params)}
-              loading={loading[leg.leg_number] ?? false}
-            />
-
-            {loading[leg.leg_number] && (
-              <div className="flex items-center gap-2 text-sm text-gray-500 py-2">
-                <span className="animate-spin inline-block">⟳</span>
-                <span>Searching hotels…</span>
-              </div>
-            )}
-
-            {error[leg.leg_number] && (
-              <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">
-                {error[leg.leg_number]}
-              </p>
-            )}
-
-            {displayResults[leg.leg_number] && displayResults[leg.leg_number].length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-3">
-                <SortBar options={HOTEL_SORT_OPTIONS} value={sortKey} onChange={setSortKey} />
-                <FilterBar variant="hotels" filters={hotelFilters} onChange={setHotelFilters} />
-              </div>
-            )}
-
-            {displayResults[leg.leg_number] && displayResults[leg.leg_number].length === 0 && (
-              <p className="text-sm text-gray-500 text-center py-4">No hotels found.</p>
-            )}
-
-            <div className="space-y-2">
-              {(displayResults[leg.leg_number] ?? []).map((offer) => (
-                <HotelCard
-                  key={offer.id}
-                  offer={offer}
-                  selected={pendingOffers[leg.leg_number]?.id === offer.id}
-                  confirmed={leg.hotel_stays.some((s) => s.hotel.id === offer.id)}
-                  onSelect={(o) => handleSelectHotel(leg.leg_number, o)}
-                  checkIn={pendingDates[leg.leg_number]?.check_in ?? getDatesForLeg(legIndex).check_in}
-                  checkOut={pendingDates[leg.leg_number]?.check_out ?? getDatesForLeg(legIndex).check_out}
-                />
-              ))}
-            </div>
-
-            {pendingOffers[leg.leg_number] &&
-              !leg.hotel_stays.some((s) => s.hotel.id === pendingOffers[leg.leg_number]?.id) && (
-                <button
-                  onClick={() => handleConfirmStay(leg.leg_number)}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-2 rounded-lg transition-colors"
-                >
-                  ✓ Confirm: {pendingOffers[leg.leg_number]?.name}
-                </button>
               )}
-          </div>
-        );
-      })}
 
-      {/* Validation panel + progress bar */}
-      <div className="space-y-3 pt-2">
-        {!allLegsHaveHotels && validationIssues.length > 0 && (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2">
-            <p className="text-sm font-semibold text-amber-800">⚠ Before you continue:</p>
-            <ul className="space-y-1">
-              {validationIssues.map((issue, i) => (
-                <li key={i} className="text-sm text-amber-700">• {issue}</li>
+              {/* Sleeper train notice */}
+              {leg.transport_mode === "train" && (
+                <div className="flex items-start gap-3 bg-success/5 border border-success/20 rounded-xl p-4">
+                  <Train size={16} className="text-success shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-success-dark text-sm font-body">Sleeper Train Leg</p>
+                    <p className="text-sm text-charcoal/70 font-body mt-0.5">
+                      Your overnight sleeper train from {leg.origin} to {leg.destination} includes
+                      berth accommodation. No hotel needed for this leg&apos;s departure night.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Confirmed stays */}
+              {leg.hotel_stays.map((stay) => (
+                <div
+                  key={stay.hotel.id}
+                  className="flex items-center justify-between bg-success/5 border border-success/20 rounded-xl px-4 py-3"
+                >
+                  <div className="flex items-center gap-2">
+                    <Check size={14} className="text-success" />
+                    <span className="text-success font-medium text-sm font-body">{stay.hotel.name}</span>
+                    <span className="text-muted text-xs font-body">
+                      {stay.check_in} → {stay.check_out}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => handleRemoveStay(leg.leg_number, stay.hotel.id)}
+                    className="w-6 h-6 rounded-lg flex items-center justify-center text-muted hover:text-red-500 hover:bg-red-50 transition-colors"
+                    aria-label="Remove hotel stay"
+                  >
+                    <X size={13} />
+                  </button>
+                </div>
               ))}
-            </ul>
-          </div>
-        )}
 
-        {allLegsHaveHotels && (
-          <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3">
-            <p className="text-sm font-medium text-green-700">
-              ✓ All hotels confirmed — ready to continue
-            </p>
-          </div>
-        )}
+              <HotelSearchForm
+                defaultIata={leg.destination}
+                defaultCheckIn={check_in}
+                defaultCheckOut={check_out}
+                onSearch={(params) => handleSearch(leg.leg_number, params)}
+                loading={loading[leg.leg_number] ?? false}
+              />
 
-        <div className="space-y-1">
-          <div className="text-xs text-gray-500">{confirmedLegs} of {totalLegs} legs with hotel</div>
-          <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-300 ${
-                allLegsHaveHotels ? "bg-green-500" : "bg-blue-400"
-              }`}
-              style={{ width: totalLegs > 0 ? `${(confirmedLegs / totalLegs) * 100}%` : "0%" }}
-            />
-          </div>
-        </div>
+              {loading[leg.leg_number] && (
+                <div className="space-y-2">
+                  {[0, 1, 2].map((i) => <SkeletonCard key={i} />)}
+                </div>
+              )}
 
-        <div className="flex justify-between">
-          <button onClick={() => router.push("/segments")} className="text-gray-500 hover:text-gray-700 text-sm">
-            ← Back to Segments
-          </button>
-          <button
-            onClick={() => router.push("/itinerary")}
-            disabled={!allLegsHaveHotels}
-            className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold px-6 py-2 rounded-lg transition-colors"
-          >
-            Build Itinerary →
-          </button>
+              {error[leg.leg_number] && (
+                <div className="flex items-start gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3 font-body">
+                  <AlertTriangle size={15} className="shrink-0 mt-0.5" />
+                  <span>{error[leg.leg_number]}</span>
+                </div>
+              )}
+
+              {displayResults[leg.leg_number] && displayResults[leg.leg_number].length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-2">
+                  <SortBar options={HOTEL_SORT_OPTIONS} value={sortKey} onChange={setSortKey} />
+                  <FilterBar variant="hotels" filters={hotelFilters} onChange={setHotelFilters} />
+                </div>
+              )}
+
+              {displayResults[leg.leg_number] && displayResults[leg.leg_number].length === 0 && (
+                <p className="text-sm text-muted text-center py-6 font-body">No hotels found.</p>
+              )}
+
+              <div className="space-y-2">
+                {(displayResults[leg.leg_number] ?? []).map((offer, idx) => (
+                  <HotelCard
+                    key={offer.id}
+                    offer={offer}
+                    selected={pendingOffers[leg.leg_number]?.id === offer.id}
+                    confirmed={leg.hotel_stays.some((s) => s.hotel.id === offer.id)}
+                    onSelect={(o) => handleSelectHotel(leg.leg_number, o)}
+                    index={idx}
+                    checkIn={pendingDates[leg.leg_number]?.check_in ?? check_in}
+                    checkOut={pendingDates[leg.leg_number]?.check_out ?? check_out}
+                  />
+                ))}
+              </div>
+
+              {pendingOffers[leg.leg_number] &&
+                !leg.hotel_stays.some((s) => s.hotel.id === pendingOffers[leg.leg_number]?.id) && (
+                  <Button
+                    variant="success"
+                    size="md"
+                    fullWidth
+                    onClick={() => handleConfirmStay(leg.leg_number)}
+                    icon={<Check size={14} />}
+                  >
+                    Confirm: {pendingOffers[leg.leg_number]?.name}
+                  </Button>
+                )}
+            </div>
+          );
+        })}
+
+        {/* Validation + progress */}
+        <div className="space-y-3 pt-2">
+          {!allLegsHaveHotels && validationIssues.length > 0 && (
+            <div className="flex items-start gap-3 bg-warning/10 border border-warning/30 rounded-xl p-4">
+              <AlertTriangle size={16} className="text-warning-dark shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-warning-dark font-body mb-1">Before you continue:</p>
+                <ul className="space-y-0.5">
+                  {validationIssues.map((issue, i) => (
+                    <li key={i} className="text-sm text-warning-dark/80 font-body">• {issue}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {allLegsHaveHotels && (
+            <div className="flex items-center gap-2 bg-success/10 border border-success/20 rounded-xl px-4 py-3">
+              <Check size={15} className="text-success" />
+              <p className="text-sm font-medium text-success font-body">
+                All hotels confirmed — ready to continue
+              </p>
+            </div>
+          )}
+
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted font-body">{confirmedLegs} of {totalLegs} legs with hotel</span>
+              <span className="text-xs font-semibold text-primary font-body">{Math.round(progressPct)}%</span>
+            </div>
+            <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${
+                  allLegsHaveHotels ? "bg-success" : "bg-primary"
+                }`}
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-between pt-1">
+            <Button variant="ghost" size="md" onClick={() => router.push("/segments")} icon={<ArrowLeft size={14} />}>
+              Back to Segments
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => router.push("/itinerary")}
+              disabled={!allLegsHaveHotels}
+              icon={<ArrowRight size={14} />}
+            >
+              Build Itinerary
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
+    </PageTransition>
   );
 }

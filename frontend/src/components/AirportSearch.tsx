@@ -72,8 +72,10 @@ export default function AirportSearch({
 }: AirportSearchProps) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const listboxId = useRef(`airport-listbox-${Math.random().toString(36).slice(2)}`);
 
   // Sync query when value changes externally
   useEffect(() => {
@@ -93,7 +95,7 @@ export default function AirportSearch({
         !containerRef.current.contains(e.target as Node)
       ) {
         setOpen(false);
-        // If user clicked away without selecting, restore display name
+        setActiveIndex(-1);
         if (value) {
           const airport = findAirport(value);
           setQuery(airport ? displayName(airport) : value);
@@ -111,6 +113,7 @@ export default function AirportSearch({
       const text = e.target.value;
       setQuery(text);
       setOpen(true);
+      setActiveIndex(-1);
       if (!text) {
         onChange("");
       }
@@ -120,7 +123,6 @@ export default function AirportSearch({
 
   const handleFocus = useCallback(() => {
     setOpen(true);
-    // Clear query to raw text when focusing so user can type fresh
     if (value) {
       setQuery("");
     }
@@ -131,6 +133,7 @@ export default function AirportSearch({
       onChange(airport.iata);
       setQuery(displayName(airport));
       setOpen(false);
+      setActiveIndex(-1);
       inputRef.current?.blur();
     },
     [onChange]
@@ -140,24 +143,36 @@ export default function AirportSearch({
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Escape") {
         setOpen(false);
+        setActiveIndex(-1);
         if (value) {
           const airport = findAirport(value);
           setQuery(airport ? displayName(airport) : value);
         }
         inputRef.current?.blur();
-      } else if (e.key === "Enter" && results.length > 0) {
+      } else if (e.key === "ArrowDown") {
         e.preventDefault();
-        handleSelect(results[0]);
+        setActiveIndex((prev) => (prev < results.length - 1 ? prev + 1 : 0));
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setActiveIndex((prev) => (prev > 0 ? prev - 1 : results.length - 1));
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        const target = activeIndex >= 0 ? results[activeIndex] : results[0];
+        if (target) handleSelect(target);
       }
     },
-    [results, value, handleSelect]
+    [results, value, handleSelect, activeIndex]
   );
 
   const selectedAirport = value ? findAirport(value) : undefined;
+  const activeOptionId =
+    activeIndex >= 0 && results[activeIndex]
+      ? `${listboxId.current}-option-${activeIndex}`
+      : undefined;
 
   return (
     <div className="relative w-full" ref={containerRef}>
-      <label className="block text-xs font-medium text-gray-600 mb-1">
+      <label className="block text-xs font-medium text-charcoal/70 mb-1 font-body">
         {label}
       </label>
 
@@ -165,7 +180,20 @@ export default function AirportSearch({
         <input
           ref={inputRef}
           type="text"
-          className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed pr-16"
+          role="combobox"
+          aria-expanded={open && results.length > 0}
+          aria-controls={listboxId.current}
+          aria-autocomplete="list"
+          aria-activedescendant={activeOptionId}
+          className={[
+            "w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm font-body",
+            "focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary",
+            "bg-white placeholder:text-subtle text-charcoal",
+            "disabled:bg-gray-50 disabled:text-muted disabled:cursor-not-allowed",
+            "transition-colors duration-150 pr-16",
+          ]
+            .filter(Boolean)
+            .join(" ")}
           placeholder={placeholder}
           value={query}
           onChange={handleInputChange}
@@ -177,7 +205,7 @@ export default function AirportSearch({
 
         {selectedAirport && !open && (
           <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
-            <span className="text-xs font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded font-mono">
+            <span className="text-xs font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded font-mono">
               {selectedAirport.iata}
             </span>
           </div>
@@ -185,32 +213,45 @@ export default function AirportSearch({
       </div>
 
       {open && results.length > 0 && (
-        <ul className="absolute z-50 w-full top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden max-h-64 overflow-y-auto">
-          {results.map((airport) => (
+        <ul
+          id={listboxId.current}
+          role="listbox"
+          aria-label={`Airport options for ${label}`}
+          className="absolute z-50 w-full top-full mt-1 bg-white border border-gray-100 rounded-xl shadow-card-hover overflow-hidden max-h-64 overflow-y-auto"
+        >
+          {results.map((airport, idx) => (
             <li
               key={airport.iata}
-              className="px-3 py-2.5 hover:bg-blue-50 cursor-pointer flex items-center justify-between border-b border-gray-50 last:border-0"
+              id={`${listboxId.current}-option-${idx}`}
+              role="option"
+              aria-selected={activeIndex === idx}
+              className={[
+                "px-3 py-2.5 cursor-pointer flex items-center justify-between border-b border-gray-50 last:border-0 transition-colors duration-100",
+                activeIndex === idx ? "bg-primary/5" : "hover:bg-primary/5",
+              ]
+                .filter(Boolean)
+                .join(" ")}
               onMouseDown={(e) => {
-                // Prevent input blur before click registers
                 e.preventDefault();
                 handleSelect(airport);
               }}
+              onMouseEnter={() => setActiveIndex(idx)}
             >
               <div className="flex flex-col min-w-0 mr-3">
-                <span className="text-sm font-medium text-gray-900 truncate">
+                <span className="text-sm font-medium text-charcoal truncate font-body">
                   {airport.name}
                 </span>
-                <span className="text-xs text-gray-500 truncate">
+                <span className="text-xs text-muted truncate">
                   {airport.city}, {COUNTRY_NAMES[airport.country] ?? airport.country}
                 </span>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 {showCityCode && AIRPORT_TO_CITY[airport.iata] && (
-                  <span className="text-xs font-bold text-green-700 bg-green-100 px-1.5 py-0.5 rounded font-mono">
+                  <span className="text-xs font-bold text-success-dark bg-success/10 px-1.5 py-0.5 rounded font-mono">
                     {AIRPORT_TO_CITY[airport.iata]}
                   </span>
                 )}
-                <span className="text-xs font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded font-mono">
+                <span className="text-xs font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded font-mono">
                   {airport.iata}
                 </span>
               </div>
@@ -220,8 +261,8 @@ export default function AirportSearch({
       )}
 
       {open && query.trim().length > 0 && results.length === 0 && (
-        <div className="absolute z-50 w-full top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
-          <div className="px-3 py-3 text-sm text-gray-400 text-center">
+        <div className="absolute z-50 w-full top-full mt-1 bg-white border border-gray-100 rounded-xl shadow-card-hover overflow-hidden">
+          <div className="px-3 py-3 text-sm text-muted text-center font-body">
             No airports found for &ldquo;{query}&rdquo;
           </div>
         </div>

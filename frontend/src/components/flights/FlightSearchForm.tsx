@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import type { TripLeg } from "@/types/trip";
+import { Button } from "@/components/ui/Button";
+import { Search } from "lucide-react";
 
 interface Props {
   leg: TripLeg;
@@ -21,46 +23,48 @@ export function FlightSearchForm({ leg, onSearch, loading }: Props) {
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-wrap gap-3 items-end">
+    <div className="bg-white border border-gray-100 rounded-xl p-4 flex flex-wrap gap-3 items-end shadow-card">
       <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1">From</label>
+        <label className="block text-xs font-medium text-charcoal/60 mb-1 font-body">From</label>
         <input
           name="origin"
           value={form.origin}
           onChange={handleChange}
           placeholder="JFK"
           maxLength={3}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm uppercase tracking-widest w-20 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-gray-200 rounded-lg px-3 py-2 text-sm uppercase tracking-widest w-20 font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
         />
       </div>
       <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1">To</label>
+        <label className="block text-xs font-medium text-charcoal/60 mb-1 font-body">To</label>
         <input
           name="destination"
           value={form.destination}
           onChange={handleChange}
           placeholder="CDG"
           maxLength={3}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm uppercase tracking-widest w-20 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-gray-200 rounded-lg px-3 py-2 text-sm uppercase tracking-widest w-20 font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
         />
       </div>
       <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1">Date</label>
+        <label className="block text-xs font-medium text-charcoal/60 mb-1 font-body">Date</label>
         <input
           type="date"
           name="departure_date"
           value={form.departure_date}
           onChange={handleChange}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors font-body"
         />
       </div>
-      <button
+      <Button
+        variant="primary"
+        size="md"
         onClick={() => onSearch(form)}
-        disabled={loading}
-        className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors"
+        loading={loading}
+        icon={<Search size={14} />}
       >
         {loading ? "Searching…" : "Search Flights"}
-      </button>
+      </Button>
     </div>
   );
 }

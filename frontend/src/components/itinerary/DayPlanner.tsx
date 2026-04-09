@@ -80,9 +80,9 @@ export function DayPlanner({ days, onDaysChange }: Props) {
 
   if (days.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-400 border-2 border-dashed border-gray-200 rounded-xl">
-        <p className="text-sm">No days planned yet.</p>
-        <p className="text-xs mt-1">Days will appear here once hotels are confirmed.</p>
+      <div className="text-center py-12 text-muted border-2 border-dashed border-gray-200 rounded-xl">
+        <p className="text-sm font-body">No days planned yet.</p>
+        <p className="text-xs mt-1 font-body">Days will appear here once hotels are confirmed.</p>
       </div>
     );
   }
@@ -99,7 +99,7 @@ export function DayPlanner({ days, onDaysChange }: Props) {
       <div className="space-y-6">
         {Object.entries(legGroups).map(([legNum, legDays]) => (
           <div key={legNum}>
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+            <h3 className="text-xs font-semibold text-muted uppercase tracking-widest mb-2 font-body">
               {legDays[0]?.city} — {legDays.length} day{legDays.length > 1 ? "s" : ""}
             </h3>
             <div className="space-y-3">

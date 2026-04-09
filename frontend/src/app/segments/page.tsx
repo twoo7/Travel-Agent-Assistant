@@ -11,13 +11,20 @@ import { FerrySegmentCard } from "@/components/segments/FerrySegmentCard";
 import { CarSegmentCard } from "@/components/segments/CarSegmentCard";
 import { SortBar, SortOption } from "@/components/SortBar";
 import { FilterBar, FlightFilters } from "@/components/FilterBar";
+import { PageTransition } from "@/components/ui/PageTransition";
+import { Button } from "@/components/ui/Button";
+import { SkeletonCard } from "@/components/ui/Skeleton";
 import type { FlightOffer, TripLeg } from "@/types/trip";
+import {
+  Plane, Train, Ship, Car, Check, AlertTriangle, ArrowRight, ArrowLeft, Plus, X,
+  type LucideIcon,
+} from "lucide-react";
 
-const MODE_LABELS: Record<string, { icon: string; label: string }> = {
-  flight: { icon: "✈", label: "Flight" },
-  train: { icon: "🚂", label: "Train" },
-  ferry: { icon: "⛴", label: "Ferry" },
-  car: { icon: "🚗", label: "Bus/Car" },
+const MODE_META: Record<string, { Icon: LucideIcon; label: string }> = {
+  flight: { Icon: Plane,  label: "Flight"  },
+  train:  { Icon: Train,  label: "Train"   },
+  ferry:  { Icon: Ship,   label: "Ferry"   },
+  car:    { Icon: Car,    label: "Bus/Car" },
 };
 
 const FLIGHT_SORT_OPTIONS: SortOption[] = [
@@ -109,13 +116,11 @@ export default function SegmentsPage() {
     for (const leg of tripContext.legs) {
       const mode = leg.transport_mode ?? "flight";
       if (mode !== "flight") {
-        // Non-flight legs are auto-confirmed — clear stale immediately
         dispatch({ type: "CLEAR_STALE", payload: { key: `segments-${leg.leg_number}` } });
         continue;
       }
       if (!leg.origin || !leg.destination || !leg.departure_date) continue;
       if (leg.selected_flight) {
-        // Already has a selection — clear stale
         dispatch({ type: "CLEAR_STALE", payload: { key: `segments-${leg.leg_number}` } });
         continue;
       }
@@ -168,6 +173,7 @@ export default function SegmentsPage() {
   const confirmedLegs = tripContext.legs.filter(isLegConfirmed).length;
   const totalLegs = tripContext.legs.length;
   const allLegsConfirmed = totalLegs > 0 && confirmedLegs === totalLegs;
+  const progressPct = totalLegs > 0 ? (confirmedLegs / totalLegs) * 100 : 0;
 
   const validationIssues = tripContext.legs
     .filter((leg) => !isLegConfirmed(leg))
@@ -180,214 +186,242 @@ export default function SegmentsPage() {
 
   if (tripContext.legs.length === 0) {
     return (
-      <div className="max-w-3xl mx-auto text-center py-16">
-        <p className="text-gray-500">No trip set up yet.</p>
-        <button onClick={() => router.push("/")} className="mt-4 text-blue-600 hover:underline">
+      <PageTransition className="max-w-3xl mx-auto text-center py-16">
+        <p className="text-muted font-body">No trip set up yet.</p>
+        <button
+          onClick={() => router.push("/")}
+          className="mt-4 text-primary hover:text-primary-dark font-body text-sm underline underline-offset-2"
+        >
           ← Go back to Trip Setup
         </button>
-      </div>
+      </PageTransition>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Travel Segments</h1>
-        <p className="text-gray-500 mt-1">
-          Configure how you&apos;re travelling between each destination.
-        </p>
-      </div>
+    <PageTransition>
+      <div className="max-w-3xl mx-auto space-y-8">
+        {/* Header */}
+        <div>
+          <h1 className="text-3xl font-bold text-primary font-display">Travel Segments</h1>
+          <p className="text-muted mt-1 font-body">
+            Configure how you&apos;re travelling between each destination.
+          </p>
+        </div>
 
-      {tripContext.legs.map((leg) => {
-        const mode = leg.transport_mode ?? "flight";
-        const modeInfo = MODE_LABELS[mode] ?? MODE_LABELS.flight;
-        const confirmed = isLegConfirmed(leg);
+        {/* Leg cards */}
+        {tripContext.legs.map((leg) => {
+          const mode = leg.transport_mode ?? "flight";
+          const meta = MODE_META[mode] ?? MODE_META.flight;
+          const { Icon } = meta;
+          const confirmed = isLegConfirmed(leg);
 
-        return (
-          <div key={leg.leg_number} className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-gray-800 flex items-center gap-2">
-                <span className="text-base">{modeInfo.icon}</span>
-                <span>{modeInfo.label}</span>
-                <span className="text-gray-400 font-normal">·</span>
-                <span>
-                  Leg {leg.leg_number}: {leg.origin} → {leg.destination}
-                </span>
-                <span className="ml-1 text-sm font-normal text-gray-400">{leg.departure_date}</span>
-              </h2>
-              <div className="flex items-center gap-2">
-                {confirmed && (
-                  <span className="text-xs text-green-600 font-medium bg-green-50 px-2 py-1 rounded-full">
-                    ✓ {mode === "flight" ? "Flight selected" : "Confirmed"}
+          return (
+            <div key={leg.leg_number} className="space-y-3">
+              {/* Leg header */}
+              <div className="flex items-center justify-between">
+                <h2 className="font-semibold text-charcoal flex items-center gap-2 font-body">
+                  <Icon size={16} className="text-accent" />
+                  <span>{meta.label}</span>
+                  <span className="text-gray-300 font-normal">·</span>
+                  <span>
+                    Leg {leg.leg_number}:{" "}
+                    <span className="font-mono text-sm">{leg.origin} → {leg.destination}</span>
                   </span>
-                )}
-                {tripContext.legs.length > 1 && (
-                  <button
-                    onClick={() => handleRemoveLeg(leg.leg_number)}
-                    className="text-xs text-red-500 hover:text-red-700"
-                  >
-                    Remove leg
-                  </button>
-                )}
+                  <span className="text-muted font-normal text-sm">{leg.departure_date}</span>
+                </h2>
+                <div className="flex items-center gap-2">
+                  {confirmed && (
+                    <span className="inline-flex items-center gap-1 text-xs text-success font-medium bg-success/10 border border-success/20 px-2 py-1 rounded-full font-body">
+                      <Check size={10} />
+                      {mode === "flight" ? "Flight selected" : "Confirmed"}
+                    </span>
+                  )}
+                  {tripContext.legs.length > 1 && (
+                    <button
+                      onClick={() => handleRemoveLeg(leg.leg_number)}
+                      className="w-7 h-7 rounded-lg flex items-center justify-center text-muted hover:text-red-500 hover:bg-red-50 transition-colors"
+                      aria-label={`Remove leg ${leg.leg_number}`}
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Flight mode content */}
+              {mode === "flight" && (
+                <>
+                  <FlightSearchForm
+                    leg={leg}
+                    onSearch={(params) => handleSearch(leg.leg_number, params)}
+                    loading={loading[leg.leg_number] ?? false}
+                  />
+
+                  {loading[leg.leg_number] && (
+                    <div className="space-y-2">
+                      {[0, 1, 2].map((i) => <SkeletonCard key={i} />)}
+                    </div>
+                  )}
+
+                  {error[leg.leg_number] && (
+                    <div className="flex items-start gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3 font-body">
+                      <AlertTriangle size={15} className="shrink-0 mt-0.5" />
+                      <span>{error[leg.leg_number]}</span>
+                    </div>
+                  )}
+
+                  {results[leg.leg_number] && results[leg.leg_number].length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      <SortBar options={FLIGHT_SORT_OPTIONS} value={sortKey} onChange={setSortKey} />
+                      <FilterBar variant="flights" filters={flightFilters} onChange={setFlightFilters} />
+                    </div>
+                  )}
+
+                  {displayResults[leg.leg_number] && displayResults[leg.leg_number].length === 0 && (
+                    <p className="text-sm text-muted text-center py-6 font-body">No flights found.</p>
+                  )}
+
+                  <div className="space-y-2">
+                    {(displayResults[leg.leg_number] ?? []).map((offer, idx) => (
+                      <FlightCard
+                        key={offer.id}
+                        offer={offer}
+                        selected={leg.selected_flight?.id === offer.id}
+                        onSelect={(o) => handleSelectFlight(leg.leg_number, o)}
+                        index={idx}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {mode === "train" && <TrainSegmentCard leg={leg} />}
+              {mode === "ferry" && <FerrySegmentCard leg={leg} />}
+              {mode === "car" && <CarSegmentCard leg={leg} />}
+            </div>
+          );
+        })}
+
+        {/* Add another leg */}
+        <div className="border-2 border-dashed border-gray-200 rounded-xl p-5 space-y-3">
+          <h3 className="text-sm font-semibold text-charcoal/70 flex items-center gap-1.5 font-body">
+            <Plus size={14} />
+            Add another leg
+          </h3>
+          <div className="flex flex-wrap gap-3 items-end">
+            <div>
+              <label className="block text-xs font-medium text-charcoal/60 mb-1 font-body">From</label>
+              <input
+                value={newLeg.origin}
+                onChange={(e) => setNewLeg((p) => ({ ...p, origin: e.target.value }))}
+                placeholder="JFK"
+                maxLength={3}
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm uppercase tracking-widest w-20 font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-charcoal/60 mb-1 font-body">To</label>
+              <input
+                value={newLeg.destination}
+                onChange={(e) => setNewLeg((p) => ({ ...p, destination: e.target.value }))}
+                placeholder="NRT"
+                maxLength={3}
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm uppercase tracking-widest w-20 font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-charcoal/60 mb-1 font-body">Date</label>
+              <input
+                type="date"
+                value={newLeg.departure_date}
+                onChange={(e) => setNewLeg((p) => ({ ...p, departure_date: e.target.value }))}
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors font-body"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-charcoal/60 mb-1 font-body">Mode</label>
+              <select
+                value={newLeg.transport_mode}
+                onChange={(e) =>
+                  setNewLeg((p) => ({ ...p, transport_mode: e.target.value as TripLeg["transport_mode"] }))
+                }
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors font-body bg-white"
+              >
+                <option value="flight">Flight</option>
+                <option value="train">Train</option>
+                <option value="ferry">Ferry</option>
+                <option value="car">Bus/Car</option>
+              </select>
+            </div>
+            <Button
+              variant="secondary"
+              size="md"
+              onClick={handleAddLeg}
+              disabled={!newLeg.origin || !newLeg.destination || !newLeg.departure_date}
+              icon={<Plus size={14} />}
+            >
+              Add Leg
+            </Button>
+          </div>
+        </div>
+
+        {/* Validation + progress */}
+        <div className="space-y-3 pt-2">
+          {!allLegsConfirmed && validationIssues.length > 0 && (
+            <div className="flex items-start gap-3 bg-warning/10 border border-warning/30 rounded-xl p-4">
+              <AlertTriangle size={16} className="text-warning-dark shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-warning-dark font-body mb-1">Before you continue:</p>
+                <ul className="space-y-0.5">
+                  {validationIssues.map((issue, i) => (
+                    <li key={i} className="text-sm text-warning-dark/80 font-body">• {issue}</li>
+                  ))}
+                </ul>
               </div>
             </div>
+          )}
 
-            {mode === "flight" && (
-              <>
-                <FlightSearchForm
-                  leg={leg}
-                  onSearch={(params) => handleSearch(leg.leg_number, params)}
-                  loading={loading[leg.leg_number] ?? false}
-                />
+          {allLegsConfirmed && (
+            <div className="flex items-center gap-2 bg-success/10 border border-success/20 rounded-xl px-4 py-3">
+              <Check size={15} className="text-success" />
+              <p className="text-sm font-medium text-success font-body">
+                All segments confirmed — ready to continue
+              </p>
+            </div>
+          )}
 
-                {loading[leg.leg_number] && (
-                  <div className="flex items-center gap-2 text-sm text-gray-500 py-2">
-                    <span className="animate-spin inline-block">⟳</span>
-                    <span>Searching flights…</span>
-                  </div>
-                )}
-
-                {error[leg.leg_number] && (
-                  <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">
-                    {error[leg.leg_number]}
-                  </p>
-                )}
-
-                {displayResults[leg.leg_number] && displayResults[leg.leg_number].length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    <SortBar options={FLIGHT_SORT_OPTIONS} value={sortKey} onChange={setSortKey} />
-                    <FilterBar variant="flights" filters={flightFilters} onChange={setFlightFilters} />
-                  </div>
-                )}
-
-                {displayResults[leg.leg_number] && displayResults[leg.leg_number].length === 0 && (
-                  <p className="text-sm text-gray-500 text-center py-4">No flights found.</p>
-                )}
-
-                <div className="space-y-2">
-                  {(displayResults[leg.leg_number] ?? []).map((offer) => (
-                    <FlightCard
-                      key={offer.id}
-                      offer={offer}
-                      selected={leg.selected_flight?.id === offer.id}
-                      onSelect={(o) => handleSelectFlight(leg.leg_number, o)}
-                    />
-                  ))}
-                </div>
-              </>
-            )}
-
-            {mode === "train" && <TrainSegmentCard leg={leg} />}
-            {mode === "ferry" && <FerrySegmentCard leg={leg} />}
-            {mode === "car" && <CarSegmentCard leg={leg} />}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted font-body">{confirmedLegs} of {totalLegs} legs confirmed</span>
+              <span className="text-xs font-semibold text-primary font-body">{Math.round(progressPct)}%</span>
+            </div>
+            <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${
+                  allLegsConfirmed ? "bg-success" : "bg-primary"
+                }`}
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
           </div>
-        );
-      })}
 
-      {/* Add another leg */}
-      <div className="border-2 border-dashed border-gray-200 rounded-xl p-5">
-        <h3 className="text-sm font-medium text-gray-700 mb-3">+ Add another leg</h3>
-        <div className="flex flex-wrap gap-3 items-end">
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">From</label>
-            <input
-              value={newLeg.origin}
-              onChange={(e) => setNewLeg((p) => ({ ...p, origin: e.target.value }))}
-              placeholder="JFK"
-              maxLength={3}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm uppercase tracking-widest w-20 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">To</label>
-            <input
-              value={newLeg.destination}
-              onChange={(e) => setNewLeg((p) => ({ ...p, destination: e.target.value }))}
-              placeholder="NRT"
-              maxLength={3}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm uppercase tracking-widest w-20 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Date</label>
-            <input
-              type="date"
-              value={newLeg.departure_date}
-              onChange={(e) => setNewLeg((p) => ({ ...p, departure_date: e.target.value }))}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Mode</label>
-            <select
-              value={newLeg.transport_mode}
-              onChange={(e) =>
-                setNewLeg((p) => ({ ...p, transport_mode: e.target.value as TripLeg["transport_mode"] }))
-              }
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          <div className="flex justify-between pt-1">
+            <Button variant="ghost" size="md" onClick={() => router.push("/")} icon={<ArrowLeft size={14} />}>
+              Back
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => router.push("/hotels")}
+              disabled={!allLegsConfirmed}
+              icon={<ArrowRight size={14} />}
             >
-              <option value="flight">✈ Flight</option>
-              <option value="train">🚂 Train</option>
-              <option value="ferry">⛴ Ferry</option>
-              <option value="car">🚗 Bus/Car</option>
-            </select>
+              Continue to Hotels
+            </Button>
           </div>
-          <button
-            onClick={handleAddLeg}
-            disabled={!newLeg.origin || !newLeg.destination || !newLeg.departure_date}
-            className="bg-gray-800 hover:bg-gray-900 disabled:bg-gray-300 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
-          >
-            Add Leg
-          </button>
         </div>
       </div>
-
-      {/* Validation panel + progress bar */}
-      <div className="space-y-3 pt-2">
-        {!allLegsConfirmed && validationIssues.length > 0 && (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2">
-            <p className="text-sm font-semibold text-amber-800">⚠ Before you continue:</p>
-            <ul className="space-y-1">
-              {validationIssues.map((issue, i) => (
-                <li key={i} className="text-sm text-amber-700">• {issue}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {allLegsConfirmed && (
-          <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3">
-            <p className="text-sm font-medium text-green-700">
-              ✓ All segments confirmed — ready to continue
-            </p>
-          </div>
-        )}
-
-        <div className="space-y-1">
-          <div className="text-xs text-gray-500">{confirmedLegs} of {totalLegs} legs confirmed</div>
-          <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-300 ${
-                allLegsConfirmed ? "bg-green-500" : "bg-blue-400"
-              }`}
-              style={{ width: totalLegs > 0 ? `${(confirmedLegs / totalLegs) * 100}%` : "0%" }}
-            />
-          </div>
-        </div>
-
-        <div className="flex justify-between">
-          <button onClick={() => router.push("/")} className="text-gray-500 hover:text-gray-700 text-sm">
-            ← Back
-          </button>
-          <button
-            onClick={() => router.push("/hotels")}
-            disabled={!allLegsConfirmed}
-            className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold px-6 py-2 rounded-lg transition-colors"
-          >
-            Continue to Hotels →
-          </button>
-        </div>
-      </div>
-    </div>
+    </PageTransition>
   );
 }

@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import AirportSearch from "@/components/AirportSearch";
 import { toCityCode } from "@/utils/cityCodeMap";
+import { Button } from "@/components/ui/Button";
+import { Search, Check } from "lucide-react";
 
 interface Props {
   defaultIata: string;
@@ -36,7 +38,7 @@ export function HotelSearchForm({
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-wrap gap-3 items-end">
+    <div className="bg-white border border-gray-100 rounded-xl p-4 flex flex-wrap gap-3 items-end shadow-card">
       <div className="flex-1 min-w-[200px]">
         <AirportSearch
           label="City or Airport"
@@ -48,11 +50,12 @@ export function HotelSearchForm({
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1">
+        <label className="block text-xs font-medium text-charcoal/60 mb-1 font-body flex items-center gap-1">
           Check-in
           {checkInAuto && (
-            <span className="ml-1.5 text-xs font-semibold text-green-700 bg-green-100 px-1.5 py-0.5 rounded-full">
-              ✓ Auto
+            <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-success bg-success/10 border border-success/20 px-1.5 py-0.5 rounded-full font-body">
+              <Check size={9} />
+              Auto
             </span>
           )}
         </label>
@@ -60,16 +63,17 @@ export function HotelSearchForm({
           type="date"
           value={checkIn}
           onChange={(e) => setCheckIn(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors font-body"
         />
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1">
+        <label className="block text-xs font-medium text-charcoal/60 mb-1 font-body flex items-center gap-1">
           Check-out
           {checkOutAuto && (
-            <span className="ml-1.5 text-xs font-semibold text-green-700 bg-green-100 px-1.5 py-0.5 rounded-full">
-              ✓ Auto
+            <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-success bg-success/10 border border-success/20 px-1.5 py-0.5 rounded-full font-body">
+              <Check size={9} />
+              Auto
             </span>
           )}
         </label>
@@ -77,17 +81,20 @@ export function HotelSearchForm({
           type="date"
           value={checkOut}
           onChange={(e) => setCheckOut(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors font-body"
         />
       </div>
 
-      <button
+      <Button
+        variant="primary"
+        size="md"
         onClick={handleSubmit}
         disabled={loading || !checkIn || !checkOut || !iata}
-        className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors"
+        loading={loading}
+        icon={<Search size={14} />}
       >
         {loading ? "Searching…" : "Search Hotels"}
-      </button>
+      </Button>
     </div>
   );
 }

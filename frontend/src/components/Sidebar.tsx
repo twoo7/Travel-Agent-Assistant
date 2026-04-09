@@ -6,20 +6,36 @@ import { useState, useRef, useEffect } from "react";
 import { useTripContext } from "@/context/TripContext";
 import { calcNights } from "@/utils/dateUtils";
 import type { TransportMode } from "@/types/trip";
+import {
+  Plane,
+  Train,
+  Ship,
+  Car,
+  Hotel,
+  Calendar,
+  Download,
+  Menu,
+  X,
+  Pin,
+  PinOff,
+  Check,
+  AlertTriangle,
+  Lock,
+} from "lucide-react";
 
 const STEPS = [
-  { label: "Trip Setup",  icon: "✈",  href: "/",          staleKey: "trip-setup" },
-  { label: "Segments",    icon: "🛫", href: "/segments",   staleKey: "segments" },
-  { label: "Hotels",      icon: "🏨", href: "/hotels",     staleKey: "hotels" },
-  { label: "Itinerary",   icon: "🗓", href: "/itinerary",  staleKey: "itinerary" },
-  { label: "Export",      icon: "📥", href: "/export",     staleKey: "export" },
+  { label: "Trip Setup",  Icon: Plane,     href: "/",          staleKey: "trip-setup" },
+  { label: "Segments",    Icon: Plane,     href: "/segments",  staleKey: "segments" },
+  { label: "Hotels",      Icon: Hotel,     href: "/hotels",    staleKey: "hotels" },
+  { label: "Itinerary",   Icon: Calendar,  href: "/itinerary", staleKey: "itinerary" },
+  { label: "Export",      Icon: Download,  href: "/export",    staleKey: "export" },
 ];
 
-const TRANSPORT_ICONS: Record<TransportMode, string> = {
-  flight: "✈",
-  train: "🚂",
-  ferry: "⛴",
-  car: "🚗",
+const TRANSPORT_ICONS: Record<TransportMode, React.ReactNode> = {
+  flight: <Plane size={12} />,
+  train:  <Train size={12} />,
+  ferry:  <Ship  size={12} />,
+  car:    <Car   size={12} />,
 };
 
 type StepStatus = "active" | "done" | "stale" | "locked";
@@ -45,7 +61,7 @@ function TripSummary({ staleSteps }: { staleSteps: string[] }) {
   return (
     <div className="space-y-2">
       {routeLabel && (
-        <p className="font-medium text-slate-200 truncate whitespace-nowrap">{routeLabel}</p>
+        <p className="font-display font-medium text-slate-200 truncate text-sm">{routeLabel}</p>
       )}
 
       {tripContext.legs.map((leg) => {
@@ -63,9 +79,10 @@ function TripSummary({ staleSteps }: { staleSteps: string[] }) {
           return (
             <p
               key={`flight-${leg.leg_number}`}
-              className={`truncate whitespace-nowrap ${legIsStale ? "text-amber-400" : "text-green-400"}`}
+              className={`truncate flex items-center gap-1 ${legIsStale ? "text-amber-400" : "text-green-400"}`}
             >
-              {transportIcon} {flightNum} · {f.currency} {f.price.toLocaleString()}
+              <span className="shrink-0">{transportIcon}</span>
+              <span>{flightNum} · {f.currency} {f.price.toLocaleString()}</span>
             </p>
           );
         })() : null;
@@ -76,15 +93,16 @@ function TripSummary({ staleSteps }: { staleSteps: string[] }) {
           return (
             <p
               key={`hotel-${stay.hotel.id}`}
-              className={`truncate whitespace-nowrap ${legIsStale ? "text-amber-300" : "text-slate-300"}`}
+              className={`truncate flex items-center gap-1 ${legIsStale ? "text-amber-300" : "text-slate-300"}`}
             >
-              🏨 {stay.hotel.name}
+              <Hotel size={12} className="shrink-0" />
+              <span>{stay.hotel.name}</span>
             </p>
           );
         });
 
         return (
-          <div key={leg.leg_number} className="space-y-0.5">
+          <div key={leg.leg_number} className="space-y-0.5 text-xs">
             {flightLine}
             {hotelLines}
           </div>
@@ -92,7 +110,7 @@ function TripSummary({ staleSteps }: { staleSteps: string[] }) {
       })}
 
       {totalCost > 0 && (
-        <p className="text-blue-400 font-semibold pt-1 border-t border-slate-700 whitespace-nowrap">
+        <p className="text-accent font-semibold pt-1 border-t border-slate-700 text-xs">
           Total ~{tripContext.currency ?? tripContext.legs[0]?.selected_flight?.currency ?? "USD"}{" "}
           {totalCost.toLocaleString()}
         </p>
@@ -102,16 +120,65 @@ function TripSummary({ staleSteps }: { staleSteps: string[] }) {
 }
 
 function StatusChip({ status }: { status: StepStatus }) {
-  const map: Record<StepStatus, { label: string; cls: string }> = {
-    active: { label: "● Active", cls: "bg-indigo-600 text-white" },
-    done:   { label: "✓ Done",   cls: "bg-green-900 text-green-300" },
-    stale:  { label: "⚠ Stale",  cls: "bg-amber-900 text-amber-300" },
-    locked: { label: "○ Locked", cls: "bg-slate-800 text-slate-400" },
+  const map: Record<StepStatus, { label: string; icon: React.ReactNode; cls: string }> = {
+    active: { label: "Active",  icon: null,                          cls: "bg-accent/20 text-accent border border-accent/30" },
+    done:   { label: "Done",    icon: <Check size={10} />,           cls: "bg-success/20 text-success border border-success/30" },
+    stale:  { label: "Stale",   icon: <AlertTriangle size={10} />,   cls: "bg-warning/20 text-warning border border-warning/30" },
+    locked: { label: "Locked",  icon: <Lock size={10} />,            cls: "bg-slate-800 text-slate-500 border border-slate-700" },
   };
-  const { label, cls } = map[status];
+  const { label, icon, cls } = map[status];
   return (
-    <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full shrink-0 ${cls}`}>
+    <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0 ${cls}`}>
+      {icon}
       {label}
+    </span>
+  );
+}
+
+function StepIcon({
+  step,
+  index,
+  status,
+  expanded,
+}: {
+  step: (typeof STEPS)[0];
+  index: number;
+  status: StepStatus;
+  expanded: boolean;
+}) {
+  const { Icon } = step;
+  const isDone = status === "done";
+  const isActive = status === "active";
+  const isStale = status === "stale";
+
+  const iconColor = isActive
+    ? "text-white"
+    : isDone
+    ? "text-success"
+    : isStale
+    ? "text-warning"
+    : "text-slate-500";
+
+  return (
+    <span
+      className={[
+        "w-9 shrink-0 rounded-lg flex flex-col items-center justify-center gap-0.5 relative transition-colors",
+        expanded ? "h-9" : "h-14",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      {!expanded && (
+        <span className="text-[10px] font-bold leading-none text-slate-500">
+          {index + 1}
+        </span>
+      )}
+      <span className={iconColor}>
+        {isDone ? <Check size={16} /> : <Icon size={16} />}
+      </span>
+      {isStale && !expanded && (
+        <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-warning" />
+      )}
     </span>
   );
 }
@@ -155,64 +222,64 @@ export function Sidebar() {
     return "locked";
   }
 
+  const stepLinkClass = (status: StepStatus) => {
+    const base =
+      "flex items-center gap-2 rounded-xl px-1 py-1 transition-all duration-150 select-none";
+    if (status === "active")
+      return `${base} bg-primary text-white border-l-2 border-accent`;
+    if (status === "done")
+      return `${base} text-success hover:bg-slate-800/60`;
+    if (status === "stale")
+      return `${base} text-warning hover:bg-slate-800/60`;
+    return `${base} text-slate-500 cursor-default pointer-events-none`;
+  };
+
   const desktopNav = (
     <nav
-      className={`
-        fixed left-0 top-0 h-full z-50 flex flex-col bg-slate-900
-        transition-[width] duration-200 overflow-hidden
-        ${expanded ? "w-56" : "w-12"}
-      `}
+      className={[
+        "fixed left-0 top-0 h-full z-50 flex flex-col bg-navy-sidebar border-r border-accent/10",
+        "transition-all duration-300 overflow-hidden",
+        expanded ? "w-56" : "w-12",
+      ]
+        .filter(Boolean)
+        .join(" ")}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
+      {/* Brand mark — collapsed */}
+      {!expanded && (
+        <div className="flex items-center justify-center h-12 border-b border-slate-800">
+          <Plane size={18} className="text-accent" />
+        </div>
+      )}
+
+      {/* Brand name — expanded */}
+      {expanded && (
+        <div className="flex items-center px-4 h-12 border-b border-slate-800">
+          <span className="font-display text-slate-100 text-sm font-medium tracking-wide">
+            Travel Planner
+          </span>
+        </div>
+      )}
+
       {/* Steps */}
       <ul className="flex flex-col gap-1 p-1.5 flex-1 overflow-y-auto">
         {STEPS.map((step, i) => {
           const status = stepStatus(i);
-          const isActive = status === "active";
-          const isDone = status === "done";
-          const isStale = status === "stale";
-          const isLocked = status === "locked";
 
           return (
             <li key={step.href}>
               <Link
                 href={step.href}
-                className={`
-                  flex items-center gap-2 rounded-lg px-1 py-1
-                  transition-colors duration-150 select-none
-                  ${isActive ? "bg-indigo-600 text-white" : ""}
-                  ${isDone ? "text-green-400 hover:bg-slate-800" : ""}
-                  ${isStale ? "text-amber-400 hover:bg-slate-800" : ""}
-                  ${isLocked ? "text-slate-500 cursor-default pointer-events-none" : ""}
-                `}
-                tabIndex={isLocked ? -1 : 0}
-                aria-current={isActive ? "page" : undefined}
+                className={stepLinkClass(status)}
+                tabIndex={status === "locked" ? -1 : 0}
+                aria-current={status === "active" ? "page" : undefined}
+                data-testid={`sidebar-step-${step.staleKey}`}
               >
-                {/* Icon cell — always square with status bar at bottom */}
-                <span className="w-9 h-9 shrink-0 rounded-lg flex items-center justify-center relative">
-                  <span className="text-base leading-none">{step.icon}</span>
-                  {!expanded && (
-                    <>
-                      <span className="absolute -top-0.5 -left-0.5 text-[8px] font-bold text-slate-400 leading-none">
-                        {i + 1}
-                      </span>
-                      <span
-                        className={`absolute bottom-0 left-1 right-1 h-[3px] rounded-full ${
-                          isActive ? "bg-indigo-500" :
-                          isDone ? "bg-green-500" :
-                          isStale ? "bg-amber-400 animate-pulse" :
-                          "bg-slate-700"
-                        }`}
-                      />
-                    </>
-                  )}
-                </span>
-
-                {/* Expanded: label + status chip */}
+                <StepIcon step={step} index={i} status={status} expanded={expanded} />
                 {expanded && (
                   <>
-                    <span className="whitespace-nowrap text-sm font-medium flex-1 overflow-hidden">
+                    <span className="whitespace-nowrap text-sm font-body font-medium flex-1 overflow-hidden">
                       {step.label}
                     </span>
                     <StatusChip status={status} />
@@ -224,28 +291,21 @@ export function Sidebar() {
         })}
       </ul>
 
-      {/* Trip summary — fade in after width transition */}
-      <div
-        className={`px-3 py-2 border-t border-slate-700 text-xs text-slate-300
-          transition-opacity duration-150
-          ${expanded ? "opacity-100 delay-100" : "opacity-0 pointer-events-none h-0 p-0 border-0 overflow-hidden"}`}
-      >
-        <TripSummary staleSteps={staleSteps} />
-      </div>
+      {/* Trip summary — expanded only */}
+      {expanded && (
+        <div className="px-3 py-2 border-t border-slate-800 text-xs text-slate-300">
+          <TripSummary staleSteps={staleSteps} />
+        </div>
+      )}
 
       {/* Pin toggle */}
       <button
         onClick={() => setPinned((v) => !v)}
-        className="
-          w-full flex items-center justify-center py-3
-          border-t border-slate-700 text-slate-400
-          hover:text-slate-100 hover:bg-slate-800
-          transition-colors duration-150 text-base
-        "
+        className="w-full flex items-center justify-center py-3 border-t border-slate-800 text-slate-500 hover:text-slate-200 hover:bg-slate-800/50 transition-colors duration-150"
         aria-label={pinned ? "Unpin sidebar" : "Pin sidebar open"}
         title={pinned ? "Unpin sidebar" : "Pin sidebar open"}
       >
-        {pinned ? "‹" : "›"}
+        {pinned ? <PinOff size={15} /> : <Pin size={15} />}
       </button>
     </nav>
   );
@@ -255,16 +315,16 @@ export function Sidebar() {
       {/* Desktop sidebar */}
       <div className="hidden md:block">{desktopNav}</div>
 
-      {/* Mobile: hamburger in top bar */}
-      <div className="md:hidden fixed top-0 left-0 right-0 h-11 z-40 bg-slate-900 flex items-center px-3 shadow">
+      {/* Mobile: hamburger top bar */}
+      <div className="md:hidden fixed top-0 left-0 right-0 h-11 z-40 bg-navy-sidebar border-b border-accent/10 flex items-center px-3">
         <button
           onClick={() => setMobileOpen(true)}
-          className="text-slate-300 hover:text-white text-xl w-9 h-9 flex items-center justify-center"
+          className="text-slate-400 hover:text-white w-9 h-9 flex items-center justify-center rounded-lg hover:bg-slate-800 transition-colors"
           aria-label="Open navigation"
         >
-          ☰
+          <Menu size={18} />
         </button>
-        <span className="ml-3 text-slate-200 text-sm font-semibold">
+        <span className="ml-3 text-slate-200 text-sm font-body font-semibold">
           {STEPS[currentIndex]?.label ?? "Travel Planner"}
         </span>
       </div>
@@ -272,7 +332,7 @@ export function Sidebar() {
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="md:hidden fixed inset-0 z-40 bg-black/50"
+          className="md:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
           onClick={() => setMobileOpen(false)}
           aria-hidden="true"
         />
@@ -280,56 +340,64 @@ export function Sidebar() {
 
       {/* Mobile slide-in sidebar */}
       <div
-        className={`
-          md:hidden fixed left-0 top-0 h-full z-50 flex flex-col bg-slate-900 w-56
-          transition-transform duration-300
-          ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
-        `}
+        className={[
+          "md:hidden fixed left-0 top-0 h-full z-50 flex flex-col bg-navy-sidebar w-64",
+          "transition-transform duration-300",
+          mobileOpen ? "translate-x-0" : "-translate-x-full",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+        role="dialog"
+        aria-label="Navigation"
       >
-        <div className="flex items-center justify-between px-3 py-2 border-b border-slate-700">
-          <span className="text-slate-200 text-sm font-semibold">Navigation</span>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800">
+          <span className="font-display text-slate-100 text-sm tracking-wide">Travel Planner</span>
           <button
             onClick={() => setMobileOpen(false)}
-            className="text-slate-400 hover:text-white text-lg w-8 h-8 flex items-center justify-center"
+            className="text-slate-400 hover:text-white w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-800 transition-colors"
             aria-label="Close navigation"
           >
-            ✕
+            <X size={16} />
           </button>
         </div>
-        <ul className="flex flex-col gap-1 p-1.5 flex-1 overflow-y-auto">
+        <ul className="flex flex-col gap-1 p-2 flex-1 overflow-y-auto">
           {STEPS.map((step, i) => {
             const status = stepStatus(i);
-            const isActive = status === "active";
+            const { Icon } = step;
             const isDone = status === "done";
+            const isActive = status === "active";
             const isStale = status === "stale";
             const isLocked = status === "locked";
+
             return (
               <li key={step.href}>
                 <Link
                   href={step.href}
                   onClick={() => setMobileOpen(false)}
-                  className={`
-                    flex items-center gap-3 rounded-lg px-1.5 py-1.5
-                    transition-colors duration-150 select-none
-                    ${isActive ? "bg-indigo-600 text-white" : ""}
-                    ${isDone ? "text-green-400 hover:bg-slate-800" : ""}
-                    ${isStale ? "text-amber-400 hover:bg-slate-800" : ""}
-                    ${isLocked ? "text-slate-500 cursor-default pointer-events-none" : ""}
-                  `}
+                  className={[
+                    "flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-150 select-none",
+                    isActive ? "bg-primary text-white border-l-2 border-accent" : "",
+                    isDone ? "text-success hover:bg-slate-800/60" : "",
+                    isStale ? "text-warning hover:bg-slate-800/60" : "",
+                    isLocked ? "text-slate-500 cursor-default pointer-events-none" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
                   tabIndex={isLocked ? -1 : 0}
                 >
-                  <span className="w-9 h-9 shrink-0 rounded-lg flex items-center justify-center text-lg">
-                    {step.icon}
+                  <span className="w-9 h-9 shrink-0 rounded-lg flex items-center justify-center">
+                    {isDone ? <Check size={16} /> : <Icon size={16} />}
                   </span>
-                  <span className="whitespace-nowrap text-sm font-medium flex-1">
+                  <span className="whitespace-nowrap text-sm font-body font-medium flex-1">
                     {i + 1}. {step.label}
                   </span>
+                  <StatusChip status={status} />
                 </Link>
               </li>
             );
           })}
         </ul>
-        <div className="px-3 py-2 border-t border-slate-700 text-xs text-slate-300">
+        <div className="px-4 py-3 border-t border-slate-800 text-xs text-slate-300">
           <TripSummary staleSteps={staleSteps} />
         </div>
       </div>

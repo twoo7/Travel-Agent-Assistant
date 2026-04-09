@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { api } from "@/services/api";
 import type { TripLeg } from "@/types/trip";
+import { Car, Check, ExternalLink, Info, MapPin } from "lucide-react";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 interface Props {
   leg: TripLeg;
@@ -50,34 +52,39 @@ export function CarSegmentCard({ leg }: Props) {
     `https://www.google.com/maps/dir/${encodeURIComponent(leg.origin)}/${encodeURIComponent(leg.destination)}`;
 
   return (
-    <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 relative">
-      <span className="absolute top-4 right-4 text-xs font-semibold text-amber-700 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full">
-        ✓ Confirmed
+    <div className="bg-warning/5 border border-warning/20 rounded-xl p-5 relative">
+      <span className="absolute top-4 right-4 inline-flex items-center gap-1 text-xs font-semibold text-warning-dark bg-warning/10 border border-warning/20 px-2 py-0.5 rounded-full font-body">
+        <Check size={10} />
+        Confirmed
       </span>
 
       <div className="flex items-center gap-2 mb-3">
-        <span className="text-2xl">🚗</span>
-        <h3 className="text-lg font-semibold text-amber-900">Bus/Car</h3>
+        <div className="w-9 h-9 rounded-lg bg-warning/10 flex items-center justify-center">
+          <Car size={18} className="text-warning-dark" />
+        </div>
+        <h3 className="text-lg font-semibold text-primary font-display">Bus/Car</h3>
       </div>
 
-      <p className="text-base font-medium text-gray-800 mb-4">
+      <p className="text-base font-medium text-charcoal mb-4 font-body">
         {leg.origin} → {leg.destination}
       </p>
 
       {loading ? (
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
-          <div className="w-4 h-4 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
-          <span>Calculating drive time…</span>
+        <div className="mb-4 space-y-2">
+          <Skeleton className="h-4 w-48" />
         </div>
       ) : error || !driveInfo || driveInfo.distance_km === null ? (
-        <p className="text-sm text-gray-500 mb-4">Couldn&apos;t calculate drive time.</p>
+        <p className="text-sm text-muted mb-4 font-body">Couldn&apos;t calculate drive time.</p>
       ) : (
         <div className="flex flex-wrap items-center gap-4 mb-4">
-          <span className="text-sm text-gray-700">
-            <span className="font-semibold">{driveInfo.distance_km.toLocaleString()} km</span>
-          </span>
-          <span className="text-gray-300">|</span>
-          <span className="text-sm text-gray-700">
+          <div className="flex items-center gap-1.5">
+            <MapPin size={13} className="text-warning-dark" />
+            <span className="text-sm text-charcoal font-body">
+              <span className="font-semibold">{driveInfo.distance_km.toLocaleString()} km</span>
+            </span>
+          </div>
+          <div className="w-px h-4 bg-gray-200" />
+          <span className="text-sm text-charcoal font-body">
             Est. drive time:{" "}
             <span className="font-semibold">
               {driveInfo.duration_mins !== null ? formatDuration(driveInfo.duration_mins) : "—"}
@@ -90,14 +97,18 @@ export function CarSegmentCard({ leg }: Props) {
         href={mapsUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-1 text-sm text-amber-700 font-medium hover:text-amber-900 underline underline-offset-2 mb-4"
+        className="inline-flex items-center gap-1.5 text-sm text-warning-dark font-medium hover:text-warning underline underline-offset-2 mb-4 font-body transition-colors"
       >
-        Open in Google Maps ↗
+        Open in Google Maps
+        <ExternalLink size={12} />
       </a>
 
-      <p className="text-xs text-gray-500 bg-amber-100 rounded-lg px-3 py-2">
-        ℹ️ Drive time is an estimate. Factor in breaks, border crossings, and traffic.
-      </p>
+      <div className="flex items-start gap-2 bg-warning/5 rounded-lg px-3 py-2 mt-2">
+        <Info size={13} className="text-warning-dark shrink-0 mt-0.5" />
+        <p className="text-xs text-charcoal/60 font-body">
+          Drive time is an estimate. Factor in breaks, border crossings, and traffic.
+        </p>
+      </div>
     </div>
   );
 }

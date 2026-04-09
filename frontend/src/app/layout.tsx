@@ -1,10 +1,20 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { DM_Serif_Display, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { TripContextProvider } from "@/context/TripContext";
 import { Sidebar } from "@/components/Sidebar";
+import { ToastProvider } from "@/components/ui/Toast";
 
-const inter = Inter({ subsets: ["latin"] });
+const dmSerif = DM_Serif_Display({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-dm-serif",
+});
+
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-dm-sans",
+});
 
 export const metadata: Metadata = {
   title: "Travel Agent Assistant",
@@ -14,10 +24,12 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-gray-50 min-h-screen`}>
+      <body className={`${dmSerif.variable} ${dmSans.variable} font-body bg-background min-h-screen`}>
         <TripContextProvider>
-          <Sidebar />
-          <main className="min-h-screen pl-11 transition-all duration-300">{children}</main>
+          <ToastProvider>
+            <Sidebar />
+            <main className="min-h-screen pl-11 transition-all duration-300">{children}</main>
+          </ToastProvider>
         </TripContextProvider>
       </body>
     </html>

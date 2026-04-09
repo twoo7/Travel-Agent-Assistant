@@ -7,14 +7,15 @@ import { api } from "@/services/api";
 import { SuggestionsSidebar } from "@/components/itinerary/SuggestionsSidebar";
 import { DayPlanner } from "@/components/itinerary/DayPlanner";
 import { TripMap } from "@/components/itinerary/TripMap";
+import { Button } from "@/components/ui/Button";
 import type { DayPlan, DayItem, POI, TripContext } from "@/types/trip";
+import { Sparkles, ArrowLeft, ArrowRight } from "lucide-react";
 
 function buildInitialDays(tripContext: TripContext): DayPlan[] {
   const days: DayPlan[] = [];
   let dayNumber = 1;
 
   for (const leg of tripContext.legs) {
-    // Build date range from departure_date using hotel check-in/check-out if available
     const checkIn = leg.hotel_stays[0]?.check_in ?? leg.departure_date;
     const checkOut = leg.hotel_stays[leg.hotel_stays.length - 1]?.check_out ?? leg.departure_date;
 
@@ -29,7 +30,6 @@ function buildInitialDays(tripContext: TripContext): DayPlan[] {
 
       const items: DayItem[] = [];
 
-      // Arrival day: pin airport
       if (d === 0) {
         items.push({
           type: "airport",
@@ -40,7 +40,6 @@ function buildInitialDays(tripContext: TripContext): DayPlan[] {
         });
       }
 
-      // Add hotel as default first item (after airport on arrival day)
       if (leg.hotel_stays.length > 0) {
         const stay = leg.hotel_stays[0];
         items.push({
@@ -76,7 +75,6 @@ export default function ItineraryPage() {
   const [generatingItinerary, setGeneratingItinerary] = useState(false);
   const [currentLeg, setCurrentLeg] = useState(1);
 
-  // Initialize days from trip context
   useEffect(() => {
     if (tripContext.legs.length > 0 && days.length === 0) {
       const allExistingDays = tripContext.legs.flatMap((l) => l.days);
@@ -106,7 +104,6 @@ export default function ItineraryPage() {
 
   function handleAddPOI(poi: POI) {
     dispatch({ type: "ADD_UNSCHEDULED_POI", payload: poi });
-    // Add to the first day of the current leg as a starting point
     const legDays = days.filter((d) => d.leg_number === currentLeg);
     if (legDays.length === 0) return;
     const targetDay = legDays[0];
@@ -134,7 +131,6 @@ export default function ItineraryPage() {
 
   async function handleGenerateItinerary() {
     setGeneratingItinerary(true);
-    // Persist current days into context before generating
     dispatch({ type: "SET_DAYS", payload: days });
     try {
       const narratives = await api.generateItinerary({
@@ -144,7 +140,6 @@ export default function ItineraryPage() {
           days: days.filter((d) => d.leg_number === leg.leg_number),
         })),
       });
-      // Build ItineraryDay array from narrative + day data
       const itineraryDays = days.map((day) => ({
         day_number: day.day_number,
         date: day.date,
@@ -167,8 +162,11 @@ export default function ItineraryPage() {
   if (tripContext.legs.length === 0) {
     return (
       <div className="max-w-3xl mx-auto text-center py-16">
-        <p className="text-gray-500">No trip set up yet.</p>
-        <button onClick={() => router.push("/")} className="mt-4 text-blue-600 hover:underline">
+        <p className="text-muted font-body">No trip set up yet.</p>
+        <button
+          onClick={() => router.push("/")}
+          className="mt-4 text-primary hover:text-primary-dark font-body text-sm underline underline-offset-2"
+        >
           ← Go back to Trip Setup
         </button>
       </div>
@@ -180,24 +178,24 @@ export default function ItineraryPage() {
       {/* Top bar */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Itinerary Builder</h1>
-          <p className="text-gray-500 text-sm mt-0.5">
-            Add POIs, arrange your days, then generate the narrative.
+          <h1 className="text-3xl font-bold text-primary font-display">Itinerary Builder</h1>
+          <p className="text-muted text-sm mt-0.5 font-body">
+            Add places, arrange your days, then generate your narrative.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           {/* Leg selector */}
           {tripContext.legs.length > 1 && (
-            <div className="flex gap-1">
+            <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
               {tripContext.legs.map((leg) => (
                 <button
                   key={leg.leg_number}
                   onClick={() => setCurrentLeg(leg.leg_number)}
-                  className={`text-xs px-3 py-1.5 rounded-lg transition-colors ${
+                  className={`text-xs px-3 py-1.5 rounded-md transition-colors font-body font-medium ${
                     currentLeg === leg.leg_number
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      ? "bg-primary text-white shadow-sm"
+                      : "text-charcoal/70 hover:bg-white hover:shadow-sm"
                   }`}
                 >
                   {leg.destination}
@@ -206,13 +204,15 @@ export default function ItineraryPage() {
             </div>
           )}
 
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={handleFetchPOIs}
-            disabled={loadingPois}
-            className="text-sm bg-white border border-gray-200 hover:border-blue-400 text-gray-700 px-4 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+            loading={loadingPois}
+            icon={<Sparkles size={13} />}
           >
-            {loadingPois ? "Loading…" : "✨ Get AI Suggestions"}
-          </button>
+            {loadingPois ? "Loading…" : "Get AI Suggestions"}
+          </Button>
         </div>
       </div>
 
@@ -242,23 +242,20 @@ export default function ItineraryPage() {
       </div>
 
       {/* Bottom actions */}
-      <div className="flex justify-between pt-2 border-t border-gray-200">
-        <button onClick={() => router.push("/hotels")} className="text-gray-500 hover:text-gray-700 text-sm">
-          ← Back to Hotels
-        </button>
-        <button
+      <div className="flex justify-between pt-2 border-t border-gray-100">
+        <Button variant="ghost" size="md" onClick={() => router.push("/hotels")} icon={<ArrowLeft size={14} />}>
+          Back to Hotels
+        </Button>
+        <Button
+          variant="primary"
+          size="md"
           onClick={handleGenerateItinerary}
           disabled={generatingItinerary || days.length === 0}
-          className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold px-6 py-2 rounded-lg transition-colors flex items-center gap-2"
+          loading={generatingItinerary}
+          icon={<ArrowRight size={14} />}
         >
-          {generatingItinerary ? (
-            <>
-              <span className="animate-spin">⟳</span> Generating…
-            </>
-          ) : (
-            "✨ Generate Itinerary →"
-          )}
-        </button>
+          {generatingItinerary ? "Generating…" : "Generate Itinerary"}
+        </Button>
       </div>
     </div>
   );
