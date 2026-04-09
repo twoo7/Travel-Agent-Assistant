@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useTripContext } from "@/context/TripContext";
 import { api } from "@/services/api";
@@ -9,6 +9,8 @@ import { FlightCard } from "@/components/flights/FlightCard";
 import { TrainSegmentCard } from "@/components/segments/TrainSegmentCard";
 import { FerrySegmentCard } from "@/components/segments/FerrySegmentCard";
 import { CarSegmentCard } from "@/components/segments/CarSegmentCard";
+import { SortBar, SortOption } from "@/components/SortBar";
+import { FilterBar, FlightFilters } from "@/components/FilterBar";
 import type { FlightOffer, TripLeg } from "@/types/trip";
 
 const MODE_LABELS: Record<string, { icon: string; label: string }> = {
@@ -17,6 +19,20 @@ const MODE_LABELS: Record<string, { icon: string; label: string }> = {
   ferry: { icon: "⛴", label: "Ferry" },
   car: { icon: "🚗", label: "Bus/Car" },
 };
+
+const FLIGHT_SORT_OPTIONS: SortOption[] = [
+  { key: "ai", label: "AI Pick" },
+  { key: "price_asc", label: "Price ↑" },
+  { key: "price_desc", label: "Price ↓" },
+  { key: "duration", label: "Duration ↑" },
+  { key: "stops", label: "Stops ↑" },
+];
+
+function parseDuration(iso: string): number | null {
+  const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
+  if (!m) return null;
+  return (parseInt(m[1] ?? "0") * 60) + parseInt(m[2] ?? "0");
+}
 
 function isLegConfirmed(leg: TripLeg): boolean {
   const mode = leg.transport_mode ?? "flight";
@@ -34,12 +50,34 @@ export default function SegmentsPage() {
   const [error, setError] = useState<Record<number, string>>({});
   const autoFiredRef = useRef<Set<number>>(new Set());
 
+  const [sortKey, setSortKey] = useState("ai");
+  const [flightFilters, setFlightFilters] = useState<FlightFilters>({ maxStops: null, maxPrice: null });
+
   const [newLeg, setNewLeg] = useState({
     origin: "",
     destination: "",
     departure_date: "",
     transport_mode: "flight" as TripLeg["transport_mode"],
   });
+
+  const displayResults = useMemo(() => {
+    const display: Record<number, FlightOffer[]> = {};
+    for (const [key, offers] of Object.entries(results)) {
+      let filtered = [...offers];
+      if (flightFilters.maxStops !== null) filtered = filtered.filter((o) => o.stops <= flightFilters.maxStops!);
+      if (flightFilters.maxPrice !== null) filtered = filtered.filter((o) => o.price <= flightFilters.maxPrice!);
+      filtered.sort((a, b) => {
+        if (sortKey === "ai") return a.ai_recommended === b.ai_recommended ? 0 : a.ai_recommended ? -1 : 1;
+        if (sortKey === "price_asc") return a.price - b.price;
+        if (sortKey === "price_desc") return b.price - a.price;
+        if (sortKey === "stops") return a.stops - b.stops;
+        if (sortKey === "duration") return (parseDuration(a.total_duration) ?? 0) - (parseDuration(b.total_duration) ?? 0);
+        return 0;
+      });
+      display[Number(key)] = filtered;
+    }
+    return display;
+  }, [results, sortKey, flightFilters]);
 
   async function handleSearch(
     legNumber: number,
@@ -55,8 +93,10 @@ export default function SegmentsPage() {
         destination: params.destination,
         departure_date: params.departure_date,
         adults: tripContext.adults,
+        currency: tripContext.currency,
       });
       setResults((prev) => ({ ...prev, [legNumber]: offers }));
+      dispatch({ type: "SET_FLIGHT_RESULTS", payload: { leg_number: legNumber, results: offers } });
     } catch (e) {
       setError((prev) => ({ ...prev, [legNumber]: String(e) }));
     } finally {
@@ -80,6 +120,13 @@ export default function SegmentsPage() {
         continue;
       }
       if (autoFiredRef.current.has(leg.leg_number)) continue;
+
+      // Check if results are already cached in context
+      if (leg.flight_results && leg.flight_results.length > 0) {
+        setResults((prev) => ({ ...prev, [leg.leg_number]: leg.flight_results! }));
+        autoFiredRef.current.add(leg.leg_number);
+        continue;
+      }
 
       autoFiredRef.current.add(leg.leg_number);
       handleSearch(leg.leg_number, {
@@ -206,12 +253,19 @@ export default function SegmentsPage() {
                   </p>
                 )}
 
-                {results[leg.leg_number] && results[leg.leg_number].length === 0 && (
+                {displayResults[leg.leg_number] && displayResults[leg.leg_number].length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    <SortBar options={FLIGHT_SORT_OPTIONS} value={sortKey} onChange={setSortKey} />
+                    <FilterBar variant="flights" filters={flightFilters} onChange={setFlightFilters} />
+                  </div>
+                )}
+
+                {displayResults[leg.leg_number] && displayResults[leg.leg_number].length === 0 && (
                   <p className="text-sm text-gray-500 text-center py-4">No flights found.</p>
                 )}
 
                 <div className="space-y-2">
-                  {(results[leg.leg_number] ?? []).map((offer) => (
+                  {(displayResults[leg.leg_number] ?? []).map((offer) => (
                     <FlightCard
                       key={offer.id}
                       offer={offer}

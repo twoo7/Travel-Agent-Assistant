@@ -4,18 +4,13 @@ import json
 import logging
 from typing import List
 
-import anthropic
-
-from backend.src.config import Config
+from backend.src.agents.base import BaseAgent
 
 logger = logging.getLogger(__name__)
 
 
-class FlightAgent:
+class FlightAgent(BaseAgent):
     """Uses Claude to rank and recommend flight offers."""
-
-    def __init__(self) -> None:
-        self.client = anthropic.Anthropic(api_key=Config.ANTHROPIC_API_KEY)
 
     def rank_and_recommend(
         self,
@@ -64,7 +59,7 @@ class FlightAgent:
         )
 
         try:
-            message = self.client.messages.create(
+            message = self._create_with_retry(
                 model="claude-sonnet-4-6",
                 max_tokens=512,
                 messages=[{"role": "user", "content": prompt}],

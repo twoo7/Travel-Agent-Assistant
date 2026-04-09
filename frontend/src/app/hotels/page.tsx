@@ -1,13 +1,22 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useTripContext } from "@/context/TripContext";
 import { api } from "@/services/api";
 import { HotelSearchForm } from "@/components/hotels/HotelSearchForm";
 import { HotelCard } from "@/components/hotels/HotelCard";
+import { SortBar, SortOption } from "@/components/SortBar";
+import { FilterBar, HotelFilters } from "@/components/FilterBar";
 import { toCityCode } from "@/utils/cityCodeMap";
 import type { HotelOffer, AccommodationType } from "@/types/trip";
+
+const HOTEL_SORT_OPTIONS: SortOption[] = [
+  { key: "ai", label: "AI Pick" },
+  { key: "price_asc", label: "Price ↑" },
+  { key: "price_desc", label: "Price ↓" },
+  { key: "rating", label: "Rating ↓" },
+];
 
 export default function HotelsPage() {
   const router = useRouter();
@@ -22,6 +31,27 @@ export default function HotelsPage() {
     Record<number, { check_in: string; check_out: string }>
   >({});
   const autoFiredRef = useRef<Set<number>>(new Set());
+
+  const [sortKey, setSortKey] = useState("ai");
+  const [hotelFilters, setHotelFilters] = useState<HotelFilters>({ minRating: null, maxPrice: null });
+
+  const displayResults = useMemo(() => {
+    const display: Record<number, HotelOffer[]> = {};
+    for (const [key, offers] of Object.entries(results)) {
+      let filtered = [...offers];
+      if (hotelFilters.minRating !== null) filtered = filtered.filter((o) => (o.rating ?? 0) >= hotelFilters.minRating!);
+      if (hotelFilters.maxPrice !== null) filtered = filtered.filter((o) => o.price_per_night <= hotelFilters.maxPrice!);
+      filtered.sort((a, b) => {
+        if (sortKey === "ai") return a.ai_recommended === b.ai_recommended ? 0 : a.ai_recommended ? -1 : 1;
+        if (sortKey === "price_asc") return a.price_per_night - b.price_per_night;
+        if (sortKey === "price_desc") return b.price_per_night - a.price_per_night;
+        if (sortKey === "rating") return (b.rating ?? 0) - (a.rating ?? 0);
+        return 0;
+      });
+      display[Number(key)] = filtered;
+    }
+    return display;
+  }, [results, sortKey, hotelFilters]);
 
   function getDatesForLeg(legIndex: number): { check_in: string; check_out: string } {
     const leg = tripContext.legs[legIndex];
@@ -45,8 +75,10 @@ export default function HotelsPage() {
         check_in: params.check_in,
         check_out: params.check_out,
         adults: tripContext.adults,
+        currency: tripContext.currency,
       });
       setResults((prev) => ({ ...prev, [legNumber]: offers }));
+      dispatch({ type: "SET_HOTEL_RESULTS", payload: { leg_number: legNumber, results: offers } });
       setPendingDates((prev) => ({
         ...prev,
         [legNumber]: { check_in: params.check_in, check_out: params.check_out },
@@ -65,6 +97,17 @@ export default function HotelsPage() {
       const { check_in, check_out } = getDatesForLeg(legIndex);
       if (!leg.destination || !check_in || !check_out) return;
       const city_code = toCityCode(leg.destination);
+
+      // Check if results are already cached in context
+      if (leg.hotel_results && leg.hotel_results.length > 0) {
+        setResults((prev) => ({ ...prev, [leg.leg_number]: leg.hotel_results! }));
+        setPendingDates((prev) => ({
+          ...prev,
+          [leg.leg_number]: { check_in, check_out },
+        }));
+        autoFiredRef.current.add(leg.leg_number);
+        return;
+      }
 
       autoFiredRef.current.add(leg.leg_number);
       handleSearch(leg.leg_number, { city_code, check_in, check_out });
@@ -196,18 +239,27 @@ export default function HotelsPage() {
               </p>
             )}
 
-            {results[leg.leg_number] && results[leg.leg_number].length === 0 && (
+            {displayResults[leg.leg_number] && displayResults[leg.leg_number].length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-3">
+                <SortBar options={HOTEL_SORT_OPTIONS} value={sortKey} onChange={setSortKey} />
+                <FilterBar variant="hotels" filters={hotelFilters} onChange={setHotelFilters} />
+              </div>
+            )}
+
+            {displayResults[leg.leg_number] && displayResults[leg.leg_number].length === 0 && (
               <p className="text-sm text-gray-500 text-center py-4">No hotels found.</p>
             )}
 
             <div className="space-y-2">
-              {(results[leg.leg_number] ?? []).map((offer) => (
+              {(displayResults[leg.leg_number] ?? []).map((offer) => (
                 <HotelCard
                   key={offer.id}
                   offer={offer}
                   selected={pendingOffers[leg.leg_number]?.id === offer.id}
                   confirmed={leg.hotel_stays.some((s) => s.hotel.id === offer.id)}
                   onSelect={(o) => handleSelectHotel(leg.leg_number, o)}
+                  checkIn={pendingDates[leg.leg_number]?.check_in ?? getDatesForLeg(legIndex).check_in}
+                  checkOut={pendingDates[leg.leg_number]?.check_out ?? getDatesForLeg(legIndex).check_out}
                 />
               ))}
             </div>

@@ -98,8 +98,8 @@ class TestFlightAgent:
         bullets = ["💰 Best value non-stop flight."]
         mock_client = _mock_anthropic_response("F1", bullets)
 
-        with patch("backend.src.agents.flight_agent.Config") as mock_cfg, \
-             patch("backend.src.agents.flight_agent.anthropic.Anthropic", return_value=mock_client):
+        with patch("backend.src.agents.base.Config") as mock_cfg, \
+             patch("backend.src.agents.base.anthropic.Anthropic", return_value=mock_client):
             mock_cfg.ANTHROPIC_API_KEY = "test-key"
             from backend.src.agents.flight_agent import FlightAgent
             agent = FlightAgent()
@@ -119,8 +119,8 @@ class TestFlightAgent:
         """Only the picked offer has ai_recommended=True; others are explicitly False."""
         mock_client = _mock_anthropic_response("F2", ["💰 Cheapest option."])
 
-        with patch("backend.src.agents.flight_agent.Config") as mock_cfg, \
-             patch("backend.src.agents.flight_agent.anthropic.Anthropic", return_value=mock_client):
+        with patch("backend.src.agents.base.Config") as mock_cfg, \
+             patch("backend.src.agents.base.anthropic.Anthropic", return_value=mock_client):
             mock_cfg.ANTHROPIC_API_KEY = "test-key"
             from backend.src.agents.flight_agent import FlightAgent
             agent = FlightAgent()
@@ -135,8 +135,8 @@ class TestFlightAgent:
 
     def test_empty_offers_returns_empty(self):
         """No crash when offers list is empty."""
-        with patch("backend.src.agents.flight_agent.Config") as mock_cfg, \
-             patch("backend.src.agents.flight_agent.anthropic.Anthropic") as mock_cls:
+        with patch("backend.src.agents.base.Config") as mock_cfg, \
+             patch("backend.src.agents.base.anthropic.Anthropic") as mock_cls:
             mock_cfg.ANTHROPIC_API_KEY = "test-key"
             from backend.src.agents.flight_agent import FlightAgent
             agent = FlightAgent()
@@ -150,8 +150,8 @@ class TestFlightAgent:
         mock_client = MagicMock()
         mock_client.messages.create.side_effect = Exception("API error")
 
-        with patch("backend.src.agents.flight_agent.Config") as mock_cfg, \
-             patch("backend.src.agents.flight_agent.anthropic.Anthropic", return_value=mock_client):
+        with patch("backend.src.agents.base.Config") as mock_cfg, \
+             patch("backend.src.agents.base.anthropic.Anthropic", return_value=mock_client):
             mock_cfg.ANTHROPIC_API_KEY = "test-key"
             from backend.src.agents.flight_agent import FlightAgent
             agent = FlightAgent()
@@ -167,8 +167,8 @@ class TestFlightAgent:
         """Verify the correct model is passed to messages.create."""
         mock_client = _mock_anthropic_response("F1", ["💰 Good pick."])
 
-        with patch("backend.src.agents.flight_agent.Config") as mock_cfg, \
-             patch("backend.src.agents.flight_agent.anthropic.Anthropic", return_value=mock_client):
+        with patch("backend.src.agents.base.Config") as mock_cfg, \
+             patch("backend.src.agents.base.anthropic.Anthropic", return_value=mock_client):
             mock_cfg.ANTHROPIC_API_KEY = "test-key"
             from backend.src.agents.flight_agent import FlightAgent
             agent = FlightAgent()
@@ -188,8 +188,8 @@ class TestHotelAgent:
         bullets = ["⭐ Highly rated centrally located hotel."]
         mock_client = _mock_anthropic_response("H1", bullets)
 
-        with patch("backend.src.agents.hotel_agent.Config") as mock_cfg, \
-             patch("backend.src.agents.hotel_agent.anthropic.Anthropic", return_value=mock_client):
+        with patch("backend.src.agents.base.Config") as mock_cfg, \
+             patch("backend.src.agents.base.anthropic.Anthropic", return_value=mock_client):
             mock_cfg.ANTHROPIC_API_KEY = "test-key"
             from backend.src.agents.hotel_agent import HotelAgent
             agent = HotelAgent()
@@ -206,8 +206,8 @@ class TestHotelAgent:
         """Non-selected hotels explicitly have ai_recommended=False."""
         mock_client = _mock_anthropic_response("H2", ["💰 Best price."])
 
-        with patch("backend.src.agents.hotel_agent.Config") as mock_cfg, \
-             patch("backend.src.agents.hotel_agent.anthropic.Anthropic", return_value=mock_client):
+        with patch("backend.src.agents.base.Config") as mock_cfg, \
+             patch("backend.src.agents.base.anthropic.Anthropic", return_value=mock_client):
             mock_cfg.ANTHROPIC_API_KEY = "test-key"
             from backend.src.agents.hotel_agent import HotelAgent
             agent = HotelAgent()
@@ -220,8 +220,8 @@ class TestHotelAgent:
 
     def test_empty_offers_returns_empty(self):
         """No crash when offers list is empty."""
-        with patch("backend.src.agents.hotel_agent.Config") as mock_cfg, \
-             patch("backend.src.agents.hotel_agent.anthropic.Anthropic") as mock_cls:
+        with patch("backend.src.agents.base.Config") as mock_cfg, \
+             patch("backend.src.agents.base.anthropic.Anthropic") as mock_cls:
             mock_cfg.ANTHROPIC_API_KEY = "test-key"
             from backend.src.agents.hotel_agent import HotelAgent
             agent = HotelAgent()
@@ -235,8 +235,8 @@ class TestHotelAgent:
         mock_client = MagicMock()
         mock_client.messages.create.side_effect = Exception("API error")
 
-        with patch("backend.src.agents.hotel_agent.Config") as mock_cfg, \
-             patch("backend.src.agents.hotel_agent.anthropic.Anthropic", return_value=mock_client):
+        with patch("backend.src.agents.base.Config") as mock_cfg, \
+             patch("backend.src.agents.base.anthropic.Anthropic", return_value=mock_client):
             mock_cfg.ANTHROPIC_API_KEY = "test-key"
             from backend.src.agents.hotel_agent import HotelAgent
             agent = HotelAgent()
@@ -252,8 +252,8 @@ class TestHotelAgent:
         """Verify the correct model is passed to messages.create."""
         mock_client = _mock_anthropic_response("H1", ["💰 Great choice."])
 
-        with patch("backend.src.agents.hotel_agent.Config") as mock_cfg, \
-             patch("backend.src.agents.hotel_agent.anthropic.Anthropic", return_value=mock_client):
+        with patch("backend.src.agents.base.Config") as mock_cfg, \
+             patch("backend.src.agents.base.anthropic.Anthropic", return_value=mock_client):
             mock_cfg.ANTHROPIC_API_KEY = "test-key"
             from backend.src.agents.hotel_agent import HotelAgent
             agent = HotelAgent()
@@ -277,8 +277,8 @@ class TestFlightAgentBullets:
         ]
         mock_client = _mock_anthropic_response("F1", bullets)
 
-        with patch("backend.src.agents.flight_agent.Config") as mock_cfg, \
-             patch("backend.src.agents.flight_agent.anthropic.Anthropic", return_value=mock_client):
+        with patch("backend.src.agents.base.Config") as mock_cfg, \
+             patch("backend.src.agents.base.anthropic.Anthropic", return_value=mock_client):
             mock_cfg.ANTHROPIC_API_KEY = "test-key"
             from backend.src.agents.flight_agent import FlightAgent
             agent = FlightAgent()
@@ -292,8 +292,8 @@ class TestFlightAgentBullets:
         mock_client = MagicMock()
         mock_client.messages.create.side_effect = Exception("API error")
 
-        with patch("backend.src.agents.flight_agent.Config") as mock_cfg, \
-             patch("backend.src.agents.flight_agent.anthropic.Anthropic", return_value=mock_client):
+        with patch("backend.src.agents.base.Config") as mock_cfg, \
+             patch("backend.src.agents.base.anthropic.Anthropic", return_value=mock_client):
             mock_cfg.ANTHROPIC_API_KEY = "test-key"
             from backend.src.agents.flight_agent import FlightAgent
             agent = FlightAgent()
@@ -310,8 +310,8 @@ class TestFlightAgentBullets:
         mock_client = MagicMock()
         mock_client.messages.create.return_value = message
 
-        with patch("backend.src.agents.flight_agent.Config") as mock_cfg, \
-             patch("backend.src.agents.flight_agent.anthropic.Anthropic", return_value=mock_client):
+        with patch("backend.src.agents.base.Config") as mock_cfg, \
+             patch("backend.src.agents.base.anthropic.Anthropic", return_value=mock_client):
             mock_cfg.ANTHROPIC_API_KEY = "test-key"
             from backend.src.agents.flight_agent import FlightAgent
             agent = FlightAgent()
@@ -332,8 +332,8 @@ class TestHotelAgentBullets:
         ]
         mock_client = _mock_anthropic_response("H1", bullets)
 
-        with patch("backend.src.agents.hotel_agent.Config") as mock_cfg, \
-             patch("backend.src.agents.hotel_agent.anthropic.Anthropic", return_value=mock_client):
+        with patch("backend.src.agents.base.Config") as mock_cfg, \
+             patch("backend.src.agents.base.anthropic.Anthropic", return_value=mock_client):
             mock_cfg.ANTHROPIC_API_KEY = "test-key"
             from backend.src.agents.hotel_agent import HotelAgent
             agent = HotelAgent()
@@ -347,8 +347,8 @@ class TestHotelAgentBullets:
         mock_client = MagicMock()
         mock_client.messages.create.side_effect = Exception("API error")
 
-        with patch("backend.src.agents.hotel_agent.Config") as mock_cfg, \
-             patch("backend.src.agents.hotel_agent.anthropic.Anthropic", return_value=mock_client):
+        with patch("backend.src.agents.base.Config") as mock_cfg, \
+             patch("backend.src.agents.base.anthropic.Anthropic", return_value=mock_client):
             mock_cfg.ANTHROPIC_API_KEY = "test-key"
             from backend.src.agents.hotel_agent import HotelAgent
             agent = HotelAgent()

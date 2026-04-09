@@ -33,6 +33,7 @@ class FlightSearchRequest(BaseModel):
     departure_date: str
     adults: int
     max_results: int = 10
+    currency: str = "USD"
 
 
 # FlightSearchRequest.model_rebuild() is called from trip.py after TripContext is fully built

@@ -35,6 +35,7 @@ export const api = {
     departure_date: string;
     adults: number;
     max_results?: number;
+    currency?: string;
   }): Promise<FlightOffer[]> => post("/flights/search", params),
 
   searchHotels: (params: {
@@ -44,11 +45,13 @@ export const api = {
     check_in: string;
     check_out: string;
     adults: number;
+    currency?: string;
   }): Promise<HotelOffer[]> => post("/hotels/search", params),
 
   suggestPOIs: (params: {
     trip_context: TripContext;
     leg_number: number;
+    user_prompt?: string;
   }): Promise<POI[]> => post("/pois/suggest", params),
 
   getDistances: (params: {

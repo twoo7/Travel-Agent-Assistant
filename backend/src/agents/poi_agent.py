@@ -5,9 +5,7 @@ import logging
 import uuid
 from typing import List
 
-import anthropic
-
-from backend.src.config import Config
+from backend.src.agents.base import BaseAgent
 from backend.src.models.poi import POI
 from backend.src.services.google_places_service import GooglePlacesService
 
@@ -16,7 +14,7 @@ logger = logging.getLogger(__name__)
 _SUGGEST_COUNT = 12
 
 
-class POIAgent:
+class POIAgent(BaseAgent):
     """
     Uses Claude to brainstorm POI suggestions, then enriches each one
     with real place data from Google Places.
@@ -26,13 +24,14 @@ class POIAgent:
         self,
         places_service: GooglePlacesService | None = None,
     ) -> None:
-        self.client = anthropic.Anthropic(api_key=Config.ANTHROPIC_API_KEY)
+        super().__init__()
         self.places = places_service or GooglePlacesService()
 
     def suggest(
         self,
         trip_context: "TripContext",  # noqa: F821
         leg_number: int,
+        user_prompt: str | None = None,
     ) -> List[POI]:
         """
         Return up to _SUGGEST_COUNT enriched POIs for the requested trip leg.
@@ -54,10 +53,12 @@ class POIAgent:
             f'  "claude_booking_tip": string (booking advice or null)\n\n'
             f"Output the raw JSON array only — no markdown, no prose."
         )
+        if user_prompt:
+            prompt += f"\n\nUser request: {user_prompt}. Prioritize suggestions matching this request."
 
         suggestions: list[dict] = []
         try:
-            message = self.client.messages.create(
+            message = self._create_with_retry(
                 model="claude-sonnet-4-6",
                 max_tokens=2048,
                 messages=[{"role": "user", "content": prompt}],

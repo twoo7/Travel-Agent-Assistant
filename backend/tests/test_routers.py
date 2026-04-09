@@ -23,7 +23,7 @@ def client():
 
 
 def _base_trip_context() -> dict:
-    return {"home_origin": "JFK", "adults": 2, "children": 0, "legs": [], "unscheduled_pois": [], "saved_pois": []}
+    return {"home_origin": "JFK", "adults": 2, "children": 0, "currency": "USD", "legs": [], "unscheduled_pois": [], "saved_pois": []}
 
 
 def _flight_offer_dict(offer_id: str = "F1") -> dict:
@@ -142,6 +142,32 @@ def test_flights_search_returns_offers(client):
     assert data[0]["ai_recommended"] is True
 
 
+def test_flights_search_passes_currency(client):
+    offer = FlightOffer(**{**_flight_offer_dict(), "ai_recommended": False})
+
+    with patch("backend.src.routers.flights.AmadeusService") as MockSvc, \
+         patch("backend.src.routers.flights.FlightAgent") as MockAgent:
+        MockSvc.return_value.search_flights.return_value = [offer]
+        MockAgent.return_value.rank_and_recommend.return_value = [offer]
+
+        client.post(
+            "/flights/search",
+            json={
+                "trip_context": {**_base_trip_context(), "currency": "EUR"},
+                "leg_number": 1,
+                "origin": "JFK",
+                "destination": "CDG",
+                "departure_date": "2025-06-01",
+                "adults": 2,
+                "currency": "EUR",
+            },
+        )
+
+    MockSvc.return_value.search_flights.assert_called_once()
+    call_kwargs = MockSvc.return_value.search_flights.call_args.kwargs
+    assert call_kwargs.get("currency_code") == "EUR"
+
+
 def test_flights_search_502_on_service_error(client):
     with patch("backend.src.routers.flights.AmadeusService") as MockSvc:
         MockSvc.return_value.search_flights.side_effect = RuntimeError("Amadeus down")
@@ -230,6 +256,21 @@ def test_pois_suggest_returns_pois(client):
     data = resp.json()
     assert data[0]["name"] == "Eiffel Tower"
     assert data[0]["claude_note"] == "Iconic Paris landmark."
+
+
+def test_pois_suggest_with_user_prompt(client):
+    import unittest.mock
+    poi = POI(**_poi_dict())
+    with patch("backend.src.routers.pois.POIAgent") as MockAgent:
+        MockAgent.return_value.suggest.return_value = [poi]
+        resp = client.post(
+            "/pois/suggest",
+            json={"trip_context": _base_trip_context(), "leg_number": 1, "user_prompt": "more museums"},
+        )
+    assert resp.status_code == 200
+    MockAgent.return_value.suggest.assert_called_once_with(
+        unittest.mock.ANY, 1, user_prompt="more museums"
+    )
 
 
 # ---------------------------------------------------------------------------

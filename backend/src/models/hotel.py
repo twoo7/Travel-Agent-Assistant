@@ -31,6 +31,7 @@ class HotelSearchRequest(BaseModel):
     check_in: str
     check_out: str
     adults: int
+    currency: str = "USD"
 
 
 # HotelSearchRequest.model_rebuild() is called from trip.py after TripContext is fully built

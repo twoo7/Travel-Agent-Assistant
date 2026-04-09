@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import airportsData from "@/data/airports.json";
 import { AIRPORT_TO_CITY } from "@/utils/cityCodeMap";
+import { COUNTRY_NAMES } from "@/utils/countryNames";
 
 interface Airport {
   iata: string;
@@ -46,8 +47,10 @@ function filterAirports(query: string): Airport[] {
     const matchesIata = airport.iata.toLowerCase().includes(q);
     const matchesName = airport.name.toLowerCase().includes(q);
     const matchesCity = airport.city.toLowerCase().includes(q);
+    const countryName = COUNTRY_NAMES[airport.country] ?? "";
+    const matchesCountry = countryName.toLowerCase().includes(q);
 
-    if (matchesIata || matchesName || matchesCity) {
+    if (matchesIata || matchesName || matchesCity || matchesCountry) {
       if (isThreeChars && airport.iata.toLowerCase() === q) {
         exactIata.push(airport);
       } else {
@@ -198,7 +201,7 @@ export default function AirportSearch({
                   {airport.name}
                 </span>
                 <span className="text-xs text-gray-500 truncate">
-                  {airport.city}, {airport.country}
+                  {airport.city}, {COUNTRY_NAMES[airport.country] ?? airport.country}
                 </span>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">

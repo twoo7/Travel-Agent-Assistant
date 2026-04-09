@@ -20,6 +20,7 @@ def search_hotels(req: HotelSearchRequest) -> List[HotelOffer]:
             check_in=req.check_in,
             check_out=req.check_out,
             adults=req.adults,
+            currency_code=req.currency or None,
         )
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Hotel search failed: {exc}") from exc

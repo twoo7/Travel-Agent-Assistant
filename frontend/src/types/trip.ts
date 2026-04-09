@@ -82,6 +82,8 @@ export interface TripLeg {
   selected_flight?: FlightOffer;
   hotel_stays: HotelStay[];
   days: DayPlan[];
+  flight_results?: FlightOffer[];
+  hotel_results?: HotelOffer[];
 }
 
 export interface POI {
@@ -110,6 +112,7 @@ export interface TripContext {
   home_origin: string;
   adults: number;
   children: number;
+  currency?: string;
   legs: TripLeg[];
   unscheduled_pois: POI[];
   saved_pois: POI[];
