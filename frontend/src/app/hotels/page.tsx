@@ -280,7 +280,11 @@ export default function HotelsPage() {
                   <AlertTriangle size={15} className="shrink-0 mt-0.5" />
                   <span>{error[leg.leg_number]}</span>
                   <button
-                    onClick={() => handleSearch(leg.leg_number)}
+                    onClick={() => handleSearch(leg.leg_number, {
+                      city_code: toCityCode(leg.destination),
+                      check_in: pendingDates[leg.leg_number]?.check_in ?? check_in ?? "",
+                      check_out: pendingDates[leg.leg_number]?.check_out ?? check_out ?? "",
+                    })}
                     className="ml-auto shrink-0 text-xs font-medium underline hover:no-underline"
                   >
                     Retry
