@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   APIProvider,
   Map,
   AdvancedMarker,
   InfoWindow,
+  useMap,
 } from "@vis.gl/react-google-maps";
 import type { DayPlan } from "@/types/trip";
 import { MapPin } from "lucide-react";
@@ -37,6 +38,24 @@ interface MarkerInfo {
   name: string;
   address: string;
   type: string;
+}
+
+interface LatLng { lat: number; lng: number; }
+
+function BoundsFitter({ points }: { points: LatLng[] }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!map || points.length === 0) return;
+    if (points.length === 1) {
+      map.setCenter(points[0]);
+      map.setZoom(14);
+      return;
+    }
+    const bounds = new google.maps.LatLngBounds();
+    points.forEach((p) => bounds.extend(p));
+    map.fitBounds(bounds, 60);
+  }, [map, points]);
+  return null;
 }
 
 export function TripMap({ days }: Props) {
@@ -99,10 +118,11 @@ export function TripMap({ days }: Props) {
       <APIProvider apiKey={apiKey}>
         <Map
           defaultCenter={center}
-          defaultZoom={13}
+          defaultZoom={allItems.length === 0 ? 3 : 13}
           mapId="travel-agent-map"
           className="flex-1 rounded-xl border border-gray-100 shadow-card min-h-[400px]"
         >
+          <BoundsFitter points={visibleDays.flatMap((d) => d.items).filter((i) => i.lat !== 0 || i.lng !== 0).map((i) => ({ lat: i.lat, lng: i.lng }))} />
           {visibleDays.map((day) =>
             day.items.map((item, itemIndex) => {
               if (item.lat === 0 && item.lng === 0) return null;
