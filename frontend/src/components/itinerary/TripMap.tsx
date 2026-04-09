@@ -13,6 +13,7 @@ import { MapPin } from "lucide-react";
 
 interface Props {
   days: DayPlan[];
+  currentLeg?: number;
 }
 
 // Design-token-aligned day colors (cycle through primary, accent, success, warning shades)
@@ -58,15 +59,16 @@ function BoundsFitter({ points }: { points: LatLng[] }) {
   return null;
 }
 
-export function TripMap({ days }: Props) {
+export function TripMap({ days, currentLeg }: Props) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
   const [activeDay, setActiveDay] = useState<number | null>(null);
   const [infoMarker, setInfoMarker] = useState<MarkerInfo | null>(null);
   const [infoPos, setInfoPos] = useState<{ lat: number; lng: number } | null>(null);
 
-  const visibleDays = activeDay === null ? days : days.filter((d) => d.day_number === activeDay);
+  const legDays = currentLeg != null ? days.filter((d) => d.leg_number === currentLeg) : days;
+  const visibleDays = activeDay === null ? legDays : legDays.filter((d) => d.day_number === activeDay);
 
-  const allItems = days.flatMap((d) => d.items).filter((i) => i.lat !== 0 || i.lng !== 0);
+  const allItems = legDays.flatMap((d) => d.items).filter((i) => i.lat !== 0 || i.lng !== 0);
   const center =
     allItems.length > 0
       ? { lat: allItems[0].lat, lng: allItems[0].lng }
@@ -98,7 +100,7 @@ export function TripMap({ days }: Props) {
         >
           All
         </button>
-        {days.map((d) => (
+        {legDays.map((d) => (
           <button
             key={d.day_number}
             onClick={() => setActiveDay(d.day_number === activeDay ? null : d.day_number)}

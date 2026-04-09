@@ -238,7 +238,7 @@ export default function ItineraryPage() {
 
         {/* Right: Map */}
         <div className="w-80 shrink-0 hidden lg:flex flex-col">
-          <TripMap days={days} />
+          <TripMap days={days} currentLeg={currentLeg} />
         </div>
       </div>
 
