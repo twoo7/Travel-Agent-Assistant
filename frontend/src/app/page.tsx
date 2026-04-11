@@ -64,34 +64,24 @@ const CURRENCIES = [
 type ModeMeta = {
   Icon: LucideIcon;
   label: string;
-  selectedClass: string;
-  dotClass: string;
 };
 
 const MODE_META: Record<TransportMode, ModeMeta> = {
   flight: {
     Icon: Plane,
     label: "Flight",
-    selectedClass: "border-primary bg-primary/5 text-primary",
-    dotClass: "text-primary",
   },
   train: {
     Icon: Train,
     label: "Train",
-    selectedClass: "border-success bg-success/5 text-success-dark",
-    dotClass: "text-success",
   },
   ferry: {
     Icon: Ship,
     label: "Ferry",
-    selectedClass: "border-sky-500 bg-sky-50 text-sky-700",
-    dotClass: "text-sky-500",
   },
   car: {
     Icon: Car,
     label: "Bus/Car",
-    selectedClass: "border-warning bg-warning/5",
-    dotClass: "text-warning",
   },
 };
 
@@ -168,7 +158,7 @@ function TransportSelector({
               <Icon size={14} />
               {m.label}
               {!isSelected && m.recommended && (
-                <span className={`${meta.dotClass} text-lg leading-none`}>•</span>
+                <span className="text-lg leading-none" style={{ color: "var(--accent)" }}>•</span>
               )}
             </button>
           );
