@@ -17,8 +17,22 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     body: JSON.stringify(body),
   });
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`API ${path} failed: ${res.status} — ${text}`);
+    const raw = await res.text();
+    console.error(`API ${path} failed: ${res.status} —`, raw);
+    let message = "Something went wrong. Please try again.";
+    try {
+      const json = JSON.parse(raw) as { detail?: string };
+      if (json.detail) {
+        if (json.detail.toLowerCase().includes("temporarily unavailable")) {
+          message = "Flight/hotel search is temporarily unavailable. Please try again shortly.";
+        } else {
+          message = json.detail;
+        }
+      }
+    } catch {
+      // body was not JSON — use default message
+    }
+    throw new Error(message);
   }
   return res.json() as Promise<T>;
 }
