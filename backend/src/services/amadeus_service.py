@@ -7,6 +7,113 @@ from backend.src.models.hotel import HotelOffer
 
 logger = logging.getLogger(__name__)
 
+# ---------------------------------------------------------------------------
+# Mock data — returned when Amadeus sandbox returns HTTP 500 and AMADEUS_MOCK=true.
+# Not returned in production unless the gate is explicitly on.
+# ---------------------------------------------------------------------------
+
+_MOCK_FLIGHTS: List[FlightOffer] = [
+    FlightOffer(
+        id="MOCK-F1",
+        price=850.00,
+        currency="USD",
+        segments=[
+            FlightSegment(
+                departure_airport="JFK",
+                arrival_airport="NRT",
+                departure_time="2026-06-10T10:00:00",
+                arrival_time="2026-06-11T14:00:00",
+                duration="PT14H",
+                carrier_code="JL",
+                flight_number="006",
+            )
+        ],
+        total_duration="PT14H",
+        stops=0,
+    ),
+    FlightOffer(
+        id="MOCK-F2",
+        price=920.00,
+        currency="USD",
+        segments=[
+            FlightSegment(
+                departure_airport="JFK",
+                arrival_airport="NRT",
+                departure_time="2026-06-10T13:00:00",
+                arrival_time="2026-06-11T16:30:00",
+                duration="PT13H30M",
+                carrier_code="NH",
+                flight_number="110",
+            )
+        ],
+        total_duration="PT13H30M",
+        stops=0,
+    ),
+    FlightOffer(
+        id="MOCK-F3",
+        price=720.00,
+        currency="USD",
+        segments=[
+            FlightSegment(
+                departure_airport="JFK",
+                arrival_airport="ICN",
+                departure_time="2026-06-10T08:00:00",
+                arrival_time="2026-06-11T11:30:00",
+                duration="PT14H30M",
+                carrier_code="KE",
+                flight_number="082",
+            )
+        ],
+        total_duration="PT14H30M",
+        stops=1,
+    ),
+]
+
+_MOCK_HOTELS: List[HotelOffer] = [
+    HotelOffer(
+        id="MOCK-H1",
+        name="Hotel Gracery Shinjuku",
+        address="1-19-1 Kabukicho, Shinjuku",
+        lat=35.6938,
+        lng=139.7034,
+        price_per_night=180.00,
+        currency="USD",
+        rating=4.0,
+    ),
+    HotelOffer(
+        id="MOCK-H2",
+        name="Park Hyatt Tokyo",
+        address="3-7-1-2 Nishi-Shinjuku, Shinjuku",
+        lat=35.6864,
+        lng=139.6900,
+        price_per_night=350.00,
+        currency="USD",
+        rating=5.0,
+    ),
+    HotelOffer(
+        id="MOCK-H3",
+        name="The Prince Gallery Tokyo Kioicho",
+        address="1-2 Kioicho, Chiyoda",
+        lat=35.6791,
+        lng=139.7353,
+        price_per_night=290.00,
+        currency="USD",
+        rating=4.5,
+    ),
+    HotelOffer(
+        id="MOCK-H4",
+        name="Dormy Inn Asakusa",
+        address="1-16-2 Asakusa, Taito",
+        lat=35.7147,
+        lng=139.7967,
+        price_per_night=120.00,
+        currency="USD",
+        rating=3.5,
+    ),
+]
+
+# ---------------------------------------------------------------------------
+
 
 class AmadeusService:
     def __init__(self) -> None:
@@ -42,7 +149,6 @@ class AmadeusService:
             response = self.client.shopping.flight_offers_search.get(**params)
             offers: List[FlightOffer] = []
             for raw in response.data:
-                # Skip offers with no itineraries
                 if not raw.get("itineraries"):
                     logger.warning("Skipping flight offer %s: no itineraries", raw.get("id"))
                     continue
@@ -75,6 +181,11 @@ class AmadeusService:
             logger.info("Found %d flight offers for %s→%s", len(offers), origin, destination)
             return offers
         except ResponseError as e:
+            if e.response.status_code == 500 and Config.AMADEUS_MOCK:
+                logger.warning(
+                    "Amadeus flight search returned 500 — returning mock data (AMADEUS_MOCK=true)"
+                )
+                return list(_MOCK_FLIGHTS)
             logger.error("Amadeus flight search error: %s", e)
             raise
 
@@ -87,11 +198,15 @@ class AmadeusService:
         currency_code: str | None = None,
     ) -> List[HotelOffer]:
         try:
-            # Step 1: Get hotel IDs for the city (v3 API requires hotel IDs, not cityCode)
             hotels_response = self.client.reference_data.locations.hotels.by_city.get(
                 cityCode=city_code,
             )
         except ResponseError as e:
+            if e.response.status_code == 500 and Config.AMADEUS_MOCK:
+                logger.warning(
+                    "Amadeus hotel lookup returned 500 — returning mock data (AMADEUS_MOCK=true)"
+                )
+                return list(_MOCK_HOTELS)
             logger.error("Amadeus hotel lookup error: %s", e)
             raise
 
@@ -100,7 +215,6 @@ class AmadeusService:
             logger.warning("No hotels found in city %s", city_code)
             return []
 
-        # Step 2: Search offers for those hotel IDs
         search_params: dict = {
             "hotelIds": hotel_ids,
             "checkInDate": check_in,
@@ -113,6 +227,11 @@ class AmadeusService:
         try:
             response = self.client.shopping.hotel_offers_search.get(**search_params)
         except ResponseError as e:
+            if e.response.status_code == 500 and Config.AMADEUS_MOCK:
+                logger.warning(
+                    "Amadeus hotel offers search returned 500 — returning mock data (AMADEUS_MOCK=true)"
+                )
+                return list(_MOCK_HOTELS)
             retry_count = min(5, len(hotel_ids))
             logger.warning(
                 "Hotel offers search failed with %d IDs, retrying with %d: %s",

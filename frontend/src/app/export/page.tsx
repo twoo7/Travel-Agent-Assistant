@@ -17,12 +17,14 @@ export default function ExportPage() {
   if (tripContext.legs.length === 0) {
     return (
       <div className="max-w-3xl mx-auto text-center py-16">
-        <p className="text-muted font-body">No trip to export yet.</p>
+        <p className="text-muted font-body">
+          Your session was reset — progress is not saved across page refreshes.
+        </p>
         <button
           onClick={() => router.push("/")}
           className="mt-4 text-primary hover:text-primary-dark font-body text-sm underline underline-offset-2"
         >
-          ← Start planning
+          ← Go back to Trip Setup to start planning
         </button>
       </div>
     );

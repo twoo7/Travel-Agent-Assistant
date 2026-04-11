@@ -4,6 +4,14 @@ const NAME_INDEX: Record<string, string> = Object.fromEntries(
   airports.map((a) => [a.iata, a.city])
 );
 
+const COUNTRY_INDEX: Record<string, string> = Object.fromEntries(
+  airports.map((a) => [a.iata, a.country])
+);
+
 export function iataToCityName(iata: string): string {
   return NAME_INDEX[iata?.toUpperCase()] ?? iata;
+}
+
+export function getAirportCountry(iata: string): string {
+  return COUNTRY_INDEX[iata?.toUpperCase()] ?? "";
 }

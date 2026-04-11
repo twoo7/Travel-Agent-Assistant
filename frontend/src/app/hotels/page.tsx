@@ -224,17 +224,14 @@ export default function HotelsPage() {
 
               )}
 
-              {/* Sleeper train notice */}
+              {/* Sleeper train advisory — non-suppressing */}
               {leg.transport_mode === "train" && (
-                <div className="flex items-start gap-3 bg-success/5 border border-success/20 rounded-xl p-4">
-                  <Train size={16} className="text-success shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-semibold text-success-dark text-sm font-body">Sleeper Train Leg</p>
-                    <p className="text-sm text-charcoal/70 font-body mt-0.5">
-                      Your overnight sleeper train from {leg.origin} to {leg.destination} includes
-                      berth accommodation. No hotel needed for this leg&apos;s departure night.
-                    </p>
-                  </div>
+                <div className="flex items-start gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
+                  <Train size={13} className="text-muted shrink-0 mt-0.5" />
+                  <p className="text-xs text-charcoal/60 font-body">
+                    Note: If this is an overnight sleeper train, berth accommodation may be included —
+                    you may not need a hotel for this leg.
+                  </p>
                 </div>
               )}
 

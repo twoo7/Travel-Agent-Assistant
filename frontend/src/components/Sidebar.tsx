@@ -183,14 +183,19 @@ function StepIcon({
   );
 }
 
-export function Sidebar() {
-  const [pinned, setPinned] = useState(false);
+export function Sidebar({
+  pinned,
+  onPinChange,
+}: {
+  pinned: boolean;
+  onPinChange: (v: boolean) => void;
+}) {
   const [hovered, setHovered] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const collapseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pathname = usePathname();
   const { state } = useTripContext();
-  const { staleSteps } = state;
+  const { staleSteps, tripContext } = state;
 
   const expanded = pinned || hovered;
   const currentIndex = STEPS.findIndex((s) => s.href === pathname);
@@ -214,11 +219,27 @@ export function Sidebar() {
     return staleSteps.some((k) => k.startsWith(staleKey + "-"));
   }
 
+  function isStepDone(index: number): boolean {
+    const isReturnLeg = (destination: string) => destination === tripContext.home_origin;
+    switch (index) {
+      case 0: return tripContext.legs.length > 0;
+      case 1: return tripContext.legs.length > 0 && tripContext.legs.every(
+        (l) => !!l.selected_flight || (l.transport_mode !== "flight" && l.transport_mode !== undefined)
+      );
+      case 2: return tripContext.legs.length > 0 && tripContext.legs
+        .filter((l) => !isReturnLeg(l.destination))
+        .every((l) => l.hotel_stays.length > 0);
+      case 3: return isStepDone(2);
+      case 4: return isStepDone(3);
+      default: return false;
+    }
+  }
+
   function stepStatus(index: number): StepStatus {
     if (index === currentIndex) return "active";
     const step = STEPS[index];
     if (step.staleKey && isStepStale(step.staleKey)) return "stale";
-    if (index < currentIndex) return "done";
+    if (isStepDone(index)) return "done";
     return "locked";
   }
 
@@ -300,7 +321,7 @@ export function Sidebar() {
 
       {/* Pin toggle */}
       <button
-        onClick={() => setPinned((v) => !v)}
+        onClick={() => onPinChange(!pinned)}
         className="w-full flex items-center justify-center py-3 border-t border-slate-800 text-slate-500 hover:text-slate-200 hover:bg-slate-800/50 transition-colors duration-150"
         aria-label={pinned ? "Unpin sidebar" : "Pin sidebar open"}
         title={pinned ? "Unpin sidebar" : "Pin sidebar open"}

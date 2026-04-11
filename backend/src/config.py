@@ -18,6 +18,9 @@ class Config:
     ANTHROPIC_API_KEY: str = ""
     GOOGLE_PLACES_API_KEY: str = ""
     GOOGLE_MAPS_API_KEY: str = ""
+    # Read at class-definition time so it's available before validate() is called.
+    # Not in the required list — defaults to False (production-safe).
+    AMADEUS_MOCK: bool = os.getenv("AMADEUS_MOCK", "false").lower() == "true"
 
     @classmethod
     def validate(cls) -> None:
