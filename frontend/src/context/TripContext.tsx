@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useReducer, ReactNode } from "react";
+import { createContext, useContext, useReducer, useEffect, ReactNode } from "react";
 import type {
   TripContext as TripContextType,
   TripLeg,
@@ -56,6 +56,31 @@ const INITIAL_STATE: TripState = {
   itinerary: [],
   staleSteps: [],
 };
+
+const SESSION_KEY = "trip-context";
+
+function loadFromSession(): TripState {
+  try {
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    if (!raw) return INITIAL_STATE;
+    const parsed = JSON.parse(raw) as TripState;
+    // Minimal validation: must have a tripContext with legs array
+    if (!parsed?.tripContext || !Array.isArray(parsed.tripContext.legs)) {
+      return INITIAL_STATE;
+    }
+    return parsed;
+  } catch {
+    return INITIAL_STATE;
+  }
+}
+
+function saveToSession(state: TripState): void {
+  try {
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(state));
+  } catch {
+    // sessionStorage unavailable (e.g. private mode quota exceeded) — silently skip
+  }
+}
 
 function reducer(state: TripState, action: TripAction): TripState {
   const ctx = state.tripContext;
@@ -303,7 +328,17 @@ const TripContextCtx = createContext<{
 } | null>(null);
 
 export function TripContextProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
+  const [state, dispatch] = useReducer(reducer, INITIAL_STATE, () => {
+    // Load persisted state on first render (client-only: sessionStorage is not available on server)
+    if (typeof window === "undefined") return INITIAL_STATE;
+    return loadFromSession();
+  });
+
+  // Persist to sessionStorage after every state change
+  useEffect(() => {
+    saveToSession(state);
+  }, [state]);
+
   return (
     <TripContextCtx.Provider value={{ state, dispatch }}>
       {children}

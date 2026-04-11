@@ -164,19 +164,21 @@ export default function ItineraryPage() {
   if (tripContext.legs.length === 0) {
     return (
       <div className="max-w-3xl mx-auto text-center py-16">
-        <p className="text-muted font-body">No trip set up yet.</p>
+        <p className="text-muted font-body">
+          Your session was reset — progress is not saved across page refreshes.
+        </p>
         <button
           onClick={() => router.push("/")}
           className="mt-4 text-primary hover:text-primary-dark font-body text-sm underline underline-offset-2"
         >
-          ← Go back to Trip Setup
+          ← Go back to Trip Setup to start planning
         </button>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-4 h-full">
+    <div className="flex flex-col gap-4 h-[calc(100dvh-2.75rem)] md:h-screen">
       {/* Top bar */}
       <div className="flex items-center justify-between">
         <div>
