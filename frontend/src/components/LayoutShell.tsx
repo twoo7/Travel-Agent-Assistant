@@ -1,10 +1,10 @@
 "use client";
 
-import React from "react";
-import { useState } from "react";
+import React, { useState } from "react";
 import { usePathname } from "next/navigation";
 import { AnimatePresence } from "framer-motion";
 import { Sidebar } from "@/components/Sidebar";
+import { PageTransition } from "@/components/ui/PageTransition";
 
 export function LayoutShell({ children }: { children: React.ReactNode }) {
   const [pinned, setPinned] = useState(false);
@@ -21,9 +21,9 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
         ].join(" ")}
       >
         <AnimatePresence mode="wait">
-          <div key={pathname}>
+          <PageTransition key={pathname}>
             {children}
-          </div>
+          </PageTransition>
         </AnimatePresence>
       </main>
     </>

@@ -24,10 +24,11 @@ export function AIPulseBadge({ pulsing = false, className = "" }: AIPulseBadgePr
       }}
     >
       <Sparkles
+        aria-hidden="true"
         size={10}
         className={pulsing ? "animate-ai-pulse" : ""}
       />
-      ✦ AI Pick
+      <span aria-hidden="true">✦</span>{" "}AI Pick
     </span>
   );
 }

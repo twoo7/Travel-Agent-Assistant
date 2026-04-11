@@ -4,19 +4,11 @@ import React from "react";
 
 type GlassLevel = 1 | 2 | 3;
 
-interface GlassCardProps {
+interface GlassCardProps extends React.HTMLAttributes<HTMLElement> {
   level?: GlassLevel;
   as?: "div" | "article" | "section" | "li";
   selected?: boolean;
   aiPick?: boolean;
-  children?: React.ReactNode;
-  style?: React.CSSProperties;
-  className?: string;
-  onClick?: React.MouseEventHandler;
-  id?: string;
-  role?: string;
-  "aria-label"?: string;
-  "aria-labelledby"?: string;
 }
 
 const levelStyles: Record<GlassLevel, React.CSSProperties> = {
@@ -68,7 +60,6 @@ export function GlassCard({
   const combinedStyle = { ...baseStyle, ...aiStyle, ...selectedStyle, ...style };
   const combinedClassName = ["rounded-2xl", className].filter(Boolean).join(" ");
 
-  // Render with explicit typing per tag to satisfy TypeScript
   if (Tag === "li") {
     return (
       <li style={combinedStyle} className={combinedClassName} {...(props as React.LiHTMLAttributes<HTMLLIElement>)}>

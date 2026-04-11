@@ -58,6 +58,7 @@ export function Button({
     <motion.button
       whileTap={isDisabled ? undefined : { scale: 0.97 }}
       disabled={isDisabled}
+      aria-busy={loading || undefined}
       style={{ ...variantStyles[variant], ...style }}
       className={[
         "inline-flex items-center justify-center transition-all duration-150 font-body",
@@ -70,13 +71,16 @@ export function Button({
       ]
         .filter(Boolean)
         .join(" ")}
-      {...(props as React.ComponentPropsWithoutRef<typeof motion.button>)}
+      {...(props as unknown as React.ComponentPropsWithoutRef<typeof motion.button>)}
     >
-      {loading ? (
-        <Loader2 className="animate-spin shrink-0" size={size === "sm" ? 12 : 14} />
-      ) : icon ? (
-        <span className="shrink-0">{icon}</span>
-      ) : null}
+      {loading && (
+        <Loader2
+          aria-hidden="true"
+          className="animate-spin shrink-0"
+          size={size === "sm" ? 12 : 14}
+        />
+      )}
+      {!loading && icon && <span className="shrink-0" aria-hidden="true">{icon}</span>}
       {children}
     </motion.button>
   );
