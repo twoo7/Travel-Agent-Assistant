@@ -168,6 +168,31 @@ def test_flights_search_passes_currency(client):
     assert call_kwargs.get("currency_code") == "EUR"
 
 
+def test_flights_search_503_on_amadeus_500(client):
+    from amadeus import ResponseError as AmadeusResponseError
+    mock_resp = MagicMock()
+    mock_resp.status_code = 500
+    err = AmadeusResponseError(mock_resp)
+
+    with patch("backend.src.routers.flights.AmadeusService") as MockSvc:
+        MockSvc.return_value.search_flights.side_effect = err
+
+        resp = client.post(
+            "/flights/search",
+            json={
+                "trip_context": _base_trip_context(),
+                "leg_number": 1,
+                "origin": "JFK",
+                "destination": "CDG",
+                "departure_date": "2025-06-01",
+                "adults": 2,
+            },
+        )
+
+    assert resp.status_code == 503
+    assert "temporarily unavailable" in resp.json()["detail"].lower()
+
+
 def test_flights_search_502_on_service_error(client):
     with patch("backend.src.routers.flights.AmadeusService") as MockSvc:
         MockSvc.return_value.search_flights.side_effect = RuntimeError("Amadeus down")
@@ -216,6 +241,31 @@ def test_hotels_search_returns_offers(client):
     data = resp.json()
     assert data[0]["id"] == "H1"
     assert data[0]["ai_recommended"] is True
+
+
+def test_hotels_search_503_on_amadeus_500(client):
+    from amadeus import ResponseError as AmadeusResponseError
+    mock_resp = MagicMock()
+    mock_resp.status_code = 500
+    err = AmadeusResponseError(mock_resp)
+
+    with patch("backend.src.routers.hotels.AmadeusService") as MockSvc:
+        MockSvc.return_value.search_hotels.side_effect = err
+
+        resp = client.post(
+            "/hotels/search",
+            json={
+                "trip_context": _base_trip_context(),
+                "leg_number": 1,
+                "city_code": "PAR",
+                "check_in": "2025-06-01",
+                "check_out": "2025-06-05",
+                "adults": 2,
+            },
+        )
+
+    assert resp.status_code == 503
+    assert "temporarily unavailable" in resp.json()["detail"].lower()
 
 
 def test_hotels_search_502_on_service_error(client):

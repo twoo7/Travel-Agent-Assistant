@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import List
 
+from amadeus import ResponseError
 from fastapi import APIRouter, HTTPException
 
 from backend.src.agents.hotel_agent import HotelAgent
@@ -22,6 +23,13 @@ def search_hotels(req: HotelSearchRequest) -> List[HotelOffer]:
             adults=req.adults,
             currency_code=req.currency or None,
         )
+    except ResponseError as exc:
+        if exc.response.status_code == 500:
+            raise HTTPException(
+                status_code=503,
+                detail="Hotel search is temporarily unavailable. Please try again later.",
+            ) from exc
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Hotel search failed: {exc}") from exc
 
