@@ -27,3 +27,19 @@ def test_config_passes_when_all_keys_present(monkeypatch):
 
     from backend.src.config import Config
     Config.validate()  # should not raise
+
+
+def test_config_amadeus_mock_defaults_false(monkeypatch):
+    monkeypatch.delenv("AMADEUS_MOCK", raising=False)
+    import importlib
+    import backend.src.config as config_module
+    importlib.reload(config_module)
+    assert config_module.Config.AMADEUS_MOCK is False
+
+
+def test_config_amadeus_mock_true_when_env_set(monkeypatch):
+    monkeypatch.setenv("AMADEUS_MOCK", "true")
+    import importlib
+    import backend.src.config as config_module
+    importlib.reload(config_module)
+    assert config_module.Config.AMADEUS_MOCK is True
