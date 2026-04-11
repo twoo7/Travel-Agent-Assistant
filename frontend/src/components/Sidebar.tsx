@@ -258,6 +258,7 @@ export function Sidebar({ pinned, onPinChange }: { pinned: boolean; onPinChange:
         <AnimatePresence>
           {expanded && (
             <motion.span
+              key="brand-label"
               initial={{ opacity: 0, x: -4 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -4 }}
@@ -293,6 +294,7 @@ export function Sidebar({ pinned, onPinChange }: { pinned: boolean; onPinChange:
                 <AnimatePresence>
                   {expanded && (
                     <motion.span
+                      key={`label-${step.href}`}
                       initial={{ opacity: 0, x: -4 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -4 }}
@@ -305,7 +307,7 @@ export function Sidebar({ pinned, onPinChange }: { pinned: boolean; onPinChange:
                   )}
                 </AnimatePresence>
                 <AnimatePresence>
-                  {expanded && <StatusChip status={status} />}
+                  {expanded && <StatusChip key={`chip-${step.href}`} status={status} />}
                 </AnimatePresence>
               </Link>
             </li>
@@ -317,6 +319,7 @@ export function Sidebar({ pinned, onPinChange }: { pinned: boolean; onPinChange:
       <AnimatePresence>
         {expanded && (
           <motion.div
+            key="trip-summary"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -338,6 +341,7 @@ export function Sidebar({ pinned, onPinChange }: { pinned: boolean; onPinChange:
         className="w-full flex items-center justify-center py-3 border-t transition-colors duration-150 shrink-0"
         style={{ borderColor: "rgba(255,255,255,0.06)", color: "var(--text-subtle)" }}
         aria-label={pinned ? "Unpin sidebar" : "Pin sidebar open"}
+        title={pinned ? "Unpin sidebar" : "Pin sidebar open"}
       >
         {pinned ? <PinOff size={15} /> : <Pin size={15} />}
       </motion.button>
@@ -415,6 +419,7 @@ export function Sidebar({ pinned, onPinChange }: { pinned: boolean; onPinChange:
                 const { Icon } = step;
                 const isDone   = status === "done";
                 const isActive = status === "active";
+                const isStale  = status === "stale";
                 const isLocked = status === "locked";
                 return (
                   <li key={step.href}>
@@ -424,7 +429,7 @@ export function Sidebar({ pinned, onPinChange }: { pinned: boolean; onPinChange:
                       className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors select-none"
                       style={{
                         background: isActive ? "rgba(224,122,95,0.15)" : "transparent",
-                        color: isActive ? "var(--accent)" : isDone ? "var(--success)" : "var(--text-muted)",
+                        color: isActive ? "var(--accent)" : isStale ? "var(--warning)" : isDone ? "var(--success)" : "var(--text-muted)",
                         pointerEvents: isLocked ? "none" : "auto",
                         opacity: isLocked ? 0.5 : 1,
                       }}
