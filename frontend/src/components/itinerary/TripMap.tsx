@@ -92,7 +92,7 @@ export function TripMap({ days, currentLeg }: Props) {
   return (
     <div className="flex-1 flex flex-col gap-2 min-h-[400px]">
       {/* Day filter tabs */}
-      <div className="flex gap-1 flex-wrap">
+      <div className="flex gap-1 flex-wrap p-1.5 rounded-xl" style={{ background: "var(--glass-2)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border-2)" }}>
         <button
           onClick={() => setActiveDay(null)}
           className="text-xs px-2.5 py-1 rounded-full transition-colors font-body font-medium"

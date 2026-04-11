@@ -48,7 +48,7 @@ export function SuggestionsSidebar({ pois, addedIds, onAdd, loading }: Props) {
       <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid var(--glass-border-1)" }}>
         <div>
           <h2 className="font-semibold text-sm flex items-center gap-1.5 font-body" style={{ color: "var(--text-primary)" }}>
-            <Sparkles size={14} style={{ color: "var(--accent)" }} />
+            <Sparkles size={14} className="animate-ai-pulse" style={{ color: "var(--accent)" }} />
             <span style={{ color: "var(--accent)" }}>✦ AI Picks</span>
           </h2>
           <p className="text-xs font-body" style={{ color: "var(--text-muted)" }}>{pois.length} places</p>
@@ -103,7 +103,7 @@ export function SuggestionsSidebar({ pois, addedIds, onAdd, loading }: Props) {
         {filtered.map((poi) => {
           const isAdded = addedIds.has(poi.id);
           return (
-            <div key={poi.id} className={`px-3 py-3 ${isAdded ? "opacity-50" : ""}`} style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+            <div key={poi.id} className={`px-3 py-3 mx-2 my-1.5 rounded-lg ${isAdded ? "opacity-50" : ""}`} style={{ background: "var(--glass-2)", border: "1px solid var(--glass-border-2)", ...(poi.ai_recommended ? { borderLeft: "2px solid var(--accent)" } : {}) }}>
               {poi.photo_url && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img

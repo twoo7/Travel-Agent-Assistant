@@ -19,7 +19,7 @@ export function DayColumn({ day, onRemoveItem }: Props) {
   return (
     <div
       className="rounded-xl overflow-hidden"
-      style={{ background: "var(--glass-1)", border: "1px solid var(--glass-border-1)" }}
+      style={{ background: "var(--glass-1)", border: "1px solid var(--glass-border-1)", ...(isOver ? { borderColor: "rgba(224,122,95,0.5)" } : {}) }}
     >
       <div
         className="px-4 py-2.5 flex items-center justify-between"
@@ -41,7 +41,7 @@ export function DayColumn({ day, onRemoveItem }: Props) {
         <div
           ref={setNodeRef}
           className="p-3 space-y-1 min-h-[80px] transition-colors duration-150"
-          style={isOver ? { background: "rgba(224,122,95,0.05)" } : {}}
+          style={{}}
         >
           {day.items.length === 0 && (
             <div
