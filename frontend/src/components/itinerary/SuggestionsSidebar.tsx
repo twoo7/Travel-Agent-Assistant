@@ -5,6 +5,7 @@ import type { POI } from "@/types/trip";
 import { BusyTimesBar } from "./BusyTimesBar";
 import { Sparkles, ChevronRight, Check, Clock, Ticket, Plus } from "lucide-react";
 import { Skeleton, SkeletonText } from "@/components/ui/Skeleton";
+import { motion } from "framer-motion";
 
 interface Props {
   pois: POI[];
@@ -29,7 +30,8 @@ export function SuggestionsSidebar({ pois, addedIds, onAdd, loading }: Props) {
     return (
       <button
         onClick={() => setCollapsed(false)}
-        className="w-10 bg-white border border-gray-100 shadow-card rounded-xl flex items-center justify-center text-muted hover:text-primary self-start py-3 transition-colors"
+        className="w-10 shrink-0 rounded-xl flex items-center justify-center self-start py-3 transition-colors"
+        style={{ background: "rgba(7,20,32,0.75)", backdropFilter: "blur(16px)", border: "1px solid var(--glass-border-1)", color: "var(--text-muted)" }}
         aria-label="Open suggestions"
       >
         <ChevronRight size={16} />
@@ -38,19 +40,23 @@ export function SuggestionsSidebar({ pois, addedIds, onAdd, loading }: Props) {
   }
 
   return (
-    <div className="w-72 shrink-0 bg-white border border-gray-100 rounded-xl shadow-card flex flex-col h-full max-h-[calc(100vh-140px)] overflow-hidden">
+    <div
+      className="w-72 shrink-0 rounded-xl flex flex-col h-full max-h-[calc(100vh-140px)] overflow-hidden"
+      style={{ background: "rgba(7,20,32,0.75)", backdropFilter: "blur(16px)", border: "1px solid var(--glass-border-1)" }}
+    >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+      <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid var(--glass-border-1)" }}>
         <div>
-          <h2 className="font-semibold text-charcoal text-sm flex items-center gap-1.5 font-body">
-            <Sparkles size={14} className="text-accent" />
-            AI Suggestions
+          <h2 className="font-semibold text-sm flex items-center gap-1.5 font-body" style={{ color: "var(--text-primary)" }}>
+            <Sparkles size={14} style={{ color: "var(--accent)" }} />
+            <span style={{ color: "var(--accent)" }}>✦ AI Picks</span>
           </h2>
-          <p className="text-xs text-muted font-body">{pois.length} places</p>
+          <p className="text-xs font-body" style={{ color: "var(--text-muted)" }}>{pois.length} places</p>
         </div>
         <button
           onClick={() => setCollapsed(true)}
-          className="text-subtle hover:text-muted transition-colors w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100"
+          className="transition-colors w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/5"
+          style={{ color: "var(--text-subtle)" }}
           aria-label="Collapse sidebar"
         >
           <ChevronRight size={14} className="rotate-180" />
@@ -58,24 +64,25 @@ export function SuggestionsSidebar({ pois, addedIds, onAdd, loading }: Props) {
       </div>
 
       {/* Filter chips */}
-      <div className="flex flex-wrap gap-1.5 px-3 py-2 border-b border-gray-100">
+      <div className="flex flex-wrap gap-1.5 px-3 py-2" style={{ borderBottom: "1px solid var(--glass-border-1)" }}>
         {CATEGORIES.map((cat) => (
-          <button
+          <motion.button
             key={cat}
+            whileTap={{ scale: 0.95 }}
             onClick={() => setFilter(cat)}
-            className={`text-xs px-2.5 py-1 rounded-full whitespace-nowrap transition-colors font-body ${
-              filter === cat
-                ? "bg-primary text-white"
-                : "bg-gray-100 text-charcoal/70 hover:bg-gray-200"
-            }`}
+            className="text-xs px-2.5 py-1 rounded-full whitespace-nowrap transition-colors font-body"
+            style={filter === cat
+              ? { background: "var(--accent)", color: "white", border: "none" }
+              : { background: "var(--glass-1)", color: "var(--text-muted)", border: "1px solid var(--glass-border-1)" }
+            }
           >
             {cat}
-          </button>
+          </motion.button>
         ))}
       </div>
 
       {/* POI list */}
-      <div className="flex-1 overflow-y-auto divide-y divide-gray-50">
+      <div className="flex-1 overflow-y-auto">
         {loading && (
           <div className="p-3 space-y-4">
             {[0, 1, 2].map((i) => (
@@ -88,7 +95,7 @@ export function SuggestionsSidebar({ pois, addedIds, onAdd, loading }: Props) {
         )}
 
         {!loading && filtered.length === 0 && (
-          <div className="text-center py-10 text-sm text-muted font-body">
+          <div className="text-center py-10 text-sm font-body" style={{ color: "var(--text-muted)" }}>
             No suggestions yet.
           </div>
         )}
@@ -96,7 +103,7 @@ export function SuggestionsSidebar({ pois, addedIds, onAdd, loading }: Props) {
         {filtered.map((poi) => {
           const isAdded = addedIds.has(poi.id);
           return (
-            <div key={poi.id} className={`px-3 py-3 ${isAdded ? "opacity-50" : ""}`}>
+            <div key={poi.id} className={`px-3 py-3 ${isAdded ? "opacity-50" : ""}`} style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
               {poi.photo_url && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -107,30 +114,30 @@ export function SuggestionsSidebar({ pois, addedIds, onAdd, loading }: Props) {
               )}
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-charcoal truncate font-body">{poi.name}</p>
-                  <p className="text-xs text-muted font-body">{poi.category}</p>
+                  <p className="text-sm font-semibold truncate font-body" style={{ color: "var(--text-primary)" }}>{poi.name}</p>
+                  <p className="text-xs font-body" style={{ color: "var(--text-muted)" }}>{poi.category}</p>
                 </div>
                 <div className="text-right shrink-0">
                   {poi.rating && (
-                    <p className="text-xs text-warning-dark font-body">★ {poi.rating.toFixed(1)}</p>
+                    <p className="text-xs font-body" style={{ color: "var(--warning)" }}>★ {poi.rating.toFixed(1)}</p>
                   )}
                   {poi.price_level != null && (
-                    <p className="text-xs text-muted font-body">{PRICE_LABELS[poi.price_level]}</p>
+                    <p className="text-xs font-body" style={{ color: "var(--text-muted)" }}>{PRICE_LABELS[poi.price_level]}</p>
                   )}
                 </div>
               </div>
 
               {poi.claude_note && (
-                <p className="text-xs text-accent italic mt-1.5 font-body">{poi.claude_note}</p>
+                <p className="text-xs italic mt-1.5 font-body" style={{ color: "var(--accent)" }}>{poi.claude_note}</p>
               )}
               {poi.claude_best_time && (
-                <p className="text-xs text-muted mt-0.5 flex items-center gap-1 font-body">
+                <p className="text-xs mt-0.5 flex items-center gap-1 font-body" style={{ color: "var(--text-muted)" }}>
                   <Clock size={10} />
                   {poi.claude_best_time}
                 </p>
               )}
               {poi.booking_required && (
-                <p className="text-xs text-warning-dark mt-0.5 flex items-center gap-1 font-body">
+                <p className="text-xs mt-0.5 flex items-center gap-1 font-body" style={{ color: "var(--warning)" }}>
                   <Ticket size={10} />
                   Booking required
                 </p>
@@ -141,11 +148,11 @@ export function SuggestionsSidebar({ pois, addedIds, onAdd, loading }: Props) {
               <button
                 onClick={() => !isAdded && onAdd(poi)}
                 disabled={isAdded}
-                className={`mt-2 w-full text-xs font-medium py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1 font-body ${
-                  isAdded
-                    ? "bg-gray-100 text-subtle cursor-default"
-                    : "bg-primary hover:bg-primary-dark text-white"
-                }`}
+                className="mt-2 w-full text-xs font-medium py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1 font-body"
+                style={isAdded
+                  ? { background: "var(--glass-1)", color: "var(--text-subtle)", cursor: "default" }
+                  : { background: "var(--accent)", color: "white" }
+                }
               >
                 {isAdded ? (
                   <>

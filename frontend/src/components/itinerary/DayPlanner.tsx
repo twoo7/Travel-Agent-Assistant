@@ -1,12 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import {
   DndContext,
+  DragOverlay,
   closestCenter,
   PointerSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragStartEvent,
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import type { DayPlan, POI } from "@/types/trip";
@@ -20,10 +23,18 @@ interface Props {
 
 export function DayPlanner({ days, onDaysChange }: Props) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  function handleDragStart(e: DragStartEvent) {
+    setActiveId(String(e.active.id));
+  }
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
-    if (!over || active.id === over.id) return;
+    if (!over || active.id === over.id) {
+      setActiveId(null);
+      return;
+    }
 
     // Parse itemId format: "<dayNumber>-<itemIndex>"
     const [activeDayStr, activeIdxStr] = String(active.id).split("-");
@@ -35,7 +46,7 @@ export function DayPlanner({ days, onDaysChange }: Props) {
     if (activeDayNum === overDayNum) {
       // Reorder within same day
       const dayIndex = days.findIndex((d) => d.day_number === activeDayNum);
-      if (dayIndex === -1) return;
+      if (dayIndex === -1) { setActiveId(null); return; }
       const day = days[dayIndex];
       const from = parseInt(activeIdxStr);
       const to = parseInt(overIdxStr);
@@ -48,11 +59,11 @@ export function DayPlanner({ days, onDaysChange }: Props) {
       // Move item between days
       const activeDayIndex = days.findIndex((d) => d.day_number === activeDayNum);
       const overDayIndex = days.findIndex((d) => d.day_number === overDayNum);
-      if (activeDayIndex === -1 || overDayIndex === -1) return;
+      if (activeDayIndex === -1 || overDayIndex === -1) { setActiveId(null); return; }
 
       const activeItemIndex = parseInt(activeIdxStr);
       const item = days[activeDayIndex].items[activeItemIndex];
-      if (!item) return;
+      if (!item) { setActiveId(null); return; }
 
       const newDays = days.map((d, i) => {
         if (i === activeDayIndex) {
@@ -68,6 +79,7 @@ export function DayPlanner({ days, onDaysChange }: Props) {
       });
       onDaysChange(newDays);
     }
+    setActiveId(null);
   }
 
   function handleRemoveItem(dayNumber: number, itemIndex: number) {
@@ -80,9 +92,12 @@ export function DayPlanner({ days, onDaysChange }: Props) {
 
   if (days.length === 0) {
     return (
-      <div className="text-center py-12 text-muted border-2 border-dashed border-gray-200 rounded-xl">
-        <p className="text-sm font-body">No days planned yet.</p>
-        <p className="text-xs mt-1 font-body">Days will appear here once hotels are confirmed.</p>
+      <div
+        className="text-center py-12 rounded-xl"
+        style={{ color: "var(--text-muted)", border: "2px dashed rgba(255,255,255,0.12)" }}
+      >
+        <p className="text-sm font-body" style={{ color: "var(--text-muted)" }}>No days planned yet.</p>
+        <p className="text-xs mt-1 font-body" style={{ color: "var(--text-muted)" }}>Days will appear here once hotels are confirmed.</p>
       </div>
     );
   }
@@ -95,11 +110,14 @@ export function DayPlanner({ days, onDaysChange }: Props) {
   }
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <div className="space-y-6">
         {Object.entries(legGroups).map(([legNum, legDays]) => (
           <div key={legNum}>
-            <h3 className="text-xs font-semibold text-muted uppercase tracking-widest mb-2 font-body">
+            <h3
+              className="text-[10px] font-semibold uppercase tracking-[2.5px] mb-2 font-body"
+              style={{ color: "var(--text-eyebrow)" }}
+            >
               {legDays[0]?.city} — {legDays.length} day{legDays.length > 1 ? "s" : ""}
             </h3>
             <div className="space-y-3">
@@ -114,6 +132,18 @@ export function DayPlanner({ days, onDaysChange }: Props) {
           </div>
         ))}
       </div>
+      <DragOverlay>
+        {activeId ? (
+          <div style={{ opacity: 0.85, transform: "scale(1.04)", boxShadow: "0 0 20px var(--accent-glow)" }}>
+            <div
+              className="rounded-lg px-3 py-2 text-sm font-body"
+              style={{ background: "var(--glass-3)", border: "1px solid var(--accent)", color: "var(--text-primary)" }}
+            >
+              Dragging...
+            </div>
+          </div>
+        ) : null}
+      </DragOverlay>
     </DndContext>
   );
 }
