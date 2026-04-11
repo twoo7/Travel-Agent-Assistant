@@ -40,9 +40,9 @@ const config: Config = {
           sidebar: "#071420",
         },
         canvas: {
-          from: "#0a1628",
-          to: "#0F2937",
-          mid: "#0d1f30",
+          from: "var(--canvas-from)",
+          to: "var(--canvas-to)",
+          mid: "var(--canvas-mid)",
         },
       },
       fontFamily: {
