@@ -18,6 +18,8 @@ Do not make any changes until you have 95% confidence in waht you need to build.
 ### Backend (FastAPI / Python)
 
 ```bash
+.\backend\venv\Scripts\activate
+
 # Start dev server (from repo root)
 uvicorn backend.src.main:app --reload
 
@@ -77,7 +79,7 @@ Backend (FastAPI / Python)
 
 ### TripContext — the central data structure
 
-`TripContext` accumulates across the 5-step funnel (Setup → Flights → Hotels → POI/Itinerary → Export) and is sent with every API call so Claude always has complete trip information. It contains:
+`TripContext` accumulates across the 5-step funnel (Setup → Segments → Hotels → POI/Itinerary → Export) and is sent with every API call so Claude always has complete trip information. It contains:
 - `home_origin`, `adults`, `children`
 - `legs: TripLeg[]` — ordered flight legs, each containing `selected_flight`, `hotel_stays[]`, and `days[]`
 - `unscheduled_pois[]` — POIs added but not yet placed in a day
@@ -98,7 +100,7 @@ Agents use `claude-sonnet-4-6` directly via the Anthropic SDK. They expect Claud
 | Route | Step |
 |---|---|
 | `/` | Trip Setup — initialises TripContext |
-| `/flights` | Flight search per leg |
+| `/segments` | Multi-modal segment search per leg (flight/train/ferry/car) |
 | `/hotels` | Hotel search per destination |
 | `/itinerary` | POI suggestions + drag-and-drop day planner + Google Map |
 | `/export` | Read-only summary + PDF/JSON download |
@@ -123,3 +125,4 @@ When something fails repeatedly, when Tim has to re-explain, or when a workaroun
 - Writing large data files in one shot triggers content filtering; scope to only needed entries.
 - All task commits must go in the main repo root.
 - Run pytest via `backend/venv/Scripts/python -m pytest` from repo root; plain `python -m pytest` lacks dependencies.
+- Sidebar pinned state must live in `LayoutShell` so `<main>` can adjust padding reactively.

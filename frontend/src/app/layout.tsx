@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { DM_Serif_Display, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { TripContextProvider } from "@/context/TripContext";
-import { Sidebar } from "@/components/Sidebar";
+import { LayoutShell } from "@/components/LayoutShell";
 import { ToastProvider } from "@/components/ui/Toast";
 
 const dmSerif = DM_Serif_Display({
@@ -27,8 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${dmSerif.variable} ${dmSans.variable} font-body bg-background min-h-screen`}>
         <TripContextProvider>
           <ToastProvider>
-            <Sidebar />
-            <main className="min-h-screen pl-11 transition-all duration-300">{children}</main>
+            <LayoutShell>{children}</LayoutShell>
           </ToastProvider>
         </TripContextProvider>
       </body>
