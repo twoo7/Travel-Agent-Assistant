@@ -158,12 +158,12 @@ function TransportSelector({
               type="button"
               onClick={() => onSelect(m.mode)}
               aria-pressed={isSelected}
-              className={[
-                "flex-1 min-w-0 py-2 px-3 rounded-lg border-2 text-sm font-medium font-body transition-all",
-                "flex items-center justify-center gap-1.5",
-                isSelected ? meta.selectedClass : "hover:opacity-80",
-              ].filter(Boolean).join(" ")}
-              style={isSelected ? undefined : { border: "1px solid rgba(255,255,255,0.12)", color: "var(--text-muted)", background: "var(--glass-1)" }}
+              className="flex-1 min-w-0 py-2 px-3 rounded-lg text-sm font-medium font-body transition-all flex items-center justify-center gap-1.5"
+              style={
+                isSelected
+                  ? { border: "2px solid var(--accent)", background: "rgba(224,122,95,0.1)", color: "var(--accent)" }
+                  : { border: "1px solid rgba(255,255,255,0.12)", color: "var(--text-muted)", background: "var(--glass-1)" }
+              }
             >
               <Icon size={14} />
               {m.label}
@@ -811,7 +811,7 @@ export default function TripSetupPage() {
               type="checkbox"
               checked={multiMode}
               onChange={(e) => handleMultiToggle(e.target.checked)}
-              className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary/30 accent-primary"
+              className="w-4 h-4 rounded accent-accent"
             />
             <span
               className="text-sm font-medium font-body"
@@ -865,7 +865,7 @@ export default function TripSetupPage() {
                     type="checkbox"
                     checked={addReturnLeg}
                     onChange={(e) => setAddReturnLeg(e.target.checked)}
-                    className="rounded border-gray-300"
+                    className="rounded accent-accent"
                   />
                   Add return flight home
                 </label>
