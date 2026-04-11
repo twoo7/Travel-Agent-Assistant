@@ -61,8 +61,9 @@ export default function SegmentsPage() {
   const [sortKey, setSortKey] = useState("ai");
   const [flightFilters, setFlightFilters] = useState<FlightFilters>({ maxStops: null, maxPrice: null });
 
+  const lastDestination = tripContext.legs[tripContext.legs.length - 1]?.destination ?? "";
   const [newLeg, setNewLeg] = useState({
-    origin: "",
+    origin: lastDestination,
     destination: "",
     departure_date: "",
     transport_mode: "flight" as TripLeg["transport_mode"],
@@ -164,7 +165,7 @@ export default function SegmentsPage() {
         days: [],
       },
     });
-    setNewLeg({ origin: "", destination: "", departure_date: "", transport_mode: "flight" });
+    setNewLeg({ origin: "", destination: "", departure_date: "", transport_mode: "flight" as TripLeg["transport_mode"] });
   }
 
   function handleRemoveLeg(leg_number: number) {
@@ -316,7 +317,7 @@ export default function SegmentsPage() {
               <input
                 value={newLeg.origin}
                 onChange={(e) => setNewLeg((p) => ({ ...p, origin: e.target.value }))}
-                placeholder="JFK"
+                placeholder="e.g. KIX"
                 maxLength={3}
                 className="border border-gray-200 rounded-lg px-3 py-2 text-sm uppercase tracking-widest w-20 font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
               />
@@ -326,7 +327,7 @@ export default function SegmentsPage() {
               <input
                 value={newLeg.destination}
                 onChange={(e) => setNewLeg((p) => ({ ...p, destination: e.target.value }))}
-                placeholder="NRT"
+                placeholder="Next destination"
                 maxLength={3}
                 className="border border-gray-200 rounded-lg px-3 py-2 text-sm uppercase tracking-widest w-20 font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
               />
