@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { useTripContext } from "@/context/TripContext";
 import { api } from "@/services/api";
 import { FlightSearchForm } from "@/components/flights/FlightSearchForm";
@@ -252,14 +253,15 @@ export default function SegmentsPage() {
                   {/* Icon for mode indicator */}
                   <Icon size={16} style={{ color: "var(--accent)" }} />
                   {tripContext.legs.length > 1 && (
-                    <button
+                    <motion.button
+                      whileHover={{ color: "rgba(239,68,68,0.85)", backgroundColor: "rgba(239,68,68,0.1)" }}
                       onClick={() => handleRemoveLeg(leg.leg_number)}
                       className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
                       style={{ color: "var(--text-muted)" }}
                       aria-label={`Remove leg ${leg.leg_number}`}
                     >
                       <X size={14} />
-                    </button>
+                    </motion.button>
                   )}
                 </div>
               </div>
@@ -334,7 +336,7 @@ export default function SegmentsPage() {
                 onChange={(e) => setNewLeg((p) => ({ ...p, origin: e.target.value }))}
                 placeholder="e.g. KIX"
                 maxLength={3}
-                className="rounded-lg px-3 py-2 text-sm uppercase tracking-widest w-20 font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors"
+                className="rounded-lg px-3 py-2 text-sm uppercase tracking-widest w-20 font-mono focus:outline-none transition-colors"
                 style={{ border: "1px solid var(--glass-border-2)" }}
               />
             </div>
@@ -345,7 +347,7 @@ export default function SegmentsPage() {
                 onChange={(e) => setNewLeg((p) => ({ ...p, destination: e.target.value }))}
                 placeholder="Next destination"
                 maxLength={3}
-                className="rounded-lg px-3 py-2 text-sm uppercase tracking-widest w-20 font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors"
+                className="rounded-lg px-3 py-2 text-sm uppercase tracking-widest w-20 font-mono focus:outline-none transition-colors"
                 style={{ border: "1px solid var(--glass-border-2)" }}
               />
             </div>
@@ -355,7 +357,7 @@ export default function SegmentsPage() {
                 type="date"
                 value={newLeg.departure_date}
                 onChange={(e) => setNewLeg((p) => ({ ...p, departure_date: e.target.value }))}
-                className="rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors font-body"
+                className="rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors font-body"
                 style={{ border: "1px solid var(--glass-border-2)" }}
               />
             </div>
@@ -366,7 +368,7 @@ export default function SegmentsPage() {
                 onChange={(e) =>
                   setNewLeg((p) => ({ ...p, transport_mode: e.target.value as TripLeg["transport_mode"] }))
                 }
-                className="rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors font-body"
+                className="rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors font-body"
                 style={{ border: "1px solid var(--glass-border-2)" }}
               >
                 <option value="flight">Flight</option>
@@ -390,13 +392,14 @@ export default function SegmentsPage() {
         {/* Validation + progress */}
         <div className="space-y-3 pt-2">
           {!allLegsConfirmed && validationIssues.length > 0 && (
-            <div className="flex items-start gap-3 bg-warning/10 border border-warning/30 rounded-xl p-4">
-              <AlertTriangle size={16} className="text-warning-dark shrink-0 mt-0.5" />
+            <div className="flex items-start gap-3 rounded-xl p-4"
+                 style={{ background: "rgba(212,165,116,0.1)", border: "1px solid rgba(212,165,116,0.3)" }}>
+              <AlertTriangle size={16} className="shrink-0 mt-0.5" style={{ color: "var(--warning)" }} />
               <div>
-                <p className="text-sm font-semibold text-warning-dark font-body mb-1">Before you continue:</p>
+                <p className="text-sm font-semibold font-body mb-1" style={{ color: "var(--warning)" }}>Before you continue:</p>
                 <ul className="space-y-0.5">
                   {validationIssues.map((issue, i) => (
-                    <li key={i} className="text-sm text-warning-dark/80 font-body">• {issue}</li>
+                    <li key={i} className="text-sm font-body" style={{ color: "rgba(212,165,116,0.8)" }}>• {issue}</li>
                   ))}
                 </ul>
               </div>
@@ -404,9 +407,10 @@ export default function SegmentsPage() {
           )}
 
           {allLegsConfirmed && (
-            <div className="flex items-center gap-2 bg-success/10 border border-success/20 rounded-xl px-4 py-3">
-              <Check size={15} className="text-success" />
-              <p className="text-sm font-medium text-success font-body">
+            <div className="flex items-center gap-2 rounded-xl px-4 py-3"
+                 style={{ background: "rgba(107,144,128,0.1)", border: "1px solid rgba(107,144,128,0.2)" }}>
+              <Check size={15} style={{ color: "var(--success)" }} />
+              <p className="text-sm font-medium font-body" style={{ color: "var(--success)" }}>
                 All segments confirmed — ready to continue
               </p>
             </div>
@@ -419,10 +423,8 @@ export default function SegmentsPage() {
             </div>
             <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: "var(--glass-2)" }}>
               <div
-                className={`h-full rounded-full transition-all duration-500 ${
-                  allLegsConfirmed ? "bg-success" : "bg-primary"
-                }`}
-                style={{ width: `${progressPct}%` }}
+                className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${progressPct}%`, background: allLegsConfirmed ? "var(--success)" : "var(--accent)" }}
               />
             </div>
           </div>

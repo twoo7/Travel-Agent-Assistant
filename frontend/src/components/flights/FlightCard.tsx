@@ -6,7 +6,6 @@ import type { FlightOffer } from "@/types/trip";
 import { Sparkles, ChevronRight, Check } from "lucide-react";
 import { formatPrice } from "@/utils/formatPrice";
 import { AIPulseBadge } from "@/components/ui/AIPulseBadge";
-import { listItemVariants } from "@/components/ui/AnimatedList";
 
 interface Props {
   offer: FlightOffer;
@@ -51,7 +50,6 @@ export function FlightCard({ offer, selected, onSelect }: Props) {
 
   return (
     <motion.div
-      variants={listItemVariants}
       whileHover={selected ? undefined : { y: -2 }}
       whileTap={selected ? undefined : { scale: 0.99 }}
       onClick={() => { if (!selected) onSelect(offer); }}
@@ -59,7 +57,7 @@ export function FlightCard({ offer, selected, onSelect }: Props) {
       tabIndex={0}
       onKeyDown={(e) => { if ((e.key === "Enter" || e.key === " ") && !selected) { e.preventDefault(); onSelect(offer); } }}
       style={cardStyle}
-      className="relative rounded-2xl p-4 transition-shadow duration-200 outline-none cursor-pointer"
+      className="relative rounded-2xl p-4 transition-shadow duration-200 outline-none cursor-pointer focus-visible:ring-2 focus-visible:ring-accent/40"
     >
       {/* Badges */}
       {offer.ai_recommended && !selected && (
@@ -141,6 +139,7 @@ export function FlightCard({ offer, selected, onSelect }: Props) {
           <AnimatePresence>
             {expanded && (
               <motion.div
+                key="ai-reason"
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
