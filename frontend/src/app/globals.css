@@ -31,6 +31,7 @@
 [data-theme="light"] {
   --canvas-from:        #FAF8F5;
   --canvas-to:          #FAF8F5;
+  --canvas-mid:         #FAF8F5;
   --glass-1:            rgba(255,255,255,0.6);
   --glass-2:            rgba(255,255,255,0.85);
   --glass-3:            rgba(255,255,255,1);
