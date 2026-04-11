@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import airportsData from "@/data/airports.json";
 import { AIRPORT_TO_CITY } from "@/utils/cityCodeMap";
 import { COUNTRY_NAMES } from "@/utils/countryNames";
@@ -24,14 +24,17 @@ interface AirportSearchProps {
   placeholder?: string;
   disabled?: boolean;
   showCityCode?: boolean;
+  id?: string;
 }
+
+let moduleCounter = 0;
 
 function findAirport(iata: string): Airport | undefined {
   return airports.find((a) => a.iata === iata);
 }
 
 function displayName(airport: Airport): string {
-  return `${airport.name} (${airport.city})`;
+  return airport.city;
 }
 
 function filterAirports(query: string): Airport[] {
@@ -69,13 +72,14 @@ export default function AirportSearch({
   placeholder = "City or airport name",
   disabled = false,
   showCityCode = false,
+  id,
 }: AirportSearchProps) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const listboxId = useRef(`airport-listbox-${Math.random().toString(36).slice(2)}`);
+  const listboxId = useRef(`airport-listbox-${id ?? moduleCounter++}`);
 
   // Sync query when value changes externally
   useEffect(() => {
@@ -106,7 +110,7 @@ export default function AirportSearch({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [value]);
 
-  const results = open ? filterAirports(query) : [];
+  const results = useMemo(() => (open ? filterAirports(query) : []), [open, query]);
 
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
