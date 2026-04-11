@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
 
 type ButtonVariant = "primary" | "secondary" | "ghost" | "success" | "danger";
@@ -15,21 +16,27 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary:
-    "bg-primary text-white hover:bg-primary-light active:bg-primary-dark shadow-sm hover:shadow-md",
-  secondary:
-    "bg-white text-primary border-2 border-primary/20 hover:border-primary/40 hover:bg-primary/5",
-  ghost:
-    "bg-transparent text-muted hover:text-charcoal hover:bg-gray-100",
-  success:
-    "bg-success text-white hover:bg-success-light active:bg-success-dark shadow-sm hover:shadow-md",
-  danger:
-    "bg-red-500 text-white hover:bg-red-600 active:bg-red-700 shadow-sm hover:shadow-md",
+  primary:   "text-white shadow-sm hover:shadow-md",
+  secondary: "text-white border border-white/20 hover:border-white/40",
+  ghost:     "text-white/60 hover:text-white hover:bg-white/10",
+  success:   "bg-success text-white hover:bg-success-light shadow-sm hover:shadow-md",
+  danger:    "bg-red-500 text-white hover:bg-red-600 shadow-sm hover:shadow-md",
+};
+
+const variantStyles: Record<ButtonVariant, React.CSSProperties> = {
+  primary:   {
+    background: "linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%)",
+    boxShadow: "0 0 20px var(--accent-glow)",
+  },
+  secondary: { background: "var(--glass-2)" },
+  ghost:     {},
+  success:   {},
+  danger:    {},
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
   sm: "px-3 py-1.5 text-xs font-medium rounded-lg gap-1.5",
-  md: "px-4 py-2 text-sm font-medium rounded-lg gap-2",
+  md: "px-4 py-2 text-sm font-medium rounded-[10px] gap-2",
   lg: "px-6 py-3 text-sm font-semibold rounded-xl gap-2",
 };
 
@@ -42,16 +49,19 @@ export function Button({
   children,
   className = "",
   disabled,
+  style,
   ...props
 }: ButtonProps) {
   const isDisabled = disabled || loading;
 
   return (
-    <button
+    <motion.button
+      whileTap={isDisabled ? undefined : { scale: 0.97 }}
       disabled={isDisabled}
+      style={{ ...variantStyles[variant], ...style }}
       className={[
         "inline-flex items-center justify-center transition-all duration-150 font-body",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2",
         "disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none",
         variantClasses[variant],
         sizeClasses[size],
@@ -60,7 +70,7 @@ export function Button({
       ]
         .filter(Boolean)
         .join(" ")}
-      {...props}
+      {...(props as React.ComponentPropsWithoutRef<typeof motion.button>)}
     >
       {loading ? (
         <Loader2 className="animate-spin shrink-0" size={size === "sm" ? 12 : 14} />
@@ -68,6 +78,6 @@ export function Button({
         <span className="shrink-0">{icon}</span>
       ) : null}
       {children}
-    </button>
+    </motion.button>
   );
 }
