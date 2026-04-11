@@ -10,7 +10,6 @@ interface Props {
   item: DayItem;
   itemId: string;
   onRemove?: () => void;
-  isDragging?: boolean;
 }
 
 function getItemIcon(item: DayItem) {
@@ -31,7 +30,8 @@ function getItemIcon(item: DayItem) {
   return icons[item.type] ?? <MapPin size={13} />;
 }
 
-export function DayItemCard({ item, itemId, onRemove, isDragging }: Props) {
+export function DayItemCard({ item, itemId, onRemove }: Props) {
+  const isDragging = false; // reserved for future drag-state wiring
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: itemId });
 
   const style = {
@@ -50,7 +50,7 @@ export function DayItemCard({ item, itemId, onRemove, isDragging }: Props) {
     <div
       ref={setNodeRef}
       style={{ ...style, ...itemStyle }}
-      className={`rounded-lg px-3 py-2 flex items-start gap-2 ${isDragging ? "ring-2 shadow-lg" : ""}`}
+      className={`rounded-lg px-3 py-2 flex items-start gap-2 ${isDragging ? "ring-2 ring-white/20 shadow-lg" : ""}`}
     >
       {/* Drag handle */}
       <div

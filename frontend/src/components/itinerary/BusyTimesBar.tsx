@@ -16,7 +16,7 @@ export function BusyTimesBar({ busyTimes, dayOfWeek }: Props) {
 
   return (
     <div className="mt-1.5">
-      <div className="text-[10px] text-muted mb-0.5 font-body">{key} busyness</div>
+      <div className="text-[10px] mb-0.5 font-body" style={{ color: "var(--text-muted)" }}>{key} busyness</div>
       <div className="flex gap-px h-4 items-end">
         {slice.map((val, i) => (
           <div
@@ -28,14 +28,14 @@ export function BusyTimesBar({ busyTimes, dayOfWeek }: Props) {
                 ? "bg-warning"
                 : val >= 20
                 ? "bg-success"
-                : "bg-gray-200"
+                : ""
             }`}
-            style={{ height: `${Math.max(2, (val / 100) * 16)}px` }}
+            style={{ height: `${Math.max(2, (val / 100) * 16)}px`, ...(val < 20 ? { background: "rgba(255,255,255,0.12)" } : {}) }}
             title={`${8 + i}:00 — ${val}% busy`}
           />
         ))}
       </div>
-      <div className="flex justify-between text-[10px] text-subtle mt-0.5 font-body">
+      <div className="flex justify-between text-[10px] mt-0.5 font-body" style={{ color: "var(--text-subtle)" }}>
         <span>8am</span>
         <span>10pm</span>
       </div>

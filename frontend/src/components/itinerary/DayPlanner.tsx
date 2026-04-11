@@ -12,13 +12,12 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
-import type { DayPlan, POI } from "@/types/trip";
+import type { DayPlan } from "@/types/trip";
 import { DayColumn } from "./DayColumn";
 
 interface Props {
   days: DayPlan[];
   onDaysChange: (days: DayPlan[]) => void;
-  unscheduledPois?: POI[];
 }
 
 export function DayPlanner({ days, onDaysChange }: Props) {
