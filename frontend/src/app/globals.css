@@ -2,35 +2,192 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Dark mode defaults (root) ───────────────────────────────────────────── */
 :root {
-  --background: #FAF8F5;
-  --foreground: #2D2D2D;
+  --canvas-from:        #0a1628;
+  --canvas-to:          #0F2937;
+  --canvas-mid:         #0d1f30;
+  --glass-1:            rgba(255,255,255,0.04);
+  --glass-2:            rgba(255,255,255,0.07);
+  --glass-3:            rgba(255,255,255,0.11);
+  --glass-border-1:     rgba(255,255,255,0.08);
+  --glass-border-2:     rgba(255,255,255,0.13);
+  --glass-border-3:     rgba(255,255,255,0.18);
+  --accent:             #E07A5F;
+  --accent-dark:        #C96A4F;
+  --accent-glow:        rgba(224,122,95,0.3);
+  --success:            #6B9080;
+  --success-glow:       rgba(107,144,128,0.3);
+  --warning:            #D4A574;
+  --text-primary:       #FFFFFF;
+  --text-muted:         rgba(255,255,255,0.45);
+  --text-subtle:        rgba(255,255,255,0.25);
+  --text-eyebrow:       rgba(255,255,255,0.35);
+  --background:         #0a1628;
+  --foreground:         #FFFFFF;
 }
 
+/* ── Light mode overrides ────────────────────────────────────────────────── */
+[data-theme="light"] {
+  --canvas-from:        #FAF8F5;
+  --canvas-to:          #FAF8F5;
+  --glass-1:            rgba(255,255,255,0.6);
+  --glass-2:            rgba(255,255,255,0.85);
+  --glass-3:            rgba(255,255,255,1);
+  --glass-border-1:     rgba(0,0,0,0.06);
+  --glass-border-2:     rgba(0,0,0,0.09);
+  --glass-border-3:     rgba(0,0,0,0.12);
+  --accent-glow:        transparent;
+  --success-glow:       transparent;
+  --text-primary:       #1B3A4B;
+  --text-muted:         #6B7280;
+  --text-subtle:        #9CA3AF;
+  --text-eyebrow:       rgba(27,58,75,0.5);
+  --background:         #FAF8F5;
+  --foreground:         #1B3A4B;
+}
+
+/* ── Body ────────────────────────────────────────────────────────────────── */
 body {
-  color: var(--foreground);
+  color: var(--text-primary);
   background: var(--background);
 }
 
+/* ── Ambient canvas ──────────────────────────────────────────────────────── */
+.page-canvas {
+  background: linear-gradient(160deg, var(--canvas-from) 0%, var(--canvas-to) 60%, var(--canvas-mid) 100%);
+  min-height: 100vh;
+  position: relative;
+}
+
+.page-canvas::before {
+  content: '';
+  position: fixed; top: -80px; right: -80px;
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(224,122,95,0.12), transparent 70%);
+  border-radius: 50%; pointer-events: none; z-index: 0;
+}
+
+.page-canvas::after {
+  content: '';
+  position: fixed; bottom: -100px; left: -40px;
+  width: 350px; height: 350px;
+  background: radial-gradient(circle, rgba(107,144,128,0.08), transparent 70%);
+  border-radius: 50%; pointer-events: none; z-index: 0;
+}
+
+[data-theme="light"] .page-canvas::before,
+[data-theme="light"] .page-canvas::after {
+  display: none;
+}
+
+/* ── Dark input base styles ──────────────────────────────────────────────── */
+input[type="text"],
+input[type="date"],
+input[type="number"],
+input[type="search"],
+input[type="email"],
+select,
+textarea {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: var(--text-primary);
+  border-radius: 10px;
+}
+
+input[type="text"]:focus,
+input[type="date"]:focus,
+input[type="number"]:focus,
+input[type="search"]:focus,
+input[type="email"]:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: rgba(224,122,95,0.5);
+  box-shadow: 0 0 0 3px rgba(224,122,95,0.15);
+}
+
+[data-theme="light"] input[type="text"],
+[data-theme="light"] input[type="date"],
+[data-theme="light"] input[type="number"],
+[data-theme="light"] input[type="search"],
+[data-theme="light"] input[type="email"],
+[data-theme="light"] select,
+[data-theme="light"] textarea {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  color: #1B3A4B;
+}
+
+/* ── Date input calendar icon color fix ────────────────────────────────────*/
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) opacity(0.5);
+}
+[data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: none;
+}
+
+/* ── Select dropdown option styling ────────────────────────────────────────*/
+select option {
+  background: #0F2937;
+  color: #ffffff;
+}
+[data-theme="light"] select option {
+  background: #ffffff;
+  color: #1B3A4B;
+}
+
+/* ── Skeleton shimmer (dark) ────────────────────────────────────────────── */
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.04) 25%,
+    rgba(255,255,255,0.08) 50%,
+    rgba(255,255,255,0.04) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s infinite;
+}
+
+[data-theme="light"] .skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    #f0ede8 25%,
+    #e8e4de 50%,
+    #f0ede8 75%
+  );
+  background-size: 200% 100%;
+}
+
+/* ── Keyframes ───────────────────────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+@keyframes ai-pulse {
+  0%, 100% { filter: drop-shadow(0 0 4px rgba(224,122,95,0.4)); }
+  50%       { filter: drop-shadow(0 0 12px rgba(224,122,95,0.8)); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 1; }
+}
+
+/* ── Legacy compatibility ────────────────────────────────────────────────── */
 @layer components {
   .card-base {
-    @apply bg-white rounded-card shadow-card border border-gray-100;
+    @apply rounded-2xl;
+    background: var(--glass-2);
+    border: 1px solid var(--glass-border-2);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+    backdrop-filter: blur(12px);
   }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
-  }
-
-  .skeleton-shimmer {
-    background: linear-gradient(
-      90deg,
-      #f0ede8 25%,
-      #e8e4de 50%,
-      #f0ede8 75%
-    );
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
   }
 }

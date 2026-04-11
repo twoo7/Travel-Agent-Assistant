@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${dmSerif.variable} ${dmSans.variable} font-body bg-background min-h-screen`}>
+      <body className={`${dmSerif.variable} ${dmSans.variable} font-body page-canvas`}>
         <TripContextProvider>
           <ToastProvider>
             <LayoutShell>{children}</LayoutShell>

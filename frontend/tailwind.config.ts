@@ -37,7 +37,12 @@ const config: Config = {
         charcoal: "#2D2D2D",
         navy: {
           DEFAULT: "#1B3A4B",
-          sidebar: "#0F2937",
+          sidebar: "#071420",
+        },
+        canvas: {
+          from: "#0a1628",
+          to: "#0F2937",
+          mid: "#0d1f30",
         },
       },
       fontFamily: {
@@ -45,9 +50,8 @@ const config: Config = {
         body: ["var(--font-dm-sans)", "system-ui", "sans-serif"],
       },
       boxShadow: {
-        card: "0 1px 3px rgba(27,58,75,0.08), 0 1px 2px rgba(27,58,75,0.06)",
-        "card-hover":
-          "0 10px 25px rgba(27,58,75,0.1), 0 4px 10px rgba(27,58,75,0.06)",
+        card: "0 4px 24px rgba(0,0,0,0.3)",
+        "card-hover": "0 8px 32px rgba(0,0,0,0.4)",
         warm: "0 4px 14px rgba(139,90,43,0.08)",
       },
       borderRadius: {
@@ -55,17 +59,27 @@ const config: Config = {
       },
       keyframes: {
         "fade-in-up": {
-          "0%": { opacity: "0", transform: "translateY(8px)" },
+          "0%":   { opacity: "0", transform: "translateY(8px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
         shimmer: {
-          "0%": { backgroundPosition: "-200% 0" },
+          "0%":   { backgroundPosition: "-200% 0" },
           "100%": { backgroundPosition: "200% 0" },
+        },
+        "ai-pulse": {
+          "0%, 100%": { filter: "drop-shadow(0 0 4px rgba(224,122,95,0.4))" },
+          "50%":       { filter: "drop-shadow(0 0 12px rgba(224,122,95,0.8))" },
+        },
+        "glow-pulse": {
+          "0%, 100%": { opacity: "0.6" },
+          "50%":       { opacity: "1" },
         },
       },
       animation: {
         "fade-in-up": "fade-in-up 0.3s ease-out",
-        shimmer: "shimmer 1.5s infinite",
+        shimmer: "shimmer 1.8s infinite",
+        "ai-pulse": "ai-pulse 2s ease-in-out infinite",
+        "glow-pulse": "glow-pulse 2s ease-in-out infinite",
       },
     },
   },
