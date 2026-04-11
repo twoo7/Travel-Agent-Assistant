@@ -190,3 +190,104 @@ def test_search_flights_skips_offer_with_no_itineraries():
 
     assert len(offers) == 1
     assert offers[0].id == "offer_1"
+
+
+# ---------------------------------------------------------------------------
+# Mock fallback tests (Bugs #3, #4)
+# ---------------------------------------------------------------------------
+
+def _make_500_error():
+    """Create an Amadeus ResponseError that simulates an HTTP 500."""
+    mock_response = MagicMock()
+    mock_response.status_code = 500
+    return AmadeusResponseError(mock_response)
+
+
+def _make_401_error():
+    mock_response = MagicMock()
+    mock_response.status_code = 401
+    return AmadeusResponseError(mock_response)
+
+
+def test_search_flights_returns_mock_data_on_500_when_mock_enabled():
+    with patch("backend.src.services.amadeus_service.Config") as MockConfig, \
+         patch("backend.src.services.amadeus_service.Client") as MockClient:
+        MockConfig.validate.return_value = None
+        MockConfig.AMADEUS_API_KEY = "test"
+        MockConfig.AMADEUS_API_SECRET = "test"
+        MockConfig.AMADEUS_MOCK = True
+        mock_client = MagicMock()
+        MockClient.return_value = mock_client
+        mock_client.shopping.flight_offers_search.get.side_effect = _make_500_error()
+
+        service = AmadeusService()
+        offers = service.search_flights("JFK", "NRT", "2026-06-01", 2)
+
+        assert len(offers) == 3
+        assert all(isinstance(o, FlightOffer) for o in offers)
+
+
+def test_search_flights_reraises_500_when_mock_disabled():
+    with patch("backend.src.services.amadeus_service.Config") as MockConfig, \
+         patch("backend.src.services.amadeus_service.Client") as MockClient:
+        MockConfig.validate.return_value = None
+        MockConfig.AMADEUS_API_KEY = "test"
+        MockConfig.AMADEUS_API_SECRET = "test"
+        MockConfig.AMADEUS_MOCK = False
+        mock_client = MagicMock()
+        MockClient.return_value = mock_client
+        mock_client.shopping.flight_offers_search.get.side_effect = _make_500_error()
+
+        service = AmadeusService()
+        with pytest.raises(AmadeusResponseError):
+            service.search_flights("JFK", "NRT", "2026-06-01", 2)
+
+
+def test_search_flights_always_reraises_non_500_errors():
+    with patch("backend.src.services.amadeus_service.Config") as MockConfig, \
+         patch("backend.src.services.amadeus_service.Client") as MockClient:
+        MockConfig.validate.return_value = None
+        MockConfig.AMADEUS_API_KEY = "test"
+        MockConfig.AMADEUS_API_SECRET = "test"
+        MockConfig.AMADEUS_MOCK = True  # even with mock on, non-500 errors re-raise
+        mock_client = MagicMock()
+        MockClient.return_value = mock_client
+        mock_client.shopping.flight_offers_search.get.side_effect = _make_401_error()
+
+        service = AmadeusService()
+        with pytest.raises(AmadeusResponseError):
+            service.search_flights("JFK", "NRT", "2026-06-01", 2)
+
+
+def test_search_hotels_returns_mock_data_on_500_when_mock_enabled():
+    with patch("backend.src.services.amadeus_service.Config") as MockConfig, \
+         patch("backend.src.services.amadeus_service.Client") as MockClient:
+        MockConfig.validate.return_value = None
+        MockConfig.AMADEUS_API_KEY = "test"
+        MockConfig.AMADEUS_API_SECRET = "test"
+        MockConfig.AMADEUS_MOCK = True
+        mock_client = MagicMock()
+        MockClient.return_value = mock_client
+        mock_client.reference_data.locations.hotels.by_city.get.side_effect = _make_500_error()
+
+        service = AmadeusService()
+        offers = service.search_hotels("TYO", "2026-06-01", "2026-06-05", 2)
+
+        assert len(offers) == 4
+        assert all(isinstance(o, HotelOffer) for o in offers)
+
+
+def test_search_hotels_reraises_500_when_mock_disabled():
+    with patch("backend.src.services.amadeus_service.Config") as MockConfig, \
+         patch("backend.src.services.amadeus_service.Client") as MockClient:
+        MockConfig.validate.return_value = None
+        MockConfig.AMADEUS_API_KEY = "test"
+        MockConfig.AMADEUS_API_SECRET = "test"
+        MockConfig.AMADEUS_MOCK = False
+        mock_client = MagicMock()
+        MockClient.return_value = mock_client
+        mock_client.reference_data.locations.hotels.by_city.get.side_effect = _make_500_error()
+
+        service = AmadeusService()
+        with pytest.raises(AmadeusResponseError):
+            service.search_hotels("TYO", "2026-06-01", "2026-06-05", 2)
