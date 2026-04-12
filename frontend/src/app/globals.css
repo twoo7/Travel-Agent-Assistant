@@ -25,6 +25,9 @@
   --text-eyebrow:       rgba(255,255,255,0.35);
   --background:         #0a1628;
   --foreground:         #FFFFFF;
+  --sidebar-bg:         #071420;
+  --sidebar-bg-mobile:  rgba(7,20,32,0.9);
+  --sidebar-border:     rgba(255,255,255,0.06);
 }
 
 /* ── Light mode overrides ────────────────────────────────────────────────── */
@@ -46,6 +49,9 @@
   --text-eyebrow:       rgba(27,58,75,0.5);
   --background:         #FAF8F5;
   --foreground:         #1B3A4B;
+  --sidebar-bg:         rgba(250,248,245,0.95);
+  --sidebar-bg-mobile:  rgba(250,248,245,0.97);
+  --sidebar-border:     rgba(0,0,0,0.08);
 }
 
 /* ── Body ────────────────────────────────────────────────────────────────── */

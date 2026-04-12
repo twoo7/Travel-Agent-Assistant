@@ -245,13 +245,13 @@ export function Sidebar({ pinned, onPinChange }: { pinned: boolean; onPinChange:
       animate={{ width: expanded ? 224 : 48 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
       className="fixed left-0 top-0 h-full z-50 flex flex-col overflow-hidden"
-      style={{ background: "#071420", borderRight: "1px solid rgba(255,255,255,0.06)" }}
+      style={{ background: "var(--sidebar-bg)", borderRight: "1px solid var(--sidebar-border)" }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
       {/* Brand */}
       <div className="flex items-center h-12 border-b overflow-hidden shrink-0"
-           style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+           style={{ borderColor: "var(--sidebar-border)" }}>
         <div className="w-12 shrink-0 flex items-center justify-center">
           <Plane size={18} style={{ color: "var(--accent)" }} />
         </div>
@@ -324,7 +324,7 @@ export function Sidebar({ pinned, onPinChange }: { pinned: boolean; onPinChange:
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="px-3 py-2 border-t text-xs shrink-0"
-            style={{ borderColor: "rgba(255,255,255,0.06)", color: "var(--text-muted)" }}
+            style={{ borderColor: "var(--sidebar-border)", color: "var(--text-muted)" }}
           >
             <TripSummary staleSteps={staleSteps} />
           </motion.div>
@@ -339,7 +339,7 @@ export function Sidebar({ pinned, onPinChange }: { pinned: boolean; onPinChange:
         whileTap={{ scale: 0.9 }}
         onClick={() => onPinChange(!pinned)}
         className="w-full flex items-center justify-center py-3 border-t transition-colors duration-150 shrink-0"
-        style={{ borderColor: "rgba(255,255,255,0.06)", color: "var(--text-subtle)" }}
+        style={{ borderColor: "var(--sidebar-border)", color: "var(--text-subtle)" }}
         aria-label={pinned ? "Unpin sidebar" : "Pin sidebar open"}
         title={pinned ? "Unpin sidebar" : "Pin sidebar open"}
       >
@@ -356,7 +356,7 @@ export function Sidebar({ pinned, onPinChange }: { pinned: boolean; onPinChange:
       {/* Mobile: hamburger top bar */}
       <div
         className="md:hidden fixed top-0 left-0 right-0 h-11 z-40 flex items-center px-3"
-        style={{ background: "rgba(7,20,32,0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+        style={{ background: "var(--sidebar-bg-mobile)", backdropFilter: "blur(12px)", borderBottom: "1px solid var(--sidebar-border)" }}
       >
         <button
           onClick={() => setMobileOpen(true)}
@@ -395,12 +395,12 @@ export function Sidebar({ pinned, onPinChange }: { pinned: boolean; onPinChange:
             exit={{ x: "-100%" }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             className="md:hidden fixed left-0 top-0 h-full z-50 flex flex-col w-64"
-            style={{ background: "#071420", borderRight: "1px solid rgba(255,255,255,0.06)" }}
+            style={{ background: "var(--sidebar-bg)", borderRight: "1px solid var(--sidebar-border)" }}
             role="dialog"
             aria-label="Navigation"
           >
             <div className="flex items-center justify-between px-4 py-3 border-b shrink-0"
-                 style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+                 style={{ borderColor: "var(--sidebar-border)" }}>
               <span className="font-display text-sm tracking-wide" style={{ color: "var(--text-primary)" }}>
                 Travel Planner
               </span>
@@ -447,7 +447,7 @@ export function Sidebar({ pinned, onPinChange }: { pinned: boolean; onPinChange:
                 );
               })}
             </ul>
-            <div className="px-4 py-3 border-t text-xs shrink-0" style={{ borderColor: "rgba(255,255,255,0.06)", color: "var(--text-muted)" }}>
+            <div className="px-4 py-3 border-t text-xs shrink-0" style={{ borderColor: "var(--sidebar-border)", color: "var(--text-muted)" }}>
               <TripSummary staleSteps={staleSteps} />
             </div>
             <ThemeToggle />
