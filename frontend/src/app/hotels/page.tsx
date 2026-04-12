@@ -6,6 +6,7 @@ import { useTripContext } from "@/context/TripContext";
 import { api } from "@/services/api";
 import { HotelSearchForm } from "@/components/hotels/HotelSearchForm";
 import { HotelCard } from "@/components/hotels/HotelCard";
+import { AnimatedList, AnimatedListItem } from "@/components/ui/AnimatedList";
 import { SortBar, SortOption } from "@/components/SortBar";
 import { FilterBar, HotelFilters } from "@/components/FilterBar";
 import { PageTransition } from "@/components/ui/PageTransition";
@@ -163,10 +164,11 @@ export default function HotelsPage() {
   if (tripContext.legs.length === 0) {
     return (
       <PageTransition className="max-w-3xl mx-auto text-center py-16">
-        <p className="text-muted font-body">No trip set up yet.</p>
+        <p className="font-body" style={{ color: "var(--text-muted)" }}>No trip set up yet.</p>
         <button
           onClick={() => router.push("/")}
-          className="mt-4 text-primary hover:text-primary-dark font-body text-sm underline underline-offset-2"
+          className="mt-4 font-body text-sm underline underline-offset-2"
+          style={{ color: "var(--accent)" }}
         >
           ← Go back to Trip Setup
         </button>
@@ -179,8 +181,9 @@ export default function HotelsPage() {
       <div className="max-w-3xl mx-auto space-y-8">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-primary font-display">Hotel Stays</h1>
-          <p className="text-muted mt-1 font-body">Find a hotel for each destination in your trip.</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[2.5px] mb-1 font-body" style={{ color: "var(--text-eyebrow)" }}>Step 3 of 5</p>
+          <h1 className="font-display text-4xl mb-2" style={{ color: "var(--text-primary)" }}>Choose Your Hotels</h1>
+          <p className="font-body" style={{ color: "var(--text-muted)" }}>Find a hotel for each destination in your trip.</p>
         </div>
 
         {/* Leg sections */}
@@ -191,44 +194,52 @@ export default function HotelsPage() {
 
           return (
             <div key={leg.leg_number} className="space-y-3">
-              <h2 className="font-semibold text-charcoal font-body flex items-center gap-2 flex-wrap">
-                <Hotel size={15} className="text-accent" />
+              <h2 className="font-semibold font-body flex items-center gap-2 flex-wrap" style={{ color: "var(--text-primary)" }}>
+                <Hotel size={15} style={{ color: "var(--accent)" }} />
                 Leg {leg.leg_number}:{" "}
                 <span className="font-mono text-sm">{iataToCityName(leg.origin)} → {iataToCityName(leg.destination)}</span>
                 {returnLeg && (
-                  <span className="text-xs font-body font-normal text-muted bg-gray-100 border border-gray-200 px-2 py-0.5 rounded-full">
+                  <span
+                    className="text-xs font-body font-normal px-2 py-0.5 rounded-full"
+                    style={{ color: "var(--text-muted)", background: "var(--glass-1)", border: "1px solid var(--glass-border-1)" }}
+                  >
                     Return home — no hotel needed
                   </span>
                 )}
               </h2>
 
               {returnLeg && (
-                <p className="text-sm text-muted font-body italic">
+                <p className="text-sm font-body italic" style={{ color: "var(--text-muted)" }}>
                   This leg returns you to {iataToCityName(tripContext.home_origin)}. No hotel booking required.
                 </p>
               )}
 
               {/* Overnight ferry notice */}
               {leg.transport_mode === "ferry" && (
-                <div className="flex items-start gap-3 bg-primary/5 border border-primary/15 rounded-xl p-4">
-                  <Ship size={16} className="text-primary shrink-0 mt-0.5" />
+                <div
+                  className="flex items-start gap-3 rounded-xl p-4"
+                  style={{ background: "var(--glass-2)", border: "1px solid var(--glass-border-2)" }}
+                >
+                  <Ship size={16} className="shrink-0 mt-0.5" style={{ color: "var(--accent)" }} />
                   <div>
-                    <p className="font-semibold text-primary text-sm font-body">Overnight Ferry Leg</p>
-                    <p className="text-sm text-charcoal/70 font-body mt-0.5">
+                    <p className="font-semibold text-sm font-body" style={{ color: "var(--text-primary)" }}>Overnight Ferry Leg</p>
+                    <p className="text-sm font-body mt-0.5" style={{ color: "var(--text-muted)" }}>
                       Your overnight ferry from {leg.origin} to {leg.destination} includes cabin
                       accommodation. No hotel needed for this leg&apos;s departure night — you&apos;ll
                       sleep on board.
                     </p>
                   </div>
                 </div>
-
               )}
 
               {/* Sleeper train advisory — non-suppressing */}
               {leg.transport_mode === "train" && (
-                <div className="flex items-start gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
-                  <Train size={13} className="text-muted shrink-0 mt-0.5" />
-                  <p className="text-xs text-charcoal/60 font-body">
+                <div
+                  className="flex items-start gap-2 rounded-xl px-3 py-2"
+                  style={{ background: "var(--glass-1)", border: "1px solid var(--glass-border-1)" }}
+                >
+                  <Train size={13} className="shrink-0 mt-0.5" style={{ color: "var(--text-muted)" }} />
+                  <p className="text-xs font-body" style={{ color: "var(--text-subtle)" }}>
                     Note: If this is an overnight sleeper train, berth accommodation may be included —
                     you may not need a hotel for this leg.
                   </p>
@@ -239,18 +250,20 @@ export default function HotelsPage() {
               {leg.hotel_stays.map((stay) => (
                 <div
                   key={stay.hotel.id}
-                  className="flex items-center justify-between bg-success/5 border border-success/20 rounded-xl px-4 py-3"
+                  className="flex items-center justify-between rounded-xl px-4 py-3"
+                  style={{ background: "rgba(107,144,128,0.08)", border: "1px solid rgba(107,144,128,0.25)" }}
                 >
                   <div className="flex items-center gap-2">
-                    <Check size={14} className="text-success" />
-                    <span className="text-success font-medium text-sm font-body">{stay.hotel.name}</span>
-                    <span className="text-muted text-xs font-body">
+                    <Check size={14} style={{ color: "var(--success)" }} />
+                    <span className="font-medium text-sm font-body" style={{ color: "var(--success)" }}>{stay.hotel.name}</span>
+                    <span className="text-xs font-body" style={{ color: "var(--text-muted)" }}>
                       {stay.check_in} → {stay.check_out}
                     </span>
                   </div>
                   <button
                     onClick={() => handleRemoveStay(leg.leg_number, stay.hotel.id)}
-                    className="w-6 h-6 rounded-lg flex items-center justify-center text-muted hover:text-red-500 hover:bg-red-50 transition-colors"
+                    className="w-6 h-6 rounded-lg flex items-center justify-center transition-colors"
+                    style={{ color: "var(--text-muted)" }}
                     aria-label="Remove hotel stay"
                   >
                     <X size={13} />
@@ -273,7 +286,10 @@ export default function HotelsPage() {
               )}
 
               {error[leg.leg_number] && (
-                <div className="flex items-start gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3 font-body">
+                <div
+                  className="flex items-start gap-2 text-sm rounded-xl px-4 py-3 font-body"
+                  style={{ color: "var(--warning)", background: "rgba(224,173,95,0.08)", border: "1px solid rgba(224,173,95,0.25)" }}
+                >
                   <AlertTriangle size={15} className="shrink-0 mt-0.5" />
                   <span>{error[leg.leg_number]}</span>
                   <button
@@ -297,23 +313,23 @@ export default function HotelsPage() {
               )}
 
               {displayResults[leg.leg_number] && displayResults[leg.leg_number].length === 0 && (
-                <p className="text-sm text-muted text-center py-6 font-body">No hotels found.</p>
+                <p className="text-sm text-center py-6 font-body" style={{ color: "var(--text-muted)" }}>No hotels found.</p>
               )}
 
-              <div className="space-y-2">
-                {(displayResults[leg.leg_number] ?? []).map((offer, idx) => (
-                  <HotelCard
-                    key={offer.id}
-                    offer={offer}
-                    selected={pendingOffers[leg.leg_number]?.id === offer.id}
-                    confirmed={leg.hotel_stays.some((s) => s.hotel.id === offer.id)}
-                    onSelect={(o) => handleSelectHotel(leg.leg_number, o)}
-                    index={idx}
-                    checkIn={pendingDates[leg.leg_number]?.check_in ?? check_in}
-                    checkOut={pendingDates[leg.leg_number]?.check_out ?? check_out}
-                  />
+              <AnimatedList>
+                {(displayResults[leg.leg_number] ?? []).map((offer) => (
+                  <AnimatedListItem key={offer.id}>
+                    <HotelCard
+                      offer={offer}
+                      selected={pendingOffers[leg.leg_number]?.id === offer.id}
+                      confirmed={leg.hotel_stays.some((s) => s.hotel.id === offer.id)}
+                      onSelect={(o) => handleSelectHotel(leg.leg_number, o)}
+                      checkIn={pendingDates[leg.leg_number]?.check_in ?? check_in}
+                      checkOut={pendingDates[leg.leg_number]?.check_out ?? check_out}
+                    />
+                  </AnimatedListItem>
                 ))}
-              </div>
+              </AnimatedList>
 
               {pendingOffers[leg.leg_number] &&
                 !leg.hotel_stays.some((s) => s.hotel.id === pendingOffers[leg.leg_number]?.id) && (
@@ -334,13 +350,16 @@ export default function HotelsPage() {
         {/* Validation + progress */}
         <div className="space-y-3 pt-2">
           {!allLegsHaveHotels && validationIssues.length > 0 && (
-            <div className="flex items-start gap-3 bg-warning/10 border border-warning/30 rounded-xl p-4">
-              <AlertTriangle size={16} className="text-warning-dark shrink-0 mt-0.5" />
+            <div
+              className="flex items-start gap-3 rounded-xl p-4"
+              style={{ background: "rgba(224,173,95,0.08)", border: "1px solid rgba(224,173,95,0.25)" }}
+            >
+              <AlertTriangle size={16} className="shrink-0 mt-0.5" style={{ color: "var(--warning)" }} />
               <div>
-                <p className="text-sm font-semibold text-warning-dark font-body mb-1">Before you continue:</p>
+                <p className="text-sm font-semibold font-body mb-1" style={{ color: "var(--warning)" }}>Before you continue:</p>
                 <ul className="space-y-0.5">
                   {validationIssues.map((issue, i) => (
-                    <li key={i} className="text-sm text-warning-dark/80 font-body">• {issue}</li>
+                    <li key={i} className="text-sm font-body" style={{ color: "var(--warning)" }}>• {issue}</li>
                   ))}
                 </ul>
               </div>
@@ -348,9 +367,12 @@ export default function HotelsPage() {
           )}
 
           {allLegsHaveHotels && (
-            <div className="flex items-center gap-2 bg-success/10 border border-success/20 rounded-xl px-4 py-3">
-              <Check size={15} className="text-success" />
-              <p className="text-sm font-medium text-success font-body">
+            <div
+              className="flex items-center gap-2 rounded-xl px-4 py-3"
+              style={{ background: "rgba(107,144,128,0.08)", border: "1px solid rgba(107,144,128,0.25)" }}
+            >
+              <Check size={15} style={{ color: "var(--success)" }} />
+              <p className="text-sm font-medium font-body" style={{ color: "var(--success)" }}>
                 All hotels confirmed — ready to continue
               </p>
             </div>
@@ -358,15 +380,16 @@ export default function HotelsPage() {
 
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-muted font-body">{confirmedLegs} of {totalLegs} legs with hotel</span>
-              <span className="text-xs font-semibold text-primary font-body">{Math.round(progressPct)}%</span>
+              <span className="text-xs font-body" style={{ color: "var(--text-muted)" }}>{confirmedLegs} of {totalLegs} legs with hotel</span>
+              <span className="text-xs font-semibold font-body" style={{ color: "var(--accent)" }}>{Math.round(progressPct)}%</span>
             </div>
-            <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+            <div
+              className="h-1.5 w-full rounded-full overflow-hidden"
+              style={{ background: "var(--glass-1)" }}
+            >
               <div
-                className={`h-full rounded-full transition-all duration-500 ${
-                  allLegsHaveHotels ? "bg-success" : "bg-primary"
-                }`}
-                style={{ width: `${progressPct}%` }}
+                className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${progressPct}%`, background: allLegsHaveHotels ? "var(--success)" : "var(--accent)" }}
               />
             </div>
           </div>
