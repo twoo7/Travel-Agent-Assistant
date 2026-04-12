@@ -104,7 +104,8 @@ function TripSummary({ staleSteps }: { staleSteps: string[] }) {
         );
       })}
       {totalCost > 0 && (
-        <p className="font-semibold pt-1 border-t border-white/10 text-xs font-body"
+        <p className="font-semibold pt-1 border-t text-xs font-body"
+           style={{ borderColor: "var(--sidebar-border)" }}
            style={{ color: "var(--accent)" }}>
           Total ~{formatPrice(totalCost, tripContext.currency ?? tripContext.legs[0]?.selected_flight?.currency ?? "USD")}
         </p>
@@ -133,7 +134,7 @@ function StatusChip({ status }: { status: StepStatus }) {
     locked: {
       label: "Locked",
       icon: <Lock size={10} />,
-      style: { background: "rgba(255,255,255,0.05)", color: "var(--text-subtle)", border: "1px solid rgba(255,255,255,0.08)" },
+      style: { background: "var(--glass-1)", color: "var(--text-subtle)", border: "1px solid var(--glass-border-1)" },
     },
   };
   const { label, icon, style } = map[status];
