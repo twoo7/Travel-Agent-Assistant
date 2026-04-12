@@ -58,7 +58,7 @@ export function ExportButtons({ exportRequest }: Props) {
         <p
           className="text-sm rounded-lg px-3 py-2 flex items-center gap-2 font-body"
           style={{
-            color: "var(--warning)",
+            color: "var(--accent)",
             background: "rgba(224,122,95,0.10)",
             border: "1px solid rgba(224,122,95,0.25)",
           }}

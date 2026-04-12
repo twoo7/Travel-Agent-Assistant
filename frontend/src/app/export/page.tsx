@@ -66,7 +66,7 @@ export default function ExportPage() {
             <p className="text-[10px] font-semibold uppercase tracking-[2.5px] mb-1 font-body" style={{ color: "var(--text-eyebrow)" }}>
               Step 5 of 5
             </p>
-            <h1 className="font-display text-4xl mb-6" style={{ color: "var(--text-primary)" }}>
+            <h1 className="font-display text-4xl" style={{ color: "var(--text-primary)" }}>
               Your Trip Summary
             </h1>
           </div>

@@ -128,39 +128,42 @@ export function ItinerarySummary({ tripContext, itinerary }: Props) {
           <h2 className="font-display text-xl mb-3" style={{ color: "var(--text-primary)" }}>Where You'll Stay</h2>
           <div className="space-y-2">
             {tripContext.legs.flatMap((leg) =>
-              leg.hotel_stays.map((stay) => (
-                <div
-                  key={stay.hotel.id}
-                  className="rounded-xl px-4 py-3 flex items-center justify-between"
-                  style={{
-                    background: "var(--glass-1)",
-                    border: "1px solid var(--glass-border-1)",
-                    backdropFilter: "blur(8px)",
-                  }}
-                >
-                  <div>
-                    <span className="font-medium font-body" style={{ color: "var(--text-primary)" }}>{stay.hotel.name}</span>
-                    {stay.hotel.ai_recommended && (
-                      <span
-                        className="ml-2 inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full font-body text-white"
-                        style={{ background: "var(--accent)" }}
-                      >
-                        <Sparkles size={9} />
-                        AI Pick
-                      </span>
-                    )}
-                    <p className="text-xs mt-0.5 font-body" style={{ color: "var(--text-muted)" }}>{stay.check_in} → {stay.check_out}</p>
+              leg.hotel_stays.map((stay) => {
+                const nights = calcNights(stay.check_in, stay.check_out);
+                return (
+                  <div
+                    key={stay.hotel.id}
+                    className="rounded-xl px-4 py-3 flex items-center justify-between"
+                    style={{
+                      background: "var(--glass-1)",
+                      border: "1px solid var(--glass-border-1)",
+                      backdropFilter: "blur(8px)",
+                    }}
+                  >
+                    <div>
+                      <span className="font-medium font-body" style={{ color: "var(--text-primary)" }}>{stay.hotel.name}</span>
+                      {stay.hotel.ai_recommended && (
+                        <span
+                          className="ml-2 inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full font-body text-white"
+                          style={{ background: "var(--accent)" }}
+                        >
+                          <Sparkles size={9} />
+                          AI Pick
+                        </span>
+                      )}
+                      <p className="text-xs mt-0.5 font-body" style={{ color: "var(--text-muted)" }}>{stay.check_in} → {stay.check_out}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold font-display" style={{ color: "var(--accent)" }}>
+                        {formatPrice(stay.hotel.price_per_night * nights, stay.hotel.currency)}
+                      </p>
+                      <p className="text-xs font-body" style={{ color: "var(--text-muted)" }}>
+                        {formatPrice(stay.hotel.price_per_night, stay.hotel.currency)}/night · {nights} night{nights !== 1 ? "s" : ""}
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold font-display" style={{ color: "var(--accent)" }}>
-                      {formatPrice(stay.hotel.price_per_night * calcNights(stay.check_in, stay.check_out), stay.hotel.currency)}
-                    </p>
-                    <p className="text-xs font-body" style={{ color: "var(--text-muted)" }}>
-                      {formatPrice(stay.hotel.price_per_night, stay.hotel.currency)}/night · {calcNights(stay.check_in, stay.check_out)} night{calcNights(stay.check_in, stay.check_out) !== 1 ? "s" : ""}
-                    </p>
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
@@ -209,7 +212,7 @@ export function ItinerarySummary({ tripContext, itinerary }: Props) {
                 <div>
                   {day.items.map((item, i) => (
                     <div
-                      key={i}
+                      key={item.id ?? i}
                       className="px-4 py-2.5 flex items-center gap-3"
                       style={i > 0 ? { borderTop: "1px solid var(--glass-border-1)" } : {}}
                     >
