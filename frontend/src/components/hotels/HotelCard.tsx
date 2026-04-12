@@ -63,7 +63,7 @@ export function HotelCard({ offer, selected, confirmed, onSelect, checkIn, check
       tabIndex={0}
       onKeyDown={(e) => { if ((e.key === "Enter" || e.key === " ") && !confirmed) { e.preventDefault(); onSelect(offer); } }}
       style={cardStyle}
-      className="relative rounded-2xl p-4 outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
+      className="relative rounded-2xl p-4 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
     >
       {offer.ai_recommended && !confirmed && (
         <span className="absolute top-3 right-3">
