@@ -1,5 +1,5 @@
 import type { TripContext, ItineraryDay, TransportMode } from "@/types/trip";
-import { Plane, Train, Ship, Car, Hotel, MapPin, Sparkles, Calendar } from "lucide-react";
+import { Plane, Train, Ship, Car, Hotel, MapPin, Sparkles } from "lucide-react";
 import { iataToCityName } from "@/utils/airportNames";
 import { formatPrice } from "@/utils/formatPrice";
 import { calcNights } from "@/utils/dateUtils";
@@ -125,7 +125,7 @@ export function ItinerarySummary({ tripContext, itinerary }: Props) {
       {tripContext.legs.some((l) => l.hotel_stays.length > 0) && (
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[2.5px] mb-1 font-body" style={{ color: "var(--text-eyebrow)" }}>Accommodation</p>
-          <h2 className="font-display text-xl mb-3" style={{ color: "var(--text-primary)" }}>Where You'll Stay</h2>
+          <h2 className="font-display text-xl mb-3" style={{ color: "var(--text-primary)" }}>Where You&apos;ll Stay</h2>
           <div className="space-y-2">
             {tripContext.legs.flatMap((leg) =>
               leg.hotel_stays.map((stay) => {

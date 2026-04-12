@@ -106,6 +106,8 @@ export interface POI {
   claude_note: string;
   claude_best_time?: string;
   claude_booking_tip?: string;
+  ai_recommended?: boolean;
+  ai_reason?: string;
 }
 
 export interface TripContext {

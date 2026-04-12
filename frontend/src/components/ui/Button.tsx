@@ -17,9 +17,9 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:   "text-white shadow-sm hover:shadow-md",
-  secondary: "text-white border border-white/20 hover:border-white/40",
-  ghost:     "text-white/60 hover:text-white hover:bg-white/10",
-  success:   "bg-success text-white hover:bg-success-light shadow-sm hover:shadow-md",
+  secondary: "",
+  ghost:     "",
+  success:   "shadow-sm hover:shadow-md",
   danger:    "bg-red-500 text-white hover:bg-red-600 shadow-sm hover:shadow-md",
 };
 
@@ -28,9 +28,13 @@ const variantStyles: Record<ButtonVariant, React.CSSProperties> = {
     background: "linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%)",
     boxShadow: "0 0 20px var(--accent-glow)",
   },
-  secondary: { background: "var(--glass-2)" },
-  ghost:     {},
-  success:   {},
+  secondary: {
+    background: "var(--glass-2)",
+    border: "1px solid var(--glass-border-2)",
+    color: "var(--text-primary)",
+  },
+  ghost:     { color: "var(--text-muted)" },
+  success:   { background: "var(--success)", color: "white" },
   danger:    {},
 };
 

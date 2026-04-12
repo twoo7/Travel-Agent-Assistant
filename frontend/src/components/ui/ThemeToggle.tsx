@@ -29,8 +29,10 @@ export function ThemeToggle() {
   return (
     <motion.button
       whileTap={{ scale: 0.9 }}
+      whileHover={{ opacity: 0.8 }}
       onClick={toggle}
-      className="w-full flex items-center justify-center py-3 border-t border-white/10 text-white/40 hover:text-white/80 hover:bg-white/5 transition-colors duration-150"
+      style={{ borderTop: "1px solid var(--sidebar-border)", color: "var(--text-subtle)" }}
+      className="w-full flex items-center justify-center py-3 transition-colors duration-150"
       aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
       title={theme === "dark" ? "Light mode" : "Dark mode"}
     >
