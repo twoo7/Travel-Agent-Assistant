@@ -73,10 +73,8 @@ export function ItinerarySummary({ tripContext, itinerary }: Props) {
       {/* Transportation summary */}
       {tripContext.legs.some((l) => l.selected_flight) && (
         <div>
-          <h3 className="text-base font-semibold mb-3 flex items-center gap-2 font-body" style={{ color: "var(--text-primary)" }}>
-            <Plane size={16} style={{ color: "var(--accent)" }} />
-            Transportation
-          </h3>
+          <p className="text-[10px] font-semibold uppercase tracking-[2.5px] mb-1 font-body" style={{ color: "var(--text-eyebrow)" }}>Transport</p>
+          <h2 className="font-display text-xl mb-3" style={{ color: "var(--text-primary)" }}>Getting There</h2>
           <div className="space-y-2">
             {tripContext.legs.map((leg) =>
               leg.selected_flight ? (
@@ -126,10 +124,8 @@ export function ItinerarySummary({ tripContext, itinerary }: Props) {
       {/* Hotel summary */}
       {tripContext.legs.some((l) => l.hotel_stays.length > 0) && (
         <div>
-          <h3 className="text-base font-semibold mb-3 flex items-center gap-2 font-body" style={{ color: "var(--text-primary)" }}>
-            <Hotel size={16} style={{ color: "var(--accent)" }} />
-            Hotels
-          </h3>
+          <p className="text-[10px] font-semibold uppercase tracking-[2.5px] mb-1 font-body" style={{ color: "var(--text-eyebrow)" }}>Accommodation</p>
+          <h2 className="font-display text-xl mb-3" style={{ color: "var(--text-primary)" }}>Where You'll Stay</h2>
           <div className="space-y-2">
             {tripContext.legs.flatMap((leg) =>
               leg.hotel_stays.map((stay) => (
@@ -173,10 +169,8 @@ export function ItinerarySummary({ tripContext, itinerary }: Props) {
       {/* Day-by-day itinerary */}
       {itinerary.length > 0 && (
         <div>
-          <h3 className="text-base font-semibold mb-4 flex items-center gap-2 font-body" style={{ color: "var(--text-primary)" }}>
-            <Calendar size={16} style={{ color: "var(--success)" }} />
-            Day-by-Day Itinerary
-          </h3>
+          <p className="text-[10px] font-semibold uppercase tracking-[2.5px] mb-1 font-body" style={{ color: "var(--text-eyebrow)" }}>Itinerary</p>
+          <h2 className="font-display text-xl mb-3" style={{ color: "var(--text-primary)" }}>Day by Day</h2>
           <div className="space-y-4">
             {itinerary.map((day) => (
               <div
