@@ -48,7 +48,7 @@ export function SuggestionsSidebar({ pois, addedIds, onAdd, loading }: Props) {
       <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid var(--glass-border-1)" }}>
         <div>
           <h2 className="font-semibold text-sm flex items-center gap-1.5 font-body" style={{ color: "var(--text-primary)" }}>
-            <Sparkles size={14} className={loading ? "animate-ai-pulse" : ""} style={{ color: "var(--accent)" }} />
+            <Sparkles size={14} className={loading ? "animate-ai-pulse" : undefined} style={{ color: "var(--accent)" }} />
             <span style={{ color: "var(--accent)" }}>✦ AI Picks</span>
           </h2>
           <p className="text-xs font-body" style={{ color: "var(--text-muted)" }}>{pois.length} places</p>

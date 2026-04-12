@@ -37,9 +37,10 @@ export function SkeletonCard({ className = "" }: { className?: string }) {
     <div
       className={["rounded-2xl p-4 space-y-3", className].filter(Boolean).join(" ")}
       style={{
-        background: "var(--glass-1)",
-        border: "1px solid var(--glass-border-1)",
+        background: "var(--glass-2)",
+        border: "1px solid var(--glass-border-2)",
         backdropFilter: "blur(12px)",
+        boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
       }}
     >
       <div className="flex justify-between items-start">
