@@ -105,8 +105,7 @@ function TripSummary({ staleSteps }: { staleSteps: string[] }) {
       })}
       {totalCost > 0 && (
         <p className="font-semibold pt-1 border-t text-xs font-body"
-           style={{ borderColor: "var(--sidebar-border)" }}
-           style={{ color: "var(--accent)" }}>
+           style={{ borderColor: "var(--sidebar-border)", color: "var(--accent)" }}>
           Total ~{formatPrice(totalCost, tripContext.currency ?? tripContext.legs[0]?.selected_flight?.currency ?? "USD")}
         </p>
       )}
