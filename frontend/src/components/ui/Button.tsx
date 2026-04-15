@@ -20,7 +20,7 @@ const variantClasses: Record<ButtonVariant, string> = {
   secondary: "",
   ghost:     "",
   success:   "shadow-sm hover:shadow-md",
-  danger:    "bg-red-500 text-white hover:bg-red-600 shadow-sm hover:shadow-md",
+  danger:    "shadow-sm hover:shadow-md",
 };
 
 const variantStyles: Record<ButtonVariant, React.CSSProperties> = {
@@ -35,7 +35,7 @@ const variantStyles: Record<ButtonVariant, React.CSSProperties> = {
   },
   ghost:     { color: "var(--text-muted)" },
   success:   { background: "var(--success)", color: "white" },
-  danger:    {},
+  danger:    { background: "var(--danger)", color: "white" },
 };
 
 const sizeClasses: Record<ButtonSize, string> = {

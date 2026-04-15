@@ -19,6 +19,7 @@
   --success:            #6B9080;
   --success-glow:       rgba(107,144,128,0.3);
   --warning:            #D4A574;
+  --danger:             #ef4444;
   --text-primary:       #FFFFFF;
   --text-muted:         rgba(255,255,255,0.45);
   --text-subtle:        rgba(255,255,255,0.25);
@@ -52,6 +53,7 @@
   --sidebar-bg:         rgba(250,248,245,0.95);
   --sidebar-bg-mobile:  rgba(250,248,245,0.97);
   --sidebar-border:     rgba(0,0,0,0.08);
+  --danger:             #dc2626;
 }
 
 /* ── Body ────────────────────────────────────────────────────────────────── */

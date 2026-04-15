@@ -55,7 +55,7 @@ export function SuggestionsSidebar({ pois, addedIds, onAdd, loading }: Props) {
         </div>
         <button
           onClick={() => setCollapsed(true)}
-          className="transition-colors w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/5"
+          className="transition-colors w-7 h-7 flex items-center justify-center rounded-lg hover:bg-[var(--glass-1)]"
           style={{ color: "var(--text-subtle)" }}
           aria-label="Collapse sidebar"
         >
