@@ -176,7 +176,7 @@ export default function AirportSearch({
 
   return (
     <div className="relative w-full" ref={containerRef}>
-      <label className="block text-xs font-medium text-charcoal/70 mb-1 font-body">
+      <label className="block text-xs font-medium mb-1 font-body" style={{ color: "var(--text-muted)" }}>
         {label}
       </label>
 
@@ -190,10 +190,9 @@ export default function AirportSearch({
           aria-autocomplete="list"
           aria-activedescendant={activeOptionId}
           className={[
-            "w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm font-body",
-            "focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary",
-            "bg-white placeholder:text-subtle text-charcoal",
-            "disabled:bg-gray-50 disabled:text-muted disabled:cursor-not-allowed",
+            "w-full px-3 py-2.5 rounded-lg text-sm font-body",
+            "focus:outline-none",
+            "disabled:opacity-50 disabled:cursor-not-allowed",
             "transition-colors duration-150 pr-16",
           ]
             .filter(Boolean)
@@ -209,7 +208,7 @@ export default function AirportSearch({
 
         {selectedAirport && !open && (
           <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
-            <span className="text-xs font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded font-mono">
+            <span className="text-xs font-bold px-1.5 py-0.5 rounded font-mono" style={{ color: "var(--accent)", background: "rgba(224,122,95,0.1)" }}>
               {selectedAirport.iata}
             </span>
           </div>
@@ -221,7 +220,8 @@ export default function AirportSearch({
           id={listboxId.current}
           role="listbox"
           aria-label={`Airport options for ${label}`}
-          className="absolute z-50 w-full top-full mt-1 bg-white border border-gray-100 rounded-xl shadow-card-hover overflow-hidden max-h-64 overflow-y-auto"
+          className="absolute z-50 w-full top-full mt-1 rounded-xl shadow-card-hover overflow-hidden max-h-64 overflow-y-auto"
+          style={{ background: "var(--glass-2)", border: "1px solid var(--glass-border-2)", backdropFilter: "blur(12px)" }}
         >
           {results.map((airport, idx) => (
             <li
@@ -229,12 +229,11 @@ export default function AirportSearch({
               id={`${listboxId.current}-option-${idx}`}
               role="option"
               aria-selected={activeIndex === idx}
-              className={[
-                "px-3 py-2.5 cursor-pointer flex items-center justify-between border-b border-gray-50 last:border-0 transition-colors duration-100",
-                activeIndex === idx ? "bg-primary/5" : "hover:bg-primary/5",
-              ]
-                .filter(Boolean)
-                .join(" ")}
+              className="px-3 py-2.5 cursor-pointer flex items-center justify-between last:border-0 transition-colors duration-100"
+              style={{
+                borderBottom: "1px solid var(--glass-border-1)",
+                background: activeIndex === idx ? "rgba(224,122,95,0.05)" : "transparent",
+              }}
               onMouseDown={(e) => {
                 e.preventDefault();
                 handleSelect(airport);
@@ -242,20 +241,20 @@ export default function AirportSearch({
               onMouseEnter={() => setActiveIndex(idx)}
             >
               <div className="flex flex-col min-w-0 mr-3">
-                <span className="text-sm font-medium text-charcoal truncate font-body">
+                <span className="text-sm font-medium truncate font-body" style={{ color: "var(--text-primary)" }}>
                   {airport.name}
                 </span>
-                <span className="text-xs text-muted truncate">
+                <span className="text-xs truncate" style={{ color: "var(--text-muted)" }}>
                   {airport.city}, {COUNTRY_NAMES[airport.country] ?? airport.country}
                 </span>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 {showCityCode && AIRPORT_TO_CITY[airport.iata] && (
-                  <span className="text-xs font-bold text-success-dark bg-success/10 px-1.5 py-0.5 rounded font-mono">
+                  <span className="text-xs font-bold px-1.5 py-0.5 rounded font-mono" style={{ color: "var(--success)", background: "rgba(107,144,128,0.1)" }}>
                     {AIRPORT_TO_CITY[airport.iata]}
                   </span>
                 )}
-                <span className="text-xs font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded font-mono">
+                <span className="text-xs font-bold px-1.5 py-0.5 rounded font-mono" style={{ color: "var(--accent)", background: "rgba(224,122,95,0.1)" }}>
                   {airport.iata}
                 </span>
               </div>
@@ -265,8 +264,8 @@ export default function AirportSearch({
       )}
 
       {open && query.trim().length > 0 && results.length === 0 && (
-        <div className="absolute z-50 w-full top-full mt-1 bg-white border border-gray-100 rounded-xl shadow-card-hover overflow-hidden">
-          <div className="px-3 py-3 text-sm text-muted text-center font-body">
+        <div className="absolute z-50 w-full top-full mt-1 rounded-xl shadow-card-hover overflow-hidden" style={{ background: "var(--glass-2)", border: "1px solid var(--glass-border-2)", backdropFilter: "blur(12px)" }}>
+          <div className="px-3 py-3 text-sm text-center font-body" style={{ color: "var(--text-muted)" }}>
             No airports found for &ldquo;{query}&rdquo;
           </div>
         </div>
