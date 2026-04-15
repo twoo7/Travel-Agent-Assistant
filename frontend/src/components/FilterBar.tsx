@@ -1,5 +1,7 @@
 "use client";
 
+import type { CSSProperties } from "react";
+
 interface FlightFilters {
   maxStops: number | null;
   maxPrice: number | null;
@@ -26,7 +28,7 @@ type Props = FlightFilterBarProps | HotelFilterBarProps;
 
 export type { FlightFilters, HotelFilters };
 
-function chipStyle(active: boolean): React.CSSProperties {
+function chipStyle(active: boolean): CSSProperties {
   return active
     ? { background: "rgba(224,122,95,0.1)", color: "var(--accent)" }
     : { background: "var(--glass-1)", color: "var(--text-muted)" };
