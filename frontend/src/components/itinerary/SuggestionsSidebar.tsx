@@ -31,7 +31,7 @@ export function SuggestionsSidebar({ pois, addedIds, onAdd, loading }: Props) {
       <button
         onClick={() => setCollapsed(false)}
         className="w-10 shrink-0 rounded-xl flex items-center justify-center self-start py-3 transition-colors"
-        style={{ background: "rgba(7,20,32,0.75)", backdropFilter: "blur(16px)", border: "1px solid var(--glass-border-1)", color: "var(--text-muted)" }}
+        style={{ background: "var(--sidebar-bg)", backdropFilter: "blur(16px)", border: "1px solid var(--glass-border-1)", color: "var(--text-muted)" }}
         aria-label="Open suggestions"
       >
         <ChevronRight size={16} />
@@ -42,7 +42,7 @@ export function SuggestionsSidebar({ pois, addedIds, onAdd, loading }: Props) {
   return (
     <div
       className="w-72 shrink-0 rounded-xl flex flex-col h-full max-h-[calc(100vh-140px)] overflow-hidden"
-      style={{ background: "rgba(7,20,32,0.75)", backdropFilter: "blur(16px)", border: "1px solid var(--glass-border-1)" }}
+      style={{ background: "var(--sidebar-bg)", backdropFilter: "blur(16px)", border: "1px solid var(--glass-border-1)" }}
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid var(--glass-border-1)" }}>

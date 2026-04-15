@@ -164,12 +164,13 @@ export default function ItineraryPage() {
   if (tripContext.legs.length === 0) {
     return (
       <div className="max-w-3xl mx-auto text-center py-16">
-        <p className="text-muted font-body">
+        <p className="font-body" style={{ color: "var(--text-muted)" }}>
           Your session was reset — progress is not saved across page refreshes.
         </p>
         <button
           onClick={() => router.push("/")}
-          className="mt-4 text-primary hover:text-primary-dark font-body text-sm underline underline-offset-2"
+          className="mt-4 font-body text-sm underline underline-offset-2"
+          style={{ color: "var(--accent)" }}
         >
           ← Go back to Trip Setup to start planning
         </button>
@@ -182,8 +183,8 @@ export default function ItineraryPage() {
       {/* Top bar */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-primary font-display">Itinerary Builder</h1>
-          <p className="text-muted text-sm mt-0.5 font-body">
+          <h1 className="text-3xl font-bold font-display" style={{ color: "var(--text-primary)" }}>Itinerary Builder</h1>
+          <p className="text-sm mt-0.5 font-body" style={{ color: "var(--text-muted)" }}>
             Add places, arrange your days, then generate your final itinerary.
           </p>
         </div>
@@ -191,16 +192,19 @@ export default function ItineraryPage() {
         <div className="flex items-center gap-3">
           {/* Leg selector */}
           {tripContext.legs.length > 1 && (
-            <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
+            <div
+              className="flex gap-1 p-1 rounded-lg"
+              style={{ background: "var(--glass-2)", border: "1px solid var(--glass-border-2)" }}
+            >
               {tripContext.legs.map((leg) => (
                 <button
                   key={leg.leg_number}
                   onClick={() => setCurrentLeg(leg.leg_number)}
-                  className={`text-xs px-3 py-1.5 rounded-md transition-colors font-body font-medium ${
-                    currentLeg === leg.leg_number
-                      ? "bg-primary text-white shadow-sm"
-                      : "text-charcoal/70 hover:bg-white hover:shadow-sm"
-                  }`}
+                  className="text-xs px-3 py-1.5 rounded-md transition-colors font-body font-medium"
+                  style={currentLeg === leg.leg_number
+                    ? { background: "var(--accent)", color: "white" }
+                    : { color: "var(--text-muted)" }
+                  }
                 >
                   {iataToCityName(leg.destination)}
                 </button>
@@ -248,7 +252,7 @@ export default function ItineraryPage() {
       </div>
 
       {/* Bottom actions */}
-      <div className="flex justify-between pt-2 border-t border-gray-100">
+      <div className="flex justify-between pt-2 border-t" style={{ borderColor: "var(--glass-border-1)" }}>
         <Button variant="ghost" size="md" onClick={() => router.push("/hotels")} icon={<ArrowLeft size={14} />}>
           Back to Hotels
         </Button>

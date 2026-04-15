@@ -15,7 +15,7 @@ export function DistanceConnector({ distanceKm, travelTimeMins }: Props) {
   return (
     <div className="flex items-center gap-2 py-1 pl-6">
       <div className="border-l-2 border-dashed h-4" style={{ borderColor: "rgba(255,255,255,0.15)" }} />
-      <span className="text-[11px] text-subtle font-body">
+      <span className="text-[11px] font-body" style={{ color: "var(--text-subtle)" }}>
         {travelTimeMins != null ? `${travelTimeMins} min walk` : "—"}
         {distanceKm != null && ` · ${distanceKm.toFixed(1)} km`}
       </span>
