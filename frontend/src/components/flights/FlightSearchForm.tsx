@@ -23,37 +23,37 @@ export function FlightSearchForm({ leg, onSearch, loading }: Props) {
   }
 
   return (
-    <div className="bg-white border border-gray-100 rounded-xl p-4 flex flex-wrap gap-3 items-end shadow-card">
+    <div className="rounded-xl p-4 flex flex-wrap gap-3 items-end shadow-card" style={{ background: "var(--glass-2)", border: "1px solid var(--glass-border-2)", backdropFilter: "blur(12px)" }}>
       <div>
-        <label className="block text-xs font-medium text-charcoal/60 mb-1 font-body">From</label>
+        <label className="block text-xs font-medium mb-1 font-body" style={{ color: "var(--text-muted)" }}>From</label>
         <input
           name="origin"
           value={form.origin}
           onChange={handleChange}
           placeholder="JFK"
           maxLength={3}
-          className="border border-gray-200 rounded-lg px-3 py-2 text-sm uppercase tracking-widest w-20 font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+          className="rounded-lg px-3 py-2 text-sm uppercase tracking-widest w-20 font-mono focus:outline-none transition-colors"
         />
       </div>
       <div>
-        <label className="block text-xs font-medium text-charcoal/60 mb-1 font-body">To</label>
+        <label className="block text-xs font-medium mb-1 font-body" style={{ color: "var(--text-muted)" }}>To</label>
         <input
           name="destination"
           value={form.destination}
           onChange={handleChange}
           placeholder="CDG"
           maxLength={3}
-          className="border border-gray-200 rounded-lg px-3 py-2 text-sm uppercase tracking-widest w-20 font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+          className="rounded-lg px-3 py-2 text-sm uppercase tracking-widest w-20 font-mono focus:outline-none transition-colors"
         />
       </div>
       <div>
-        <label className="block text-xs font-medium text-charcoal/60 mb-1 font-body">Date</label>
+        <label className="block text-xs font-medium mb-1 font-body" style={{ color: "var(--text-muted)" }}>Date</label>
         <input
           type="date"
           name="departure_date"
           value={form.departure_date}
           onChange={handleChange}
-          className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors font-body"
+          className="rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors font-body"
         />
       </div>
       <Button
