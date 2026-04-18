@@ -347,20 +347,6 @@ export default function TripSetupPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleHomeOriginChange = useCallback(
-    (iata: string) => {
-      setHomeOrigin(iata);
-      setLegs((prev) => {
-        const updated = [...prev];
-        updated[0] = { ...updated[0], origin: iata };
-        return updated;
-      });
-      markStaleIfEditing([1], ["segments"]);
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [tripContext.legs.length]
-  );
-
   const handleMultiToggle = useCallback(
     (checked: boolean) => {
       setMultiMode(checked);
@@ -443,6 +429,21 @@ export default function TripSetupPage() {
     const datesOk = !departureDate || !returnDate || returnDate >= departureDate;
     return !!singleDest && !!departureDate && homeOrigin !== singleDest && datesOk;
   }, [homeOrigin, multiMode, legs, singleDest, departureDate, returnDate]);
+
+  const handleHomeOriginChange = useCallback(
+    (iata: string) => {
+      setHomeOrigin(iata);
+      setLegs((prev) => {
+        const updated = [...prev];
+        updated[0] = { ...updated[0], origin: iata };
+        return updated;
+      });
+      if (!isValid) return;
+      markStaleIfEditing([1], ["segments"]);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tripContext.legs.length, isValid]
+  );
 
   function markStaleIfEditing(legNumbers: number[], steps: string[]) {
     if (tripContext.legs.length === 0) return;
@@ -752,6 +753,7 @@ export default function TripSetupPage() {
                     type="button"
                     onClick={() => {
                       set((v) => Math.max(min, v - 1));
+                      if (!isValid) return;
                       const keys = makeStaleKeys();
                       if (keys.length) dispatch({ type: "MARK_STALE", payload: { keys } });
                     }}
@@ -771,6 +773,7 @@ export default function TripSetupPage() {
                     type="button"
                     onClick={() => {
                       set((v) => Math.min(9, v + 1));
+                      if (!isValid) return;
                       const keys = makeStaleKeys();
                       if (keys.length) dispatch({ type: "MARK_STALE", payload: { keys } });
                     }}
