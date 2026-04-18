@@ -327,14 +327,14 @@ export default function SegmentsPage() {
             Add another leg
           </h3>
           <div className="flex flex-wrap gap-3 items-end">
-            <div>
+            <div className="flex-1 min-w-0">
               <label className="block text-xs font-medium mb-1 font-body" style={{ color: "var(--text-muted)" }}>From</label>
               <input
                 value={newLeg.origin}
                 onChange={(e) => setNewLeg((p) => ({ ...p, origin: e.target.value }))}
                 placeholder="e.g. KIX"
                 maxLength={3}
-                className="rounded-lg px-3 py-2 text-sm uppercase tracking-widest w-20 font-mono focus:outline-none transition-colors"
+                className="w-full rounded-lg px-3 py-2 text-sm uppercase tracking-widest font-mono focus:outline-none transition-colors"
                 style={{ border: "1px solid var(--glass-border-2)" }}
               />
             </div>
