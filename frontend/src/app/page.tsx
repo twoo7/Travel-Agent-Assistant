@@ -291,6 +291,8 @@ export default function TripSetupPage() {
   const [singleDest, setSingleDest] = useState("");
   const [departureDate, setDepartureDate] = useState("");
   const [returnDate, setReturnDate] = useState("");
+
+  const today = useMemo(() => new Date().toISOString().split("T")[0], []);
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
 
@@ -438,8 +440,9 @@ export default function TripSetupPage() {
         (l) => l.origin && l.destination && l.date && l.origin !== l.destination
       );
     }
-    return !!singleDest && !!departureDate && homeOrigin !== singleDest;
-  }, [homeOrigin, multiMode, legs, singleDest, departureDate]);
+    const datesOk = !departureDate || !returnDate || returnDate >= departureDate;
+    return !!singleDest && !!departureDate && homeOrigin !== singleDest && datesOk;
+  }, [homeOrigin, multiMode, legs, singleDest, departureDate, returnDate]);
 
   function markStaleIfEditing(legNumbers: number[], steps: string[]) {
     if (tripContext.legs.length === 0) return;
@@ -682,6 +685,7 @@ export default function TripSetupPage() {
                     onChange={(e) => setDepartureDate(e.target.value)}
                     onBlur={() => markStaleIfEditing([1], ["segments", "hotels"])}
                     required={!multiMode}
+                    min={today}
                     className="w-full px-3 py-2.5 text-sm font-body"
                   />
                 </div>
@@ -697,8 +701,14 @@ export default function TripSetupPage() {
                     type="date"
                     value={returnDate}
                     onChange={(e) => setReturnDate(e.target.value)}
+                    min={departureDate || today}
                     className="w-full px-3 py-2.5 text-sm font-body"
                   />
+                  {returnDate && departureDate && returnDate < departureDate && (
+                    <p className="col-span-2 text-xs mt-1 font-body" style={{ color: "var(--danger)" }}>
+                      Return date must be on or after the departure date.
+                    </p>
+                  )}
                   {returnDate && (
                     <p className="text-xs mt-1 font-body" style={{ color: "var(--text-muted)" }}>
                       Adds a return leg: {singleDest || "destination"} → {homeOrigin || "home"}
