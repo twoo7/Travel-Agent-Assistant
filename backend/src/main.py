@@ -4,7 +4,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.src.config import Config
-from backend.src.routers import export, flights, hotels, itinerary, pois, segments
+from backend.src.middleware.identity import IdentityMiddleware
+from backend.src.routers import export, flights, hotels, itinerary, pois, segments, trips
 from backend.src.services import redis_service
 
 
@@ -23,6 +24,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.add_middleware(IdentityMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
@@ -37,6 +39,7 @@ app.include_router(pois.router)
 app.include_router(itinerary.router)
 app.include_router(export.router)
 app.include_router(segments.router)
+app.include_router(trips.router)
 
 
 @app.get("/health")

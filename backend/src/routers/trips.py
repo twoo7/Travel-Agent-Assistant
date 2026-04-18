@@ -11,7 +11,7 @@ Draft trips expire after 7 days from last write.
 from __future__ import annotations
 
 import json
-import time
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Request
@@ -92,8 +92,8 @@ class TripMeta(BaseModel):
     trip_id: str
     name: str
     is_draft: bool
-    created_at: float
-    updated_at: float
+    created_at: str
+    updated_at: str
 
 
 class TripDetail(TripMeta):
@@ -109,15 +109,15 @@ async def create_trip(body: CreateTripRequest, request: Request) -> TripDetail:
     """Create a new trip (draft by default).  Returns the trip_id."""
     user_id = get_user_id(request)
     trip_id = _make_id()
-    now = time.time()
+    now = datetime.now(timezone.utc).isoformat()
     is_draft = body.name is None
 
     meta = {
         "name": body.name or "",
         "owners_json": json.dumps([user_id]),
         "is_draft": str(is_draft).lower(),
-        "created_at": str(now),
-        "updated_at": str(now),
+        "created_at": now,
+        "updated_at": now,
     }
     ttl = _ttl_for(is_draft)
 
@@ -157,8 +157,8 @@ async def list_trips(request: Request) -> List[TripMeta]:
             trip_id=trip_id,
             name=meta.get("name", ""),
             is_draft=meta.get("is_draft", "true") == "true",
-            created_at=float(meta.get("created_at", 0)),
-            updated_at=float(meta.get("updated_at", 0)),
+            created_at=meta.get("created_at", datetime.now(timezone.utc).isoformat()),
+            updated_at=meta.get("updated_at", datetime.now(timezone.utc).isoformat()),
         ))
 
     trips.sort(key=lambda t: t.updated_at, reverse=True)
@@ -179,8 +179,8 @@ async def get_trip(trip_id: str, request: Request) -> TripDetail:
         trip_id=trip_id,
         name=meta.get("name", ""),
         is_draft=is_draft,
-        created_at=float(meta.get("created_at", 0)),
-        updated_at=float(meta.get("updated_at", 0)),
+        created_at=meta.get("created_at", datetime.now(timezone.utc).isoformat()),
+        updated_at=meta.get("updated_at", datetime.now(timezone.utc).isoformat()),
         state=state,
     )
 
@@ -191,18 +191,18 @@ async def save_trip(trip_id: str, body: SaveTripRequest, request: Request) -> Tr
     user_id = get_user_id(request)
     meta = await _assert_owner(trip_id, user_id)
     is_draft = meta.get("is_draft", "true") == "true"
-    now = time.time()
+    now = datetime.now(timezone.utc).isoformat()
     ttl = _ttl_for(is_draft)
 
     await redis_service.set_json(_trip_state_key(trip_id), body.state, ttl=ttl)
-    await redis_service.hset_mapping(_trip_meta_key(trip_id), {"updated_at": str(now)})
+    await redis_service.hset_mapping(_trip_meta_key(trip_id), {"updated_at": now})
     await _refresh_ttl(trip_id, is_draft)
 
     return TripMeta(
         trip_id=trip_id,
         name=meta.get("name", ""),
         is_draft=is_draft,
-        created_at=float(meta.get("created_at", 0)),
+        created_at=meta.get("created_at", datetime.now(timezone.utc).isoformat()),
         updated_at=now,
     )
 
@@ -212,9 +212,9 @@ async def patch_trip(trip_id: str, body: PatchTripRequest, request: Request) -> 
     """Rename a trip and/or promote it from draft → named."""
     user_id = get_user_id(request)
     meta = await _assert_owner(trip_id, user_id)
-    now = time.time()
+    now = datetime.now(timezone.utc).isoformat()
 
-    updates: Dict[str, str] = {"updated_at": str(now)}
+    updates: Dict[str, str] = {"updated_at": now}
     if body.name is not None:
         updates["name"] = body.name
     if body.is_draft is not None:
@@ -228,7 +228,7 @@ async def patch_trip(trip_id: str, body: PatchTripRequest, request: Request) -> 
         trip_id=trip_id,
         name=updates.get("name", meta.get("name", "")),
         is_draft=is_draft_new,
-        created_at=float(meta.get("created_at", 0)),
+        created_at=meta.get("created_at", datetime.now(timezone.utc).isoformat()),
         updated_at=now,
     )
 
@@ -277,6 +277,6 @@ async def claim_trip(trip_id: str, request: Request) -> TripMeta:
         trip_id=trip_id,
         name=meta.get("name", ""),
         is_draft=is_draft,
-        created_at=float(meta.get("created_at", 0)),
-        updated_at=float(meta.get("updated_at", 0)),
+        created_at=meta.get("created_at", datetime.now(timezone.utc).isoformat()),
+        updated_at=meta.get("updated_at", datetime.now(timezone.utc).isoformat()),
     )

@@ -215,3 +215,16 @@ def test_claim_trip(client_a, client_b) -> None:
 def test_claim_nonexistent_trip(client_b) -> None:
     resp = client_b.post("/trips/doesnotexist/claim")
     assert resp.status_code == 404
+
+
+def test_trip_meta_updated_at_is_iso_string(client_a) -> None:
+    """updated_at must be an ISO 8601 string, not a Unix float."""
+    resp = client_a.post("/trips", json={})
+    assert resp.status_code == 201
+    trip_id = resp.json()["trip_id"]
+    list_resp = client_a.get("/trips")
+    assert list_resp.status_code == 200
+    trip = next(t for t in list_resp.json() if t["trip_id"] == trip_id)
+    from datetime import datetime
+    dt = datetime.fromisoformat(trip["updated_at"])
+    assert dt.year >= 2026
