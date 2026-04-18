@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTripContext } from "@/context/TripContext";
 import { ItinerarySummary } from "@/components/export/ItinerarySummary";
@@ -18,9 +19,9 @@ export default function ExportPage() {
       <div className="max-w-3xl mx-auto text-center py-16">
         <p className="font-body" style={{ color: "var(--text-muted)" }}>
           Your session was reset.{" "}
-          <a href="/trips" className="underline" style={{ color: "var(--accent)" }}>
+          <Link href="/trips" className="underline" style={{ color: "var(--accent)" }}>
             Visit your trips page
-          </a>{" "}
+          </Link>{" "}
           to restore a saved trip.
         </p>
       </div>
