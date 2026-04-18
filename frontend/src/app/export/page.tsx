@@ -59,7 +59,7 @@ export default function ExportPage() {
   return (
     <div className="max-w-2xl mx-auto py-10 px-4">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-8">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[2.5px] mb-1 font-body" style={{ color: "var(--text-eyebrow)" }}>
               Step 5 of 5

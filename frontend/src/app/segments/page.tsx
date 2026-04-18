@@ -338,14 +338,14 @@ export default function SegmentsPage() {
                 style={{ border: "1px solid var(--glass-border-2)" }}
               />
             </div>
-            <div>
+            <div className="flex-1 min-w-0">
               <label className="block text-xs font-medium mb-1 font-body" style={{ color: "var(--text-muted)" }}>To</label>
               <input
                 value={newLeg.destination}
                 onChange={(e) => setNewLeg((p) => ({ ...p, destination: e.target.value }))}
-                placeholder="Next destination"
+                placeholder="Destination"
                 maxLength={3}
-                className="rounded-lg px-3 py-2 text-sm uppercase tracking-widest w-20 font-mono focus:outline-none transition-colors"
+                className="w-full rounded-lg px-3 py-2 text-sm uppercase tracking-widest font-mono focus:outline-none transition-colors"
                 style={{ border: "1px solid var(--glass-border-2)" }}
               />
             </div>
