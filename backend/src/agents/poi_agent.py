@@ -28,6 +28,16 @@ class POIAgent(BaseAgent):
         super().__init__()
         self.places = places_service or GooglePlacesService()
 
+    @staticmethod
+    def _deduplicate(pois: List[POI]) -> List[POI]:
+        seen: set[str] = set()
+        unique: list[POI] = []
+        for p in pois:
+            if p.id not in seen:
+                seen.add(p.id)
+                unique.append(p)
+        return unique
+
     def suggest(
         self,
         trip_context: "TripContext",  # noqa: F821
@@ -122,14 +132,7 @@ class POIAgent(BaseAgent):
 
             pois.append(poi)
 
-        # Deduplicate by place_id
-        seen: set[str] = set()
-        unique: list[POI] = []
-        for p in pois:
-            if p.id not in seen:
-                seen.add(p.id)
-                unique.append(p)
-        pois = unique
+        pois = self._deduplicate(pois)
 
         return pois
 
@@ -225,13 +228,6 @@ class POIAgent(BaseAgent):
 
             pois.append(poi)
 
-        # Deduplicate by place_id
-        seen: set[str] = set()
-        unique: list[POI] = []
-        for p in pois:
-            if p.id not in seen:
-                seen.add(p.id)
-                unique.append(p)
-        pois = unique
+        pois = self._deduplicate(pois)
 
         return pois
