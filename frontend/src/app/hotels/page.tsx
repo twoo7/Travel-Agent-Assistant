@@ -101,6 +101,7 @@ export default function HotelsPage() {
   useEffect(() => {
     tripContext.legs.forEach((leg, legIndex) => {
       if (autoFiredRef.current.has(leg.leg_number)) return;
+      if (isReturnLeg(leg)) return;
       const { check_in, check_out } = getDatesForLeg(legIndex);
       if (!leg.destination || !check_in || !check_out) return;
       const city_code = toCityCode(leg.destination);
@@ -269,78 +270,93 @@ export default function HotelsPage() {
                 </div>
               ))}
 
-              <HotelSearchForm
-                defaultIata={leg.destination}
-                defaultCheckIn={check_in}
-                defaultCheckOut={check_out}
-                onSearch={(params) => handleSearch(leg.leg_number, params)}
-                loading={loading[leg.leg_number] ?? false}
-              />
-
-              {loading[leg.leg_number] && (
-                <div className="space-y-2">
-                  {[0, 1, 2].map((i) => <SkeletonCard key={i} />)}
-                </div>
-              )}
-
-              {error[leg.leg_number] && (
+              {returnLeg ? (
                 <div
-                  className="flex items-start gap-2 text-sm rounded-xl px-4 py-3 font-body"
-                  style={{ color: "var(--warning)", background: "rgba(224,173,95,0.08)", border: "1px solid rgba(224,173,95,0.25)" }}
+                  className="rounded-xl px-4 py-3 text-sm font-body"
+                  style={{
+                    background: "var(--glass-base)",
+                    color: "var(--text-subtle)",
+                    border: "1px solid var(--border-base)"
+                  }}
                 >
-                  <AlertTriangle size={15} className="shrink-0 mt-0.5" />
-                  <span>{error[leg.leg_number]}</span>
-                  <button
-                    onClick={() => handleSearch(leg.leg_number, {
-                      city_code: toCityCode(leg.destination),
-                      check_in: pendingDates[leg.leg_number]?.check_in ?? check_in ?? "",
-                      check_out: pendingDates[leg.leg_number]?.check_out ?? check_out ?? "",
-                    })}
-                    className="ml-auto shrink-0 text-xs font-medium underline hover:no-underline"
-                  >
-                    Retry
-                  </button>
+                  Return home — no hotel search needed for the final leg back to {tripContext.home_origin}.
                 </div>
+              ) : (
+                <>
+                  <HotelSearchForm
+                    defaultIata={leg.destination}
+                    defaultCheckIn={check_in}
+                    defaultCheckOut={check_out}
+                    onSearch={(params) => handleSearch(leg.leg_number, params)}
+                    loading={loading[leg.leg_number] ?? false}
+                  />
+
+                  {loading[leg.leg_number] && (
+                    <div className="space-y-2">
+                      {[0, 1, 2].map((i) => <SkeletonCard key={i} />)}
+                    </div>
+                  )}
+
+                  {error[leg.leg_number] && (
+                    <div
+                      className="flex items-start gap-2 text-sm rounded-xl px-4 py-3 font-body"
+                      style={{ color: "var(--warning)", background: "rgba(224,173,95,0.08)", border: "1px solid rgba(224,173,95,0.25)" }}
+                    >
+                      <AlertTriangle size={15} className="shrink-0 mt-0.5" />
+                      <span>{error[leg.leg_number]}</span>
+                      <button
+                        onClick={() => handleSearch(leg.leg_number, {
+                          city_code: toCityCode(leg.destination),
+                          check_in: pendingDates[leg.leg_number]?.check_in ?? check_in ?? "",
+                          check_out: pendingDates[leg.leg_number]?.check_out ?? check_out ?? "",
+                        })}
+                        className="ml-auto shrink-0 text-xs font-medium underline hover:no-underline"
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  )}
+
+                  {displayResults[leg.leg_number] && displayResults[leg.leg_number].length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      <SortBar options={HOTEL_SORT_OPTIONS} value={sortKey} onChange={setSortKey} />
+                      <FilterBar variant="hotels" filters={hotelFilters} onChange={setHotelFilters} />
+                    </div>
+                  )}
+
+                  {displayResults[leg.leg_number] && displayResults[leg.leg_number].length === 0 && (
+                    <p className="text-sm text-center py-6 font-body" style={{ color: "var(--text-muted)" }}>No hotels found.</p>
+                  )}
+
+                  <AnimatedList>
+                    {(displayResults[leg.leg_number] ?? []).map((offer) => (
+                      <AnimatedListItem key={offer.id}>
+                        <HotelCard
+                          offer={offer}
+                          selected={pendingOffers[leg.leg_number]?.id === offer.id}
+                          confirmed={leg.hotel_stays.some((s) => s.hotel.id === offer.id)}
+                          onSelect={(o) => handleSelectHotel(leg.leg_number, o)}
+                          checkIn={pendingDates[leg.leg_number]?.check_in ?? check_in}
+                          checkOut={pendingDates[leg.leg_number]?.check_out ?? check_out}
+                        />
+                      </AnimatedListItem>
+                    ))}
+                  </AnimatedList>
+
+                  {pendingOffers[leg.leg_number] &&
+                    !leg.hotel_stays.some((s) => s.hotel.id === pendingOffers[leg.leg_number]?.id) && (
+                      <Button
+                        variant="success"
+                        size="md"
+                        fullWidth
+                        onClick={() => handleConfirmStay(leg.leg_number)}
+                        icon={<Check size={14} />}
+                      >
+                        Confirm: {pendingOffers[leg.leg_number]?.name}
+                      </Button>
+                    )}
+                </>
               )}
-
-              {displayResults[leg.leg_number] && displayResults[leg.leg_number].length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-2">
-                  <SortBar options={HOTEL_SORT_OPTIONS} value={sortKey} onChange={setSortKey} />
-                  <FilterBar variant="hotels" filters={hotelFilters} onChange={setHotelFilters} />
-                </div>
-              )}
-
-              {displayResults[leg.leg_number] && displayResults[leg.leg_number].length === 0 && (
-                <p className="text-sm text-center py-6 font-body" style={{ color: "var(--text-muted)" }}>No hotels found.</p>
-              )}
-
-              <AnimatedList>
-                {(displayResults[leg.leg_number] ?? []).map((offer) => (
-                  <AnimatedListItem key={offer.id}>
-                    <HotelCard
-                      offer={offer}
-                      selected={pendingOffers[leg.leg_number]?.id === offer.id}
-                      confirmed={leg.hotel_stays.some((s) => s.hotel.id === offer.id)}
-                      onSelect={(o) => handleSelectHotel(leg.leg_number, o)}
-                      checkIn={pendingDates[leg.leg_number]?.check_in ?? check_in}
-                      checkOut={pendingDates[leg.leg_number]?.check_out ?? check_out}
-                    />
-                  </AnimatedListItem>
-                ))}
-              </AnimatedList>
-
-              {pendingOffers[leg.leg_number] &&
-                !leg.hotel_stays.some((s) => s.hotel.id === pendingOffers[leg.leg_number]?.id) && (
-                  <Button
-                    variant="success"
-                    size="md"
-                    fullWidth
-                    onClick={() => handleConfirmStay(leg.leg_number)}
-                    icon={<Check size={14} />}
-                  >
-                    Confirm: {pendingOffers[leg.leg_number]?.name}
-                  </Button>
-                )}
             </div>
           );
         })}
