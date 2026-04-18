@@ -128,6 +128,24 @@ textarea:focus {
   color: #1B3A4B;
 }
 
+/* ── Light mode select color-scheme (native dropdown uses OS light palette) */
+[data-theme="light"] select {
+  color-scheme: light;
+}
+
+/* ── Light mode focus ring (≥3:1 contrast on #FAF8F5 background) ────────── */
+[data-theme="light"] input[type="text"]:focus,
+[data-theme="light"] input[type="date"]:focus,
+[data-theme="light"] input[type="number"]:focus,
+[data-theme="light"] input[type="search"]:focus,
+[data-theme="light"] input[type="email"]:focus,
+[data-theme="light"] select:focus,
+[data-theme="light"] textarea:focus {
+  outline: none;
+  border-color: rgba(192, 90, 63, 0.8);
+  box-shadow: 0 0 0 3px rgba(192, 90, 63, 0.25);
+}
+
 /* ── Date input calendar icon color fix ────────────────────────────────────*/
 input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(1) opacity(0.5);
