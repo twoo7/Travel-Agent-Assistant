@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { POI } from "@/types/trip";
 import { BusyTimesBar } from "./BusyTimesBar";
-import { Sparkles, ChevronRight, Check, Clock, Ticket, Plus } from "lucide-react";
+import { Sparkles, ChevronRight, Check, Clock, Ticket, Plus, RefreshCw } from "lucide-react";
 import { Skeleton, SkeletonText } from "@/components/ui/Skeleton";
 import { motion } from "framer-motion";
 
@@ -12,13 +12,15 @@ interface Props {
   addedIds: Set<string>;
   onAdd: (poi: POI) => void;
   loading: boolean;
+  onRefresh?: () => void;
+  refreshing?: boolean;
 }
 
 const CATEGORIES = ["All", "Landmark", "Museum", "Restaurant", "Park", "Neighborhood"];
 
 const PRICE_LABELS: Record<number, string> = { 0: "Free", 1: "$", 2: "$$", 3: "$$$", 4: "$$$$" };
 
-export function SuggestionsSidebar({ pois, addedIds, onAdd, loading }: Props) {
+export function SuggestionsSidebar({ pois, addedIds, onAdd, loading, onRefresh, refreshing }: Props) {
   const [filter, setFilter] = useState("All");
   const [collapsed, setCollapsed] = useState(false);
 
@@ -53,14 +55,30 @@ export function SuggestionsSidebar({ pois, addedIds, onAdd, loading }: Props) {
           </h2>
           <p className="text-xs font-body" style={{ color: "var(--text-muted)" }}>{pois.length} places</p>
         </div>
-        <button
-          onClick={() => setCollapsed(true)}
-          className="transition-colors w-7 h-7 flex items-center justify-center rounded-lg hover:bg-[var(--glass-1)]"
-          style={{ color: "var(--text-subtle)" }}
-          aria-label="Collapse sidebar"
-        >
-          <ChevronRight size={14} className="rotate-180" />
-        </button>
+        <div className="flex items-center gap-1">
+          {onRefresh && (
+            <button
+              onClick={onRefresh}
+              disabled={refreshing}
+              title="Refresh suggestions"
+              className="p-1 rounded-md transition-colors"
+              style={{ color: "var(--text-subtle)" }}
+            >
+              <RefreshCw
+                size={13}
+                className={refreshing ? "animate-spin" : ""}
+              />
+            </button>
+          )}
+          <button
+            onClick={() => setCollapsed(true)}
+            className="transition-colors w-7 h-7 flex items-center justify-center rounded-lg hover:bg-[var(--glass-1)]"
+            style={{ color: "var(--text-subtle)" }}
+            aria-label="Collapse sidebar"
+          >
+            <ChevronRight size={14} className="rotate-180" />
+          </button>
+        </div>
       </div>
 
       {/* Filter chips */}

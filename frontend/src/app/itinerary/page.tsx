@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useTripContext } from "@/context/TripContext";
 import { api } from "@/services/api";
@@ -75,6 +75,7 @@ export default function ItineraryPage() {
   const [loadingPois, setLoadingPois] = useState(false);
   const [generatingItinerary, setGeneratingItinerary] = useState(false);
   const [currentLeg, setCurrentLeg] = useState(1);
+  const autoFetched = useRef(false);
 
   useEffect(() => {
     if (tripContext.legs.length > 0 && days.length === 0) {
@@ -83,6 +84,16 @@ export default function ItineraryPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tripContext.legs]);
+
+  // Auto-fetch POI suggestions when leg changes (or on initial mount)
+  useEffect(() => {
+    autoFetched.current = false;
+    if (pois.length === 0 && tripContext.legs.length > 0) {
+      autoFetched.current = true;
+      handleFetchPOIs();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentLeg]);
 
   async function handleFetchPOIs() {
     if (!tripContext.legs[currentLeg - 1]) return;
@@ -102,6 +113,13 @@ export default function ItineraryPage() {
       setLoadingPois(false);
     }
   }
+
+  const handleRefreshPOIs = useCallback(async () => {
+    setPois([]);
+    autoFetched.current = false;
+    await handleFetchPOIs();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentLeg, tripContext]);
 
   function handleAddPOI(poi: POI) {
     dispatch({ type: "ADD_UNSCHEDULED_POI", payload: poi });
@@ -234,6 +252,8 @@ export default function ItineraryPage() {
           addedIds={addedIds}
           onAdd={handleAddPOI}
           loading={loadingPois}
+          onRefresh={handleRefreshPOIs}
+          refreshing={loadingPois}
         />
 
         {/* Middle: Day planner */}
