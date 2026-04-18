@@ -14,15 +14,16 @@ interface Props {
   loading: boolean;
   onRefresh?: () => void;
   refreshing?: boolean;
+  defaultCollapsed?: boolean;
 }
 
 const CATEGORIES = ["All", "Landmark", "Museum", "Restaurant", "Park", "Neighborhood"];
 
 const PRICE_LABELS: Record<number, string> = { 0: "Free", 1: "$", 2: "$$", 3: "$$$", 4: "$$$$" };
 
-export function SuggestionsSidebar({ pois, addedIds, onAdd, loading, onRefresh, refreshing }: Props) {
+export function SuggestionsSidebar({ pois, addedIds, onAdd, loading, onRefresh, refreshing, defaultCollapsed = false }: Props) {
   const [filter, setFilter] = useState("All");
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(defaultCollapsed);
 
   const filtered = pois.filter(
     (p) => filter === "All" || p.category.toLowerCase() === filter.toLowerCase()

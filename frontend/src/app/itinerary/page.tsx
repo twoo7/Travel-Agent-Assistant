@@ -75,7 +75,12 @@ export default function ItineraryPage() {
   const [loadingPois, setLoadingPois] = useState(false);
   const [generatingItinerary, setGeneratingItinerary] = useState(false);
   const [currentLeg, setCurrentLeg] = useState(1);
+  const [isMobile, setIsMobile] = useState(false);
   const autoFetched = useRef(false);
+
+  useEffect(() => {
+    setIsMobile(window.innerWidth < 640);
+  }, []);
 
   useEffect(() => {
     if (tripContext.legs.length > 0 && days.length === 0) {
@@ -254,6 +259,7 @@ export default function ItineraryPage() {
           loading={loadingPois}
           onRefresh={handleRefreshPOIs}
           refreshing={loadingPois}
+          defaultCollapsed={isMobile}
         />
 
         {/* Middle: Day planner */}
