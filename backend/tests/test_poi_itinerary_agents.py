@@ -113,7 +113,19 @@ class TestPOIAgent:
         """Claude suggestions are enriched with Google Places data."""
         mock_claude = _mock_claude_response(_SAMPLE_POI_SUGGESTIONS)
         mock_places = MagicMock()
-        mock_places.search_places.return_value = [_SAMPLE_GOOGLE_PLACE]
+        # Return different places for each query (Eiffel Tower vs Louvre)
+        mock_places.search_places.side_effect = [
+            [_SAMPLE_GOOGLE_PLACE],  # First call: Eiffel Tower
+            [{  # Second call: Louvre Museum
+                "place_id": "ChIJISz80EEe5kcRBjePCVl5kEA",
+                "name": "Louvre Museum",
+                "address": "Rue de Rivoli, 75004 Paris",
+                "lat": 48.8606,
+                "lng": 2.3376,
+                "rating": 4.6,
+                "review_count": 300000,
+            }],
+        ]
 
         with patch("backend.src.agents.base.Config") as mock_cfg, \
              patch("backend.src.agents.base.anthropic.Anthropic", return_value=mock_claude):

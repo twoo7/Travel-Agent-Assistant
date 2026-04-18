@@ -122,6 +122,15 @@ class POIAgent(BaseAgent):
 
             pois.append(poi)
 
+        # Deduplicate by place_id
+        seen: set[str] = set()
+        unique: list[POI] = []
+        for p in pois:
+            if p.id not in seen:
+                seen.add(p.id)
+                unique.append(p)
+        pois = unique
+
         return pois
 
     async def async_suggest(
@@ -215,5 +224,14 @@ class POIAgent(BaseAgent):
                 )
 
             pois.append(poi)
+
+        # Deduplicate by place_id
+        seen: set[str] = set()
+        unique: list[POI] = []
+        for p in pois:
+            if p.id not in seen:
+                seen.add(p.id)
+                unique.append(p)
+        pois = unique
 
         return pois

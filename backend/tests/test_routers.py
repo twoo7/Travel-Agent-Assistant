@@ -572,3 +572,65 @@ def test_config_anthropic_key_available_without_flight_search(monkeypatch):
     Config.validate()
     assert Config.ANTHROPIC_API_KEY == "sk-test-key"
     assert Config.ANTHROPIC_API_KEY != ""
+
+
+def test_poi_suggest_no_duplicate_ids(client, mocker):
+    """POI suggestions must not contain duplicate IDs even if Google Places returns same place_id."""
+    # Mock the Claude API to return two identical suggestions
+    dup_suggestion = {
+        "name": "Eiffel Tower",
+        "category": "landmark",
+        "claude_note": "Iconic tower",
+        "claude_best_time": "sunset",
+        "claude_booking_tip": "Book online",
+    }
+    mocker.patch(
+        "backend.src.agents.poi_agent.BaseAgent._create_with_retry",
+        return_value=mocker.MagicMock(
+            content=[mocker.MagicMock(text=json.dumps([dup_suggestion, dup_suggestion]))]
+        ),
+    )
+    # Mock GooglePlacesService to return the same place_id for both queries
+    mock_places_service = mocker.MagicMock()
+    mock_places_service.async_search_places_cached = mocker.AsyncMock(
+        return_value=[
+            {
+                "place_id": "ChIJW89M-SAME",
+                "name": "Eiffel Tower",
+                "address": "Champ de Mars, Paris",
+                "lat": 48.858,
+                "lng": 2.294,
+                "rating": 4.9,
+            }
+        ]
+    )
+    mocker.patch(
+        "backend.src.agents.poi_agent.GooglePlacesService",
+        return_value=mock_places_service,
+    )
+    resp = client.post(
+        "/pois/suggest",
+        json={
+            "trip_context": {
+                "home_origin": "JFK",
+                "adults": 2,
+                "children": 0,
+                "currency": "USD",
+                "legs": [{
+                    "leg_number": 1,
+                    "origin": "JFK",
+                    "destination": "Paris",
+                    "departure_date": "2025-06-01",
+                    "selected_flight": None,
+                    "hotel_stays": [],
+                    "days": [],
+                }],
+                "unscheduled_pois": [],
+                "saved_pois": [],
+            },
+            "leg_number": 1,
+        },
+    )
+    assert resp.status_code == 200
+    ids = [p["id"] for p in resp.json()]
+    assert len(ids) == len(set(ids)), f"Duplicate POI ids returned: {ids}"
