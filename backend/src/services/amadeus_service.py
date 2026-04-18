@@ -127,10 +127,7 @@ class AmadeusService:
     @staticmethod
     def _is_mock() -> bool:
         import os as _os
-        val = _os.getenv("AMADEUS_MOCK", "false")
-        result = val.lower() == "true"
-        print(f"[DEBUG] AMADEUS_MOCK env='{val}' -> _is_mock={result}", flush=True)
-        return result
+        return _os.getenv("AMADEUS_MOCK", "false").lower() == "true"
 
     def search_flights(
         self,
