@@ -179,7 +179,7 @@ function StepIcon({
           {index + 1}
         </span>
       )}
-      <span style={{ color: iconColor }}>
+      <span style={{ color: iconColor }} suppressHydrationWarning>
         {isDone ? <Check size={16} /> : <Icon size={16} />}
       </span>
       {isStale && !expanded && (

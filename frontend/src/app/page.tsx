@@ -641,6 +641,7 @@ export default function TripSetupPage() {
                   value={singleDest}
                   onChange={(iata) => {
                     setSingleDest(iata);
+                    if (!isValid) return;
                     markStaleIfEditing([1], ["segments", "hotels"]);
                   }}
                   placeholder="Destination airport"
@@ -683,7 +684,7 @@ export default function TripSetupPage() {
                     type="date"
                     value={departureDate}
                     onChange={(e) => setDepartureDate(e.target.value)}
-                    onBlur={() => markStaleIfEditing([1], ["segments", "hotels"])}
+                    onBlur={() => { if (!isValid) return; markStaleIfEditing([1], ["segments", "hotels"]); }}
                     required={!multiMode}
                     min={today}
                     className="w-full px-3 py-2.5 text-sm font-body"

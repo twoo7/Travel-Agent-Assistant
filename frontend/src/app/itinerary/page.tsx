@@ -192,15 +192,12 @@ export default function ItineraryPage() {
     return (
       <div className="max-w-3xl mx-auto text-center py-16">
         <p className="font-body" style={{ color: "var(--text-muted)" }}>
-          Your session was reset — progress is not saved across page refreshes.
+          Your session was reset.{" "}
+          <a href="/trips" className="underline" style={{ color: "var(--accent)" }}>
+            Visit your trips page
+          </a>{" "}
+          to restore a saved trip.
         </p>
-        <button
-          onClick={() => router.push("/")}
-          className="mt-4 font-body text-sm underline underline-offset-2"
-          style={{ color: "var(--accent)" }}
-        >
-          ← Go back to Trip Setup to start planning
-        </button>
       </div>
     );
   }

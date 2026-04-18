@@ -23,6 +23,15 @@ export function SaveTripButton() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
 
+  useEffect(() => {
+    if (!modalOpen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setModalOpen(false);
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [modalOpen]);
+
   const shareUrl = activeTripId
     ? typeof window !== "undefined"
       ? `${window.location.origin}/t/${activeTripId}`
