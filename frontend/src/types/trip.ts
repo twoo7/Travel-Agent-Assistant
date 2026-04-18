@@ -152,3 +152,11 @@ export interface RouteSegment {
   travel_time_mins: number | null;
   encoded_polyline: string | null;
 }
+
+export interface TripMeta {
+  trip_id: string;
+  name: string | null;
+  is_draft: boolean;
+  created_at: string;
+  updated_at: string;
+}

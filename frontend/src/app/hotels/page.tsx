@@ -9,7 +9,6 @@ import { HotelCard } from "@/components/hotels/HotelCard";
 import { AnimatedList, AnimatedListItem } from "@/components/ui/AnimatedList";
 import { SortBar, SortOption } from "@/components/SortBar";
 import { FilterBar, HotelFilters } from "@/components/FilterBar";
-import { PageTransition } from "@/components/ui/PageTransition";
 import { Button } from "@/components/ui/Button";
 import { SkeletonCard } from "@/components/ui/Skeleton";
 import { toCityCode } from "@/utils/cityCodeMap";
@@ -163,7 +162,7 @@ export default function HotelsPage() {
 
   if (tripContext.legs.length === 0) {
     return (
-      <PageTransition className="max-w-3xl mx-auto text-center py-16">
+      <div className="max-w-3xl mx-auto text-center py-16">
         <p className="font-body" style={{ color: "var(--text-muted)" }}>No trip set up yet.</p>
         <button
           onClick={() => router.push("/")}
@@ -172,13 +171,12 @@ export default function HotelsPage() {
         >
           ← Go back to Trip Setup
         </button>
-      </PageTransition>
+      </div>
     );
   }
 
   return (
-    <PageTransition>
-      <div className="max-w-3xl mx-auto space-y-8">
+    <div className="max-w-3xl mx-auto space-y-8">
         {/* Header */}
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[2.5px] mb-1 font-body" style={{ color: "var(--text-eyebrow)" }}>Step 3 of 5</p>
@@ -410,6 +408,5 @@ export default function HotelsPage() {
           </div>
         </div>
       </div>
-    </PageTransition>
   );
 }

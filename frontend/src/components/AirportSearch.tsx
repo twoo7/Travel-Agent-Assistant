@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, useId } from "react";
 import airportsData from "@/data/airports.json";
 import { AIRPORT_TO_CITY } from "@/utils/cityCodeMap";
 import { COUNTRY_NAMES } from "@/utils/countryNames";
@@ -26,8 +26,6 @@ interface AirportSearchProps {
   showCityCode?: boolean;
   id?: string;
 }
-
-let moduleCounter = 0;
 
 function findAirport(iata: string): Airport | undefined {
   return airports.find((a) => a.iata === iata);
@@ -79,7 +77,8 @@ export default function AirportSearch({
   const [activeIndex, setActiveIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const listboxId = useRef(`airport-listbox-${id ?? moduleCounter++}`);
+  const generatedId = useId();
+  const listboxId = useRef(`airport-listbox-${id ?? generatedId}`);
 
   // Sync query when value changes externally
   useEffect(() => {
@@ -221,7 +220,7 @@ export default function AirportSearch({
           role="listbox"
           aria-label={`Airport options for ${label}`}
           className="absolute z-50 w-full top-full mt-1 rounded-xl shadow-card-hover overflow-hidden max-h-64 overflow-y-auto"
-          style={{ background: "var(--glass-2)", border: "1px solid var(--glass-border-2)", backdropFilter: "blur(12px)" }}
+          style={{ background: "rgba(15,41,55,0.95)", border: "1px solid var(--glass-border-2)", backdropFilter: "blur(12px)" }}
         >
           {results.map((airport, idx) => (
             <li
@@ -232,7 +231,7 @@ export default function AirportSearch({
               className="px-3 py-2.5 cursor-pointer flex items-center justify-between last:border-0 transition-colors duration-100"
               style={{
                 borderBottom: "1px solid var(--glass-border-1)",
-                background: activeIndex === idx ? "rgba(224,122,95,0.05)" : "transparent",
+                background: activeIndex === idx ? "rgba(224,122,95,0.15)" : "transparent",
               }}
               onMouseDown={(e) => {
                 e.preventDefault();
@@ -264,7 +263,7 @@ export default function AirportSearch({
       )}
 
       {open && query.trim().length > 0 && results.length === 0 && (
-        <div className="absolute z-50 w-full top-full mt-1 rounded-xl shadow-card-hover overflow-hidden" style={{ background: "var(--glass-2)", border: "1px solid var(--glass-border-2)", backdropFilter: "blur(12px)" }}>
+        <div className="absolute z-50 w-full top-full mt-1 rounded-xl shadow-card-hover overflow-hidden" style={{ background: "rgba(15,41,55,0.95)", border: "1px solid var(--glass-border-2)", backdropFilter: "blur(12px)" }}>
           <div className="px-3 py-3 text-sm text-center font-body" style={{ color: "var(--text-muted)" }}>
             No airports found for &ldquo;{query}&rdquo;
           </div>

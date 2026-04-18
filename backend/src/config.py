@@ -18,6 +18,8 @@ class Config:
     ANTHROPIC_API_KEY: str = ""
     GOOGLE_PLACES_API_KEY: str = ""
     GOOGLE_MAPS_API_KEY: str = ""
+    # Redis — optional, defaults to local instance.
+    REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     # Read at class-definition time so it's available before validate() is called.
     # Not in the required list — defaults to False (production-safe).
     AMADEUS_MOCK: bool = os.getenv("AMADEUS_MOCK", "false").lower() == "true"
@@ -44,3 +46,5 @@ class Config:
         cls.ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
         cls.GOOGLE_PLACES_API_KEY = os.getenv("GOOGLE_PLACES_API_KEY", "")
         cls.GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "")
+        cls.REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+        cls.AMADEUS_MOCK = os.getenv("AMADEUS_MOCK", "false").lower() == "true"

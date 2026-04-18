@@ -13,7 +13,36 @@ Consult these before making architectural decisions or implementing new features
 
 Do not make any changes until you have 95% confidence in waht you need to build. Ask me follow-up questions until you reach that confidence.
 
+## UI Design System
+
+The app uses a **Bold/Immersive** dark design language. Full spec: [docs/superpowers/specs/2026-04-10-ui-polish-design.md](docs/superpowers/specs/2026-04-10-ui-polish-design.md)
+
+### Core Principles
+- **Canvas**: Dark gradient background (`#0a1628 → #0F2937`) with static ambient radial glows (ember top-right, sage bottom-left) on every page
+- **Surfaces**: 3-level glassmorphism system — Base (`white/4`), Card (`white/7`), Elevated (`white/11`). All with matching border opacity and `backdrop-filter: blur`
+- **Accent**: Ember (`#E07A5F`) with box-shadow glow for highlights, AI picks, prices. Sage (`#6B9080`) for success/selected states
+- **Typography**: DM Serif Display for page titles (28–36px), DM Sans for all body/labels. Eyebrow labels: 10px, LS 3px, uppercase, 35% white
+- **Light mode**: Background → `#FAF8F5`, glass surfaces → `white/80` with blur. Accent colors unchanged
+- **Animations**: Framer Motion spring physics throughout — page transitions (slide-up, stiffness 300/damping 30), card stagger (60ms delay, scale 0.96→1), button press (scale 0.97), hover lift (y −2px + glow), theme toggle (clip-path circle reveal)
+
+Do not deviate from this system when building new UI components. Extend it, don't replace it.
+
 ## Commands
+
+### Redis (required for trip persistence)
+
+```bash
+# Start Redis via Docker (from repo root)
+docker compose up -d redis
+
+# Stop Redis
+docker compose down
+
+# Check Redis is running
+docker compose ps
+```
+
+Redis listens on `localhost:6379`. Set `REDIS_URL=redis://localhost:6379/0` in `backend/.env` (this is the default, so it's optional for local dev).
 
 ### Backend (FastAPI / Python)
 
@@ -65,17 +94,40 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 
 ## Architecture
 
-This is a stateless trip-planning app. **All trip state lives in the browser** — no database or auth in Phase 1.
+Trip state is persisted via Redis: a `uid` cookie identifies the browser, and each trip gets a `trip_id`. The frontend auto-saves to `PUT /trips/{id}` (debounced 1s). Shared trips are claimed via `POST /trips/{id}/claim`. Third-party API results (Amadeus, Google Places) are cached in Redis by param hash.
 
 ```
 Frontend (Next.js / TypeScript)
   └── TripContext (React Context + useReducer)
-        ↕ REST — full TripContext sent with every POST
+        ├── auto-saves to PUT /trips/{id} (1s debounce)
+        ├── falls back to localStorage as offline buffer
+        └── ↕ REST — full TripContext sent with every POST
 Backend (FastAPI / Python)
   ├── Agents   — Claude orchestration (suggestions + narration)
   ├── Services — external API wrappers (Amadeus, Google Places, Directions)
+  ├── Routers  — /trips/* for persistence; ?nocache=true bypasses cache
   └── Models   — Pydantic schemas (mirrored in frontend/src/types/trip.ts)
+Redis
+  ├── trip:{id}:state    — full TripState JSON (1y named / 7d draft)
+  ├── trip:{id}:meta     — name, owners, is_draft, timestamps
+  ├── user:{uid}:trips   — SET of trip_ids per user (1y)
+  ├── cache:amadeus:flights:{hash16}   — TTL 2h
+  ├── cache:amadeus:hotels:{hash16}    — TTL 2h
+  ├── cache:places:suggest:{hash16}    — TTL 24h
+  └── cache:places:details:{place_id} — TTL 7d
 ```
+
+### Trip persistence endpoints
+
+| Method | Path | Purpose |
+|---|---|---|
+| `POST` | `/trips` | Create draft → `{trip_id, is_draft}` |
+| `GET` | `/trips` | List user's trips → `TripMeta[]` |
+| `GET` | `/trips/{id}` | Full state (403 if not owner) |
+| `PUT` | `/trips/{id}` | Replace state (autosave payload) |
+| `PATCH` | `/trips/{id}` | Rename / promote draft → named |
+| `DELETE` | `/trips/{id}` | Remove from user's list |
+| `POST` | `/trips/{id}/claim` | Add current user as owner (share flow) |
 
 ### TripContext — the central data structure
 

@@ -12,7 +12,6 @@ import { FerrySegmentCard } from "@/components/segments/FerrySegmentCard";
 import { CarSegmentCard } from "@/components/segments/CarSegmentCard";
 import { SortBar, SortOption } from "@/components/SortBar";
 import { FilterBar, FlightFilters } from "@/components/FilterBar";
-import { PageTransition } from "@/components/ui/PageTransition";
 import { Button } from "@/components/ui/Button";
 import { SkeletonCard } from "@/components/ui/Skeleton";
 import { AnimatedList, AnimatedListItem } from "@/components/ui/AnimatedList";
@@ -190,7 +189,7 @@ export default function SegmentsPage() {
 
   if (tripContext.legs.length === 0) {
     return (
-      <PageTransition className="max-w-3xl mx-auto text-center py-16">
+      <div className="max-w-3xl mx-auto text-center py-16">
         <p className="font-body" style={{ color: "var(--text-muted)" }}>No trip set up yet.</p>
         <button
           onClick={() => router.push("/")}
@@ -199,13 +198,12 @@ export default function SegmentsPage() {
         >
           ← Go back to Trip Setup
         </button>
-      </PageTransition>
+      </div>
     );
   }
 
   return (
-    <PageTransition>
-      <div className="max-w-3xl mx-auto py-8 px-4 space-y-8">
+    <div className="max-w-3xl mx-auto py-8 px-4 space-y-8">
         {/* Header */}
         <div className="mb-8">
           <p className="text-[10px] font-semibold uppercase tracking-[2.5px] mb-2 font-body"
@@ -445,6 +443,5 @@ export default function SegmentsPage() {
           </div>
         </div>
       </div>
-    </PageTransition>
   );
 }

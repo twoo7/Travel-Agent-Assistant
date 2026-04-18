@@ -7,12 +7,12 @@
   --canvas-from:        #0a1628;
   --canvas-to:          #0F2937;
   --canvas-mid:         #0d1f30;
-  --glass-1:            rgba(255,255,255,0.04);
-  --glass-2:            rgba(255,255,255,0.07);
-  --glass-3:            rgba(255,255,255,0.11);
-  --glass-border-1:     rgba(255,255,255,0.08);
-  --glass-border-2:     rgba(255,255,255,0.13);
-  --glass-border-3:     rgba(255,255,255,0.18);
+  --glass-1:            rgba(255,255,255,0.06);
+  --glass-2:            rgba(255,255,255,0.10);
+  --glass-3:            rgba(255,255,255,0.15);
+  --glass-border-1:     rgba(255,255,255,0.10);
+  --glass-border-2:     rgba(255,255,255,0.16);
+  --glass-border-3:     rgba(255,255,255,0.22);
   --accent:             #E07A5F;
   --accent-dark:        #C96A4F;
   --accent-glow:        rgba(224,122,95,0.3);
@@ -98,8 +98,8 @@ input[type="search"],
 input[type="email"],
 select,
 textarea {
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.18);
   color: var(--text-primary);
   border-radius: 10px;
 }

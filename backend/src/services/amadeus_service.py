@@ -121,7 +121,16 @@ class AmadeusService:
         self.client = Client(
             client_id=Config.AMADEUS_API_KEY,
             client_secret=Config.AMADEUS_API_SECRET,
+            hostname="test",
         )
+
+    @staticmethod
+    def _is_mock() -> bool:
+        import os as _os
+        val = _os.getenv("AMADEUS_MOCK", "false")
+        result = val.lower() == "true"
+        print(f"[DEBUG] AMADEUS_MOCK env='{val}' -> _is_mock={result}", flush=True)
+        return result
 
     def search_flights(
         self,
@@ -133,6 +142,9 @@ class AmadeusService:
         return_date: str | None = None,
         currency_code: str | None = None,
     ) -> List[FlightOffer]:
+        if self._is_mock():
+            logger.warning("AMADEUS_MOCK=true — returning mock flights without calling API")
+            return list(_MOCK_FLIGHTS)
         try:
             params: dict = {
                 "originLocationCode": origin,
@@ -183,7 +195,7 @@ class AmadeusService:
         except ResponseError as e:
             if e.response.status_code == 500 and Config.AMADEUS_MOCK:
                 logger.warning(
-                    "Amadeus flight search returned 500 — returning mock data (AMADEUS_MOCK=true)"
+                    "Amadeus flight search error (%s) — returning mock data (AMADEUS_MOCK=true)", e.response.status_code
                 )
                 return list(_MOCK_FLIGHTS)
             logger.error("Amadeus flight search error: %s", e)
@@ -197,6 +209,9 @@ class AmadeusService:
         adults: int,
         currency_code: str | None = None,
     ) -> List[HotelOffer]:
+        if self._is_mock():
+            logger.warning("AMADEUS_MOCK=true — returning mock hotels without calling API")
+            return list(_MOCK_HOTELS)
         try:
             hotels_response = self.client.reference_data.locations.hotels.by_city.get(
                 cityCode=city_code,
@@ -204,7 +219,7 @@ class AmadeusService:
         except ResponseError as e:
             if e.response.status_code == 500 and Config.AMADEUS_MOCK:
                 logger.warning(
-                    "Amadeus hotel lookup returned 500 — returning mock data (AMADEUS_MOCK=true)"
+                    "Amadeus hotel lookup error (%s) — returning mock data (AMADEUS_MOCK=true)", e.response.status_code
                 )
                 return list(_MOCK_HOTELS)
             logger.error("Amadeus hotel lookup error: %s", e)
@@ -216,10 +231,10 @@ class AmadeusService:
             return []
 
         search_params: dict = {
-            "hotelIds": hotel_ids,
+            "hotelIds": ",".join(hotel_ids),
             "checkInDate": check_in,
             "checkOutDate": check_out,
-            "adults": adults,
+            "adults": str(adults),
         }
         if currency_code:
             search_params["currency"] = currency_code
@@ -229,7 +244,7 @@ class AmadeusService:
         except ResponseError as e:
             if e.response.status_code == 500 and Config.AMADEUS_MOCK:
                 logger.warning(
-                    "Amadeus hotel offers search returned 500 — returning mock data (AMADEUS_MOCK=true)"
+                    "Amadeus hotel offers search error (%s) — returning mock data (AMADEUS_MOCK=true)", e.response.status_code
                 )
                 return list(_MOCK_HOTELS)
             retry_count = min(5, len(hotel_ids))
@@ -237,7 +252,7 @@ class AmadeusService:
                 "Hotel offers search failed with %d IDs, retrying with %d: %s",
                 len(hotel_ids), retry_count, e,
             )
-            search_params["hotelIds"] = hotel_ids[:retry_count]
+            search_params["hotelIds"] = ",".join(hotel_ids[:retry_count])
             try:
                 response = self.client.shopping.hotel_offers_search.get(**search_params)
             except ResponseError:

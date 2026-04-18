@@ -5,7 +5,6 @@ import { useTripContext } from "@/context/TripContext";
 import { ItinerarySummary } from "@/components/export/ItinerarySummary";
 import { ExportButtons } from "@/components/export/ExportButtons";
 import { Button } from "@/components/ui/Button";
-import { PageTransition } from "@/components/ui/PageTransition";
 import type { TransportSegment } from "@/types/trip";
 import { ArrowLeft, RefreshCw } from "lucide-react";
 
@@ -58,8 +57,7 @@ export default function ExportPage() {
   };
 
   return (
-    <PageTransition>
-      <div className="max-w-2xl mx-auto py-10 px-4">
+    <div className="max-w-2xl mx-auto py-10 px-4">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -123,6 +121,5 @@ export default function ExportPage() {
           <div className="pb-6" />
         </div>
       </div>
-    </PageTransition>
   );
 }

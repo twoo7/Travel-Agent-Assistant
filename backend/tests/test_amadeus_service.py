@@ -121,6 +121,7 @@ def test_search_flights_raises_on_response_error():
         MockConfig.validate.return_value = None
         MockConfig.AMADEUS_API_KEY = "test"
         MockConfig.AMADEUS_API_SECRET = "test"
+        MockConfig.AMADEUS_MOCK = False
         mock_client = MagicMock()
         MockClient.return_value = mock_client
         mock_client.shopping.flight_offers_search.get.side_effect = AmadeusResponseError(
@@ -140,6 +141,7 @@ def test_search_hotels_retries_on_response_error():
         MockConfig.validate.return_value = None
         MockConfig.AMADEUS_API_KEY = "test"
         MockConfig.AMADEUS_API_SECRET = "test"
+        MockConfig.AMADEUS_MOCK = False
         mock_client = MagicMock()
         MockClient.return_value = mock_client
 
@@ -168,7 +170,7 @@ def test_search_hotels_retries_on_response_error():
     assert results[0].name == "Test Hotel"
     assert mock_client.shopping.hotel_offers_search.get.call_count == 2
     second_call_kwargs = mock_client.shopping.hotel_offers_search.get.call_args_list[1]
-    assert len(second_call_kwargs.kwargs.get("hotelIds", [])) == 5
+    assert len(second_call_kwargs.kwargs.get("hotelIds", "").split(",")) == 5
 
 
 def test_search_flights_skips_offer_with_no_itineraries():

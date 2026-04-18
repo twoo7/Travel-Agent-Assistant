@@ -10,7 +10,6 @@ import type { ModeAvailability } from "@/utils/transportAvailability";
 import airportsData from "@/data/airports.json";
 import ferryRoutesData from "@/data/ferry_routes.json";
 import { Button } from "@/components/ui/Button";
-import { PageTransition } from "@/components/ui/PageTransition";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Plane,
@@ -543,8 +542,7 @@ export default function TripSetupPage() {
   }
 
   return (
-    <PageTransition>
-      <div className="max-w-lg mx-auto py-10 px-4 md:px-0 min-h-screen flex flex-col justify-center">
+    <div className="max-w-lg mx-auto py-10 px-4 md:px-0 min-h-screen flex flex-col justify-center">
         {/* Stale banner */}
         <AnimatePresence>
           {state.staleSteps.length > 0 && (
@@ -902,6 +900,5 @@ export default function TripSetupPage() {
           </Button>
         </form>
       </div>
-    </PageTransition>
   );
 }

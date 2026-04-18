@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { usePathname } from "next/navigation";
 import { AnimatePresence } from "framer-motion";
 import { Sidebar } from "@/components/Sidebar";
+import { SaveTripButton } from "@/components/SaveTripButton";
 import { PageTransition } from "@/components/ui/PageTransition";
 
 export function LayoutShell({ children }: { children: React.ReactNode }) {
@@ -13,6 +14,12 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Sidebar pinned={pinned} onPinChange={setPinned} />
+
+      {/* Floating top-right header bar */}
+      <div className="fixed top-3 right-4 z-30 flex items-center gap-2">
+        <SaveTripButton />
+      </div>
+
       <main
         className={[
           "min-h-screen transition-all duration-300 relative z-10",

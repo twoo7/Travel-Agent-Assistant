@@ -6,6 +6,7 @@ import type {
   DayItem,
   RouteSegment,
   ExportRequest,
+  TripMeta,
 } from "@/types/trip";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -15,6 +16,7 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
+    credentials: "include",
   });
   if (!res.ok) {
     const raw = await res.text();
@@ -37,9 +39,45 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+async function get<T>(path: string): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, { credentials: "include" });
+  if (!res.ok) throw new Error(`GET ${path} failed: ${res.status}`);
+  return res.json() as Promise<T>;
+}
+
+async function put<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error(`PUT ${path} failed: ${res.status}`);
+  return res.json() as Promise<T>;
+}
+
+async function patch<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error(`PATCH ${path} failed: ${res.status}`);
+  return res.json() as Promise<T>;
+}
+
+async function del(path: string): Promise<void> {
+  const res = await fetch(`${BASE}${path}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error(`DELETE ${path} failed: ${res.status}`);
+}
+
 export const api = {
   health: (): Promise<{ status: string }> =>
-    fetch(`${BASE}/health`).then((r) => r.json()),
+    fetch(`${BASE}/health`, { credentials: "include" }).then((r) => r.json()),
 
   searchFlights: (params: {
     trip_context: TripContext;
@@ -81,6 +119,7 @@ export const api = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(request),
+      credentials: "include",
     });
     if (!res.ok) throw new Error(`PDF export failed: ${res.status}`);
     return res.blob();
@@ -91,6 +130,7 @@ export const api = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(request),
+      credentials: "include",
     });
     if (!res.ok) throw new Error(`JSON export failed: ${res.status}`);
     return res.json();
@@ -107,4 +147,26 @@ export const api = {
     duration_mins: number | null;
     maps_url: string;
   }> => post("/segments/drive-time", params),
+
+  // Trip persistence
+  createTrip: (): Promise<{ trip_id: string; is_draft: boolean }> =>
+    post("/trips", {}),
+
+  listTrips: (): Promise<TripMeta[]> =>
+    get("/trips"),
+
+  getTrip: (tripId: string): Promise<unknown> =>
+    get(`/trips/${tripId}`),
+
+  saveTrip: (tripId: string, state: unknown): Promise<void> =>
+    put(`/trips/${tripId}`, { state }),
+
+  renameTrip: (tripId: string, name: string): Promise<void> =>
+    patch(`/trips/${tripId}`, { name, is_draft: false }),
+
+  deleteTrip: (tripId: string): Promise<void> =>
+    del(`/trips/${tripId}`),
+
+  claimTrip: (tripId: string): Promise<void> =>
+    post(`/trips/${tripId}/claim`, {}),
 };

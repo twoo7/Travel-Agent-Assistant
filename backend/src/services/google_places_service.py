@@ -1,11 +1,16 @@
+import asyncio
 import logging
 from typing import Any, Dict, List, Optional
 import httpx
 from backend.src.config import Config
+from backend.src.services import redis_service
 
 logger = logging.getLogger(__name__)
 
 PLACES_BASE = "https://places.googleapis.com/v1"
+_TTL_PLACES_SUGGEST = 24 * 3600        # 24 hours
+_TTL_PLACES_DETAILS = 7 * 24 * 3600   # 7 days
+
 FIELD_MASK = (
     "places.id,places.displayName,places.formattedAddress,places.location,"
     "places.rating,places.userRatingCount,places.priceLevel,"
@@ -58,6 +63,46 @@ class GooglePlacesService:
                 "photo_url": _parse_photo_url(place.get("photos", []), self.api_key),
             })
         return results
+
+    async def async_search_places_cached(
+        self,
+        query: str,
+        location_bias: str = "",
+        max_results: int = 10,
+        *,
+        bypass: bool = False,
+    ) -> List[Dict[str, Any]]:
+        """Async version of search_places with Redis caching (TTL 24h)."""
+        key_params = {
+            "q": f"{query} {location_bias}".strip().lower(),
+            "n": max_results,
+        }
+        cache_key = f"cache:places:suggest:{redis_service.hash_params(key_params)}"
+
+        async def fetch() -> list:
+            return await asyncio.to_thread(self.search_places, query, location_bias, max_results)
+
+        result = await redis_service.cached_call(
+            cache_key, _TTL_PLACES_SUGGEST, fetch, bypass=bypass
+        )
+        return result or []
+
+    async def async_get_place_details_cached(
+        self,
+        place_id: str,
+        *,
+        bypass: bool = False,
+    ) -> Dict[str, Any]:
+        """Async version of get_place_details with Redis caching (TTL 7d)."""
+        cache_key = f"cache:places:details:{place_id.lower()}"
+
+        async def fetch() -> dict:
+            return await asyncio.to_thread(self.get_place_details, place_id)
+
+        result = await redis_service.cached_call(
+            cache_key, _TTL_PLACES_DETAILS, fetch, bypass=bypass
+        )
+        return result or {"place_id": place_id}
 
     def get_place_details(self, place_id: str) -> Dict[str, Any]:
         try:

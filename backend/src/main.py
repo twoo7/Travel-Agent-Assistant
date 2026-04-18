@@ -1,12 +1,26 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from backend.src.config import Config
 from backend.src.routers import export, flights, hotels, itinerary, pois, segments
+from backend.src.services import redis_service
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    Config.validate()
+    await redis_service.connect(Config.REDIS_URL)
+    yield
+    await redis_service.disconnect()
+
 
 app = FastAPI(
     title="Travel Agent API",
     description="AI-powered travel planning backend",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
