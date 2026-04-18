@@ -124,12 +124,7 @@ export default function AirportSearch({
     [onChange]
   );
 
-  const handleFocus = useCallback(() => {
-    setOpen(true);
-    if (value) {
-      setQuery("");
-    }
-  }, [value]);
+  const handleFocus = useCallback(() => { setOpen(true); }, []);
 
   const handleSelect = useCallback(
     (airport: Airport) => {
@@ -186,6 +181,7 @@ export default function AirportSearch({
           role="combobox"
           aria-expanded={open && results.length > 0}
           aria-controls={listboxId.current}
+          aria-haspopup="listbox"
           aria-autocomplete="list"
           aria-activedescendant={activeOptionId}
           className={[

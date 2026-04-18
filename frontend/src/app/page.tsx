@@ -629,7 +629,7 @@ export default function TripSetupPage() {
           {/* ── Single-destination fields ── */}
           {!multiMode && (
             <>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <AirportSearch
                   label="From"
                   value={homeOrigin}
@@ -671,7 +671,7 @@ export default function TripSetupPage() {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label
                     className="block text-[10px] font-semibold uppercase tracking-[2.5px] mb-1.5 font-body"
@@ -705,7 +705,7 @@ export default function TripSetupPage() {
                     className="w-full px-3 py-2.5 text-sm font-body"
                   />
                   {returnDate && departureDate && returnDate < departureDate && (
-                    <p className="col-span-2 text-xs mt-1 font-body" style={{ color: "var(--danger)" }}>
+                    <p className="col-span-1 sm:col-span-2 text-xs mt-1 font-body" style={{ color: "var(--danger)" }}>
                       Return date must be on or after the departure date.
                     </p>
                   )}

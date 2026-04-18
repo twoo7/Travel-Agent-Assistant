@@ -207,7 +207,7 @@ export default function ItineraryPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 pr-44">
           {/* Leg selector */}
           {tripContext.legs.length > 1 && (
             <div

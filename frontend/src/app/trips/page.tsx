@@ -79,7 +79,7 @@ function TripCard({
         className="text-lg font-semibold font-body mb-2 pr-14 truncate"
         style={{ color: "var(--text-primary)" }}
       >
-        {trip.name ?? "Unnamed Trip"}
+        {trip.name || "Unnamed Trip"}
       </h2>
 
       <div className="flex items-center gap-3 text-xs font-body" style={{ color: "var(--text-muted)" }}>
