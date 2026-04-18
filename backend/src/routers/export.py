@@ -18,7 +18,11 @@ def export_plan(
 ) -> Response:
     if format == "pdf":
         pdf_bytes = _service.generate_pdf(req)
-        return Response(content=pdf_bytes, media_type="application/pdf")
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": 'attachment; filename="travel-plan.pdf"'},
+        )
 
     data = _service.generate_json(req)
     return JSONResponse(content=data)

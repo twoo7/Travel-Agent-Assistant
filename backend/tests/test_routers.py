@@ -546,6 +546,22 @@ def test_export_plan_invalid_format(client):
     assert resp.status_code == 422
 
 
+def test_pdf_export_returns_bytes(client):
+    """PDF export endpoint must return valid PDF bytes without raising."""
+    payload = {
+        "trip_context": {
+            "home_origin": "JFK", "adults": 2, "children": 0, "currency": "USD",
+            "legs": [], "unscheduled_pois": [], "saved_pois": []
+        },
+        "itinerary": [],
+        "transport_segments": []
+    }
+    resp = client.post("/export/plan?format=pdf", json=payload)
+    assert resp.status_code == 200
+    assert resp.headers["content-type"] == "application/pdf"
+    assert resp.content[:4] == b"%PDF"
+
+
 def test_config_anthropic_key_available_without_flight_search(monkeypatch):
     """ANTHROPIC_API_KEY must be populated at startup, not lazily on first AmadeusService init."""
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test-key")
