@@ -320,7 +320,18 @@ function reducer(state: TripState, action: TripAction): TripState {
       };
 
     case "SET_STATE":
-      return action.payload;
+      return {
+        ...INITIAL_STATE,
+        ...action.payload,
+        staleSteps: action.payload.staleSteps ?? [],
+        itinerary: action.payload.itinerary ?? [],
+        tripContext: {
+          ...EMPTY_CONTEXT,
+          ...(action.payload.tripContext ?? {}),
+          unscheduled_pois: action.payload.tripContext?.unscheduled_pois ?? [],
+          saved_pois: action.payload.tripContext?.saved_pois ?? [],
+        },
+      };
 
     case "SET_ACTIVE_TRIP_ID":
       return { ...state, activeTripId: action.payload };
