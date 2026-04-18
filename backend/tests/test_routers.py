@@ -634,3 +634,33 @@ def test_poi_suggest_no_duplicate_ids(client, mocker):
     assert resp.status_code == 200
     ids = [p["id"] for p in resp.json()]
     assert len(ids) == len(set(ids)), f"Duplicate POI ids returned: {ids}"
+
+
+def test_hotel_search_sends_room_quantity_for_4_adults(mocker):
+    """Hotel search with 4 adults must send adults=2 and roomQuantity=2 to Amadeus."""
+    import math
+    adults = 4
+    adults_per_room = min(adults, 2)
+    room_quantity = max(1, math.ceil(adults / adults_per_room))
+    assert adults_per_room == 2
+    assert room_quantity == 2
+    # Also verify via actual param construction logic directly
+    from backend.src.services.amadeus_service import AmadeusService
+    # Patch the Amadeus client constructor to avoid real credentials
+    mocker.patch("backend.src.services.amadeus_service.Client", return_value=mocker.MagicMock())
+    mocker.patch("backend.src.config.Config.validate")
+    svc = AmadeusService()
+    captured_params = {}
+    def fake_hotel_offers_search(**kwargs):
+        captured_params.update(kwargs)
+        raise Exception("stop")
+    svc.client.shopping.hotel_offers_search.get.side_effect = fake_hotel_offers_search
+    # Also mock the by_city call to return fake hotel ids
+    mock_hotel = {"hotelId": "HOTEL1"}
+    svc.client.reference_data.locations.hotels.by_city.get.return_value = mocker.MagicMock(data=[mock_hotel])
+    try:
+        svc.search_hotels("TYO", "2026-06-01", "2026-06-05", 4)
+    except Exception:
+        pass
+    assert captured_params.get("adults") == "2", f"Expected adults=2, got {captured_params.get('adults')}"
+    assert captured_params.get("roomQuantity") == "2", f"Expected roomQuantity=2, got {captured_params.get('roomQuantity')}"

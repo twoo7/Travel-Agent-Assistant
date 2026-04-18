@@ -1,4 +1,5 @@
 import logging
+import math
 from typing import List
 from amadeus import Client, ResponseError
 from backend.src.config import Config
@@ -227,11 +228,15 @@ class AmadeusService:
             logger.warning("No hotels found in city %s", city_code)
             return []
 
+        adults_per_room = min(adults, 2)              # Amadeus: adults = per-room count, max 2
+        room_quantity = max(1, math.ceil(adults / adults_per_room)) if adults > 0 else 1
+
         search_params: dict = {
             "hotelIds": ",".join(hotel_ids),
             "checkInDate": check_in,
             "checkOutDate": check_out,
-            "adults": str(adults),
+            "adults": str(adults_per_room),           # per-room adult count
+            "roomQuantity": str(room_quantity),       # number of rooms
         }
         if currency_code:
             search_params["currency"] = currency_code
