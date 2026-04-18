@@ -228,8 +228,8 @@ class AmadeusService:
             logger.warning("No hotels found in city %s", city_code)
             return []
 
-        adults_per_room = min(adults, 2)              # Amadeus: adults = per-room count, max 2
-        room_quantity = max(1, math.ceil(adults / adults_per_room)) if adults > 0 else 1
+        adults_per_room = min(adults, 2) if adults > 0 else 1   # Amadeus: adults = per-room count, max 2
+        room_quantity = max(1, math.ceil(adults / adults_per_room))
 
         search_params: dict = {
             "hotelIds": ",".join(hotel_ids),

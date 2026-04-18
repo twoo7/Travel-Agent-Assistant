@@ -638,13 +638,6 @@ def test_poi_suggest_no_duplicate_ids(client, mocker):
 
 def test_hotel_search_sends_room_quantity_for_4_adults(mocker):
     """Hotel search with 4 adults must send adults=2 and roomQuantity=2 to Amadeus."""
-    import math
-    adults = 4
-    adults_per_room = min(adults, 2)
-    room_quantity = max(1, math.ceil(adults / adults_per_room))
-    assert adults_per_room == 2
-    assert room_quantity == 2
-    # Also verify via actual param construction logic directly
     from backend.src.services.amadeus_service import AmadeusService
     # Patch the Amadeus client constructor to avoid real credentials
     mocker.patch("backend.src.services.amadeus_service.Client", return_value=mocker.MagicMock())
