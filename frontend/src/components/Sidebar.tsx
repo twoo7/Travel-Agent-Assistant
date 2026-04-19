@@ -11,7 +11,7 @@ import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import type { TransportMode } from "@/types/trip";
 import {
   Plane, Train, Ship, Car, Hotel, Calendar, Download,
-  Menu, X, Pin, PinOff, Check, AlertTriangle, Lock,
+  Menu, X, Pin, PinOff, Check, AlertTriangle, Lock, FolderOpen,
 } from "lucide-react";
 
 const STEPS = [
@@ -195,7 +195,7 @@ export function Sidebar({ pinned, onPinChange }: { pinned: boolean; onPinChange:
   const collapseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pathname = usePathname();
   const { state } = useTripContext();
-  const { staleSteps, tripContext } = state;
+  const { staleSteps, tripContext, itinerary } = state;
 
   const expanded = pinned || hovered;
   const currentIndex = STEPS.findIndex((s) => s.href === pathname);
@@ -226,10 +226,16 @@ export function Sidebar({ pinned, onPinChange }: { pinned: boolean; onPinChange:
       case 2: return tripContext.legs.length > 0 && tripContext.legs
         .filter((l) => !isReturnLeg(l.destination))
         .every((l) => l.hotel_stays.length > 0);
-      case 3: return isStepDone(2);
-      case 4: return isStepDone(3);
+      case 3: return itinerary.length > 0;
+      case 4: return itinerary.length > 0;
       default: return false;
     }
+  }
+
+  function isStepNavigable(index: number): boolean {
+    if (index === 0) return true;
+    if (isStepDone(index)) return true;
+    return isStepDone(index - 1);
   }
 
   function stepStatus(index: number): StepStatus {
@@ -276,7 +282,8 @@ export function Sidebar({ pinned, onPinChange }: { pinned: boolean; onPinChange:
       <ul className="flex flex-col gap-1 p-1.5 flex-1 overflow-y-auto">
         {STEPS.map((step, i) => {
           const status = stepStatus(i);
-          const isLocked = status === "locked";
+          const navigable = isStepNavigable(i);
+          const isLocked = !navigable;
           return (
             <li key={step.href}>
               <Link
@@ -307,7 +314,7 @@ export function Sidebar({ pinned, onPinChange }: { pinned: boolean; onPinChange:
                   )}
                 </AnimatePresence>
                 <AnimatePresence>
-                  {expanded && <StatusChip key={`chip-${step.href}`} status={status} />}
+                  {expanded && (status !== "locked" || isLocked) && <StatusChip key={`chip-${step.href}`} status={status} />}
                 </AnimatePresence>
               </Link>
             </li>
@@ -330,6 +337,38 @@ export function Sidebar({ pinned, onPinChange }: { pinned: boolean; onPinChange:
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* My Trips link */}
+      <div className="border-t shrink-0" style={{ borderColor: "var(--sidebar-border)" }}>
+        <Link
+          href="/trips"
+          className="flex items-center gap-2 px-1.5 py-2.5 transition-colors duration-150 select-none outline-none rounded-xl mx-1.5 my-1"
+          style={{
+            color: pathname === "/trips" ? "var(--accent)" : "var(--text-subtle)",
+            background: pathname === "/trips" ? "rgba(224,122,95,0.1)" : "transparent",
+          }}
+          title="My Trips"
+        >
+          <span className="w-9 h-9 shrink-0 flex items-center justify-center rounded-lg"
+                style={{ background: pathname === "/trips" ? "rgba(224,122,95,0.15)" : "transparent" }}>
+            <FolderOpen size={16} />
+          </span>
+          <AnimatePresence>
+            {expanded && (
+              <motion.span
+                key="trips-label"
+                initial={{ opacity: 0, x: -4 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -4 }}
+                transition={{ duration: 0.15 }}
+                className="whitespace-nowrap text-sm font-body font-medium"
+              >
+                My Trips
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </Link>
+      </div>
 
       {/* Theme toggle */}
       <ThemeToggle />
@@ -420,7 +459,7 @@ export function Sidebar({ pinned, onPinChange }: { pinned: boolean; onPinChange:
                 const isDone   = status === "done";
                 const isActive = status === "active";
                 const isStale  = status === "stale";
-                const isLocked = status === "locked";
+                const isLocked = !isStepNavigable(i);
                 return (
                   <li key={step.href}>
                     <Link
@@ -441,7 +480,7 @@ export function Sidebar({ pinned, onPinChange }: { pinned: boolean; onPinChange:
                       <span className="whitespace-nowrap text-sm font-body font-medium flex-1">
                         {i + 1}. {step.label}
                       </span>
-                      <StatusChip status={status} />
+                      {(status !== "locked" || isLocked) && <StatusChip status={status} />}
                     </Link>
                   </li>
                 );
@@ -449,6 +488,22 @@ export function Sidebar({ pinned, onPinChange }: { pinned: boolean; onPinChange:
             </ul>
             <div className="px-4 py-3 border-t text-xs shrink-0" style={{ borderColor: "var(--sidebar-border)", color: "var(--text-muted)" }}>
               <TripSummary staleSteps={staleSteps} />
+            </div>
+            <div className="border-t shrink-0 px-2 py-1.5" style={{ borderColor: "var(--sidebar-border)" }}>
+              <Link
+                href="/trips"
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors select-none"
+                style={{
+                  background: pathname === "/trips" ? "rgba(224,122,95,0.15)" : "transparent",
+                  color: pathname === "/trips" ? "var(--accent)" : "var(--text-muted)",
+                }}
+              >
+                <span className="w-9 h-9 shrink-0 rounded-lg flex items-center justify-center">
+                  <FolderOpen size={16} />
+                </span>
+                <span className="whitespace-nowrap text-sm font-body font-medium flex-1">My Trips</span>
+              </Link>
             </div>
             <ThemeToggle />
           </motion.div>

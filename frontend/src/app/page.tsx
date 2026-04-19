@@ -31,6 +31,8 @@ interface LegDraft {
   destination: string;
   date: string;
   transport_mode: TransportMode;
+  originAirports?: string[];
+  destAirports?: string[];
 }
 
 // ─── Stale step labels ────────────────────────────────────────────────────────
@@ -194,7 +196,7 @@ function LegCard({
   const handleDestinationChange = useCallback(
     (iata: string) => {
       if (!iata) {
-        onChange({ ...leg, destination: "" });
+        onChange({ ...leg, destination: "", destAirports: [] });
         return;
       }
       const availability = getTransportAvailability(
@@ -240,6 +242,7 @@ function LegCard({
           label="From"
           value={leg.origin}
           onChange={(iata) => onChange({ ...leg, origin: iata })}
+          onAirportsChange={(airports) => onChange({ ...leg, originAirports: airports })}
           placeholder="Origin airport"
           disabled={isFirst || index > 0}
         />
@@ -247,6 +250,7 @@ function LegCard({
           label="To"
           value={leg.destination}
           onChange={handleDestinationChange}
+          onAirportsChange={(airports) => onChange({ ...leg, destAirports: airports })}
           placeholder="Destination airport"
         />
       </div>
@@ -288,7 +292,9 @@ export default function TripSetupPage() {
   const { tripContext } = state;
 
   const [homeOrigin, setHomeOrigin] = useState("");
+  const [homeOriginAirports, setHomeOriginAirports] = useState<string[]>([]);
   const [singleDest, setSingleDest] = useState("");
+  const [singleDestAirports, setSingleDestAirports] = useState<string[]>([]);
   const [departureDate, setDepartureDate] = useState("");
   const [returnDate, setReturnDate] = useState("");
 
@@ -445,6 +451,15 @@ export default function TripSetupPage() {
     [tripContext.legs.length, isValid]
   );
 
+  const handleHomeOriginAirportsChange = useCallback((airports: string[]) => {
+    setHomeOriginAirports(airports);
+    setLegs((prev) => {
+      const updated = [...prev];
+      updated[0] = { ...updated[0], originAirports: airports };
+      return updated;
+    });
+  }, []);
+
   function markStaleIfEditing(legNumbers: number[], steps: string[]) {
     if (tripContext.legs.length === 0) return;
     const keys = legNumbers.flatMap((n) => steps.map((s) => `${s}-${n}`));
@@ -468,6 +483,8 @@ export default function TripSetupPage() {
             origin: homeOrigin,
             destination: singleDest,
             date: departureDate,
+            originAirports: homeOriginAirports,
+            destAirports: singleDestAirports,
             transport_mode: (() => {
               if (!homeOrigin || !singleDest) return "flight";
               const av = getTransportAvailability(
@@ -510,6 +527,8 @@ export default function TripSetupPage() {
           destination: leg.destination,
           departure_date: leg.date,
           transport_mode: leg.transport_mode,
+          origin_airports: leg.originAirports && leg.originAirports.length > 1 ? leg.originAirports : undefined,
+          destination_airports: leg.destAirports && leg.destAirports.length > 1 ? leg.destAirports : undefined,
           hotel_stays: [],
           days: [],
         },
@@ -635,6 +654,7 @@ export default function TripSetupPage() {
                   label="From"
                   value={homeOrigin}
                   onChange={handleHomeOriginChange}
+                  onAirportsChange={handleHomeOriginAirportsChange}
                   placeholder="Home airport"
                 />
                 <AirportSearch
@@ -644,6 +664,9 @@ export default function TripSetupPage() {
                     setSingleDest(iata);
                     if (!isValid) return;
                     markStaleIfEditing([1], ["segments", "hotels"]);
+                  }}
+                  onAirportsChange={(airports) => {
+                    setSingleDestAirports(airports);
                   }}
                   placeholder="Destination airport"
                 />
@@ -831,6 +854,7 @@ export default function TripSetupPage() {
                   label="Home airport (trip origin)"
                   value={homeOrigin}
                   onChange={handleHomeOriginChange}
+                  onAirportsChange={handleHomeOriginAirportsChange}
                   placeholder="Where are you flying from?"
                 />
               </div>

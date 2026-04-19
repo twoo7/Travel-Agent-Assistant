@@ -206,15 +206,9 @@ export default function ItineraryPage() {
   return (
     <div className="flex flex-col gap-4 h-[calc(100dvh-2.75rem)] md:h-screen">
       {/* Top bar */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold font-display" style={{ color: "var(--text-primary)" }}>Itinerary Builder</h1>
-          <p className="text-sm mt-0.5 font-body" style={{ color: "var(--text-muted)" }}>
-            Add places, arrange your days, then generate your final itinerary.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3 pr-44">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold font-display" style={{ color: "var(--text-primary)" }}>Itinerary Builder</h1>
+        <div className="flex items-center gap-3">
           {/* Leg selector */}
           {tripContext.legs.length > 1 && (
             <div

@@ -29,7 +29,7 @@ class IdentityMiddleware(BaseHTTPMiddleware):
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> StarletteResponse:
         existing = request.cookies.get(COOKIE_NAME)
-        user_id = existing if existing else str(uuid.uuid4())
+        user_id = request.headers.get("X-User-ID") or existing or str(uuid.uuid4())
         # Stash on request.state so route handlers can read it cheaply.
         request.state.user_id = user_id
 

@@ -79,6 +79,8 @@ export interface TripLeg {
   destination: string;
   departure_date: string;
   transport_mode?: TransportMode;
+  origin_airports?: string[];
+  destination_airports?: string[];
   selected_flight?: FlightOffer;
   hotel_stays: HotelStay[];
   days: DayPlan[];

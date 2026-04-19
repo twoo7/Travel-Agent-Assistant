@@ -29,6 +29,7 @@
   --sidebar-bg:         #071420;
   --sidebar-bg-mobile:  rgba(7,20,32,0.9);
   --sidebar-border:     rgba(255,255,255,0.06);
+  --dropdown-bg:        rgba(15,41,55,0.97);
 }
 
 /* ── Light mode overrides ────────────────────────────────────────────────── */
@@ -54,6 +55,7 @@
   --sidebar-bg-mobile:  rgba(250,248,245,0.97);
   --sidebar-border:     rgba(0,0,0,0.08);
   --danger:             #dc2626;
+  --dropdown-bg:        rgba(255,255,255,0.98);
 }
 
 /* ── Body ────────────────────────────────────────────────────────────────── */

@@ -17,7 +17,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
 
       {/* Floating top-right header bar */}
       <div className="fixed top-3 right-4 z-30 flex items-center gap-2">
-        <SaveTripButton />
+        {pathname !== "/trips" && <SaveTripButton />}
       </div>
 
       <main

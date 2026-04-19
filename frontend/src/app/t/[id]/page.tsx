@@ -58,10 +58,14 @@ export default function TripLoaderPage() {
     api
       .getTrip(id)
       .then((raw) => {
-        const tripState = raw as Parameters<typeof dispatch>[0] extends { type: "SET_STATE"; payload: infer P } ? P : never;
+        // API returns TripDetail: { trip_id, name, is_draft, ..., state: TripState }
+        // SET_STATE expects the inner TripState, not the wrapper TripDetail
+        const tripDetail = raw as { name?: string | null; state?: Record<string, unknown> | null };
+        const tripState = tripDetail.state ?? {};
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         dispatch({ type: "SET_STATE", payload: tripState as any });
         dispatch({ type: "SET_ACTIVE_TRIP_ID", payload: id });
+        if (tripDetail.name) dispatch({ type: "SET_TRIP_NAME", payload: tripDetail.name });
 
         if (!alreadyOwned) {
           // Claim in background — don't block navigation on failure

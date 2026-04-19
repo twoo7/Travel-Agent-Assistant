@@ -11,10 +11,26 @@ import type {
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
+function getOrCreateUid(): string {
+  if (typeof window === "undefined") return "";
+  const key = "travel_agent_uid";
+  let uid = localStorage.getItem(key);
+  if (!uid) {
+    uid = crypto.randomUUID();
+    localStorage.setItem(key, uid);
+  }
+  return uid;
+}
+
+function authHeaders(): Record<string, string> {
+  const uid = getOrCreateUid();
+  return uid ? { "X-User-ID": uid } : {};
+}
+
 async function post<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify(body),
     credentials: "include",
   });
@@ -40,7 +56,10 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 }
 
 async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, { credentials: "include" });
+  const res = await fetch(`${BASE}${path}`, {
+    credentials: "include",
+    headers: authHeaders(),
+  });
   if (!res.ok) throw new Error(`GET ${path} failed: ${res.status}`);
   return res.json() as Promise<T>;
 }
@@ -48,7 +67,7 @@ async function get<T>(path: string): Promise<T> {
 async function put<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify(body),
     credentials: "include",
   });
@@ -59,7 +78,7 @@ async function put<T>(path: string, body: unknown): Promise<T> {
 async function patch<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify(body),
     credentials: "include",
   });
@@ -71,6 +90,7 @@ async function del(path: string): Promise<void> {
   const res = await fetch(`${BASE}${path}`, {
     method: "DELETE",
     credentials: "include",
+    headers: authHeaders(),
   });
   if (!res.ok) throw new Error(`DELETE ${path} failed: ${res.status}`);
 }
@@ -117,18 +137,26 @@ export const api = {
   exportPDF: async (request: ExportRequest): Promise<Blob> => {
     const res = await fetch(`${BASE}/export/plan?format=pdf`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify(request),
       credentials: "include",
     });
-    if (!res.ok) throw new Error(`PDF export failed: ${res.status}`);
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`PDF export failed (${res.status}): ${text.slice(0, 200)}`);
+    }
+    const contentType = res.headers.get("content-type") ?? "";
+    if (!contentType.includes("application/pdf")) {
+      const text = await res.text();
+      throw new Error(`Server returned ${contentType || "unknown content type"} instead of PDF. Response: ${text.slice(0, 200)}`);
+    }
     return res.blob();
   },
 
   exportJSON: async (request: ExportRequest): Promise<unknown> => {
     const res = await fetch(`${BASE}/export/plan?format=json`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify(request),
       credentials: "include",
     });
@@ -149,8 +177,8 @@ export const api = {
   }> => post("/segments/drive-time", params),
 
   // Trip persistence
-  createTrip: (): Promise<{ trip_id: string; is_draft: boolean }> =>
-    post("/trips", {}),
+  createTrip: (name?: string | null, state?: unknown): Promise<{ trip_id: string; is_draft: boolean }> =>
+    post("/trips", { name: name ?? undefined, state: state ?? undefined }),
 
   listTrips: (): Promise<TripMeta[]> =>
     get("/trips"),

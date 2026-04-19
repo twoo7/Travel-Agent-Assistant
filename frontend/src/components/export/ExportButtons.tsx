@@ -24,10 +24,12 @@ export function ExportButtons({ exportRequest }: Props) {
       const a = document.createElement("a");
       a.href = url;
       a.download = "travel-plan.pdf";
+      document.body.appendChild(a);
       a.click();
-      URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 100);
     } catch (e) {
-      setError(`PDF export failed: ${e}`);
+      setError(e instanceof Error ? e.message : `PDF export failed: ${e}`);
     } finally {
       setLoadingPdf(false);
     }
@@ -46,7 +48,7 @@ export function ExportButtons({ exportRequest }: Props) {
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
-      setError(`JSON export failed: ${e}`);
+      setError(e instanceof Error ? e.message : `JSON export failed: ${e}`);
     } finally {
       setLoadingJson(false);
     }

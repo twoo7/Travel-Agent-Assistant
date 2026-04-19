@@ -12,13 +12,14 @@ import { Button } from "@/components/ui/Button";
  * Only renders once a trip has been initiated (activeTripId set or home_origin non-empty).
  */
 export function SaveTripButton() {
-  const { state } = useTripContext();
-  const { activeTripId, tripContext } = state;
+  const { state, dispatch } = useTripContext();
+  const { activeTripId, tripContext, tripName } = state;
 
   const [modalOpen, setModalOpen] = useState(false);
   const [nameInput, setNameInput] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const [copying, setCopying] = useState(false);
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
@@ -39,23 +40,48 @@ export function SaveTripButton() {
     : null;
 
   const handleSave = useCallback(async () => {
-    if (!activeTripId) return;
     setSaving(true);
+    setSaveError("");
+    const name = nameInput.trim() || null;
     try {
-      const name = nameInput.trim() || null;
-      if (name) {
-        await api.renameTrip(activeTripId, name);
+      let tripId = activeTripId;
+      let savedOk = false;
+
+      if (tripId) {
+        try {
+          if (name) await api.renameTrip(tripId, name);
+          await api.saveTrip(tripId, state);
+          savedOk = true;
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : "";
+          if (msg.includes("403")) {
+            // Stale trip (uid mismatch) — fall through to create fresh
+            dispatch({ type: "SET_ACTIVE_TRIP_ID", payload: null });
+            tripId = null;
+          } else {
+            throw err;
+          }
+        }
       }
-      await api.saveTrip(activeTripId, state);
+
+      if (!savedOk) {
+        // Single POST: create trip with name + state in one request (avoids uid mismatch)
+        const { trip_id } = await api.createTrip(name, state);
+        dispatch({ type: "SET_ACTIVE_TRIP_ID", payload: trip_id });
+      }
+
+      if (name) dispatch({ type: "SET_TRIP_NAME", payload: name });
       setSaved(true);
       setModalOpen(false);
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
+      const msg = err instanceof Error ? err.message : "Save failed. Is the backend running?";
+      setSaveError(msg);
       console.error("Save failed:", err);
     } finally {
       setSaving(false);
     }
-  }, [activeTripId, nameInput, state]);
+  }, [activeTripId, nameInput, state, dispatch]);
 
   const handleShare = useCallback(async () => {
     if (!shareUrl) return;
@@ -69,10 +95,10 @@ export function SaveTripButton() {
   }, [shareUrl]);
 
   const openModal = useCallback(() => {
-    // Pre-fill with existing name if known (not tracked in state yet; leave empty)
-    setNameInput("");
+    setNameInput(tripName ?? "");
+    setSaveError("");
     setModalOpen(true);
-  }, []);
+  }, [tripName]);
 
   // Don't show until mounted (avoids SSR hydration mismatch) or until trip started
   if (!mounted || (!activeTripId && !tripContext.home_origin)) return null;
@@ -89,7 +115,7 @@ export function SaveTripButton() {
         }}
       >
         <span style={{ color: "var(--text-muted)" }}>
-          {activeTripId ? "Trip saved" : "Draft"}
+          {tripName ?? (activeTripId ? "Saved" : "Draft")}
         </span>
 
         <span style={{ color: "var(--glass-border-2)" }} className="mx-1">·</span>
@@ -167,7 +193,7 @@ export function SaveTripButton() {
                 Save Trip
               </p>
               <h2 className="font-display text-xl mb-4" style={{ color: "var(--text-primary)" }}>
-                Name your trip
+                {tripName ? "Update trip name" : "Name your trip"}
               </h2>
 
               <input
@@ -185,6 +211,12 @@ export function SaveTripButton() {
                 }}
                 autoFocus
               />
+
+              {saveError && (
+                <p className="text-xs rounded-lg px-3 py-2 mb-2 font-body" style={{ color: "var(--danger)", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
+                  {saveError}
+                </p>
+              )}
 
               <div className="flex gap-2">
                 <Button

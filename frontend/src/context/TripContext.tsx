@@ -19,6 +19,7 @@ interface TripState {
   itinerary: ItineraryDay[];
   staleSteps: string[];
   activeTripId: string | null;
+  tripName: string | null;
 }
 
 type TripAction =
@@ -43,6 +44,7 @@ type TripAction =
   | { type: "CLEAR_STALE"; payload: { key: string } }
   | { type: "SET_STATE"; payload: TripState }
   | { type: "SET_ACTIVE_TRIP_ID"; payload: string | null }
+  | { type: "SET_TRIP_NAME"; payload: string | null }
   | { type: "RESET" };
 
 const EMPTY_CONTEXT: TripContextType = {
@@ -60,6 +62,7 @@ const INITIAL_STATE: TripState = {
   itinerary: [],
   staleSteps: [],
   activeTripId: null,
+  tripName: null,
 };
 
 const LOCAL_KEY = "trip-context:draft";
@@ -325,6 +328,7 @@ function reducer(state: TripState, action: TripAction): TripState {
         ...action.payload,
         staleSteps: action.payload.staleSteps ?? [],
         itinerary: action.payload.itinerary ?? [],
+        tripName: action.payload.tripName ?? null,
         tripContext: {
           ...EMPTY_CONTEXT,
           ...(action.payload.tripContext ?? {}),
@@ -335,6 +339,9 @@ function reducer(state: TripState, action: TripAction): TripState {
 
     case "SET_ACTIVE_TRIP_ID":
       return { ...state, activeTripId: action.payload };
+
+    case "SET_TRIP_NAME":
+      return { ...state, tripName: action.payload };
 
     case "RESET":
       return INITIAL_STATE;
@@ -350,14 +357,21 @@ const TripContextCtx = createContext<{
 } | null>(null);
 
 export function TripContextProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, INITIAL_STATE, () => {
-    // Load persisted state on first render (client-only: localStorage is not available on server)
-    if (typeof window === "undefined") return INITIAL_STATE;
-    return loadFromLocal();
-  });
+  const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
 
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isCreatingTrip = useRef(false);
+  const localLoaded = useRef(false);
+
+  // Load persisted state after hydration — never runs on the server
+  useEffect(() => {
+    if (localLoaded.current) return;
+    localLoaded.current = true;
+    const saved = loadFromLocal();
+    if (saved.tripContext.home_origin || saved.activeTripId || saved.tripContext.legs.length > 0) {
+      dispatch({ type: "SET_STATE", payload: saved });
+    }
+  }, []);
 
   useEffect(() => {
     // Always keep localStorage in sync as offline fallback
