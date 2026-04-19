@@ -48,6 +48,7 @@ export function DayItemCard({ item, itemId, onRemove, isOverlay = false }: Props
   } = useSortable({
     id: itemId,
     disabled: isHotel || isOverlay,
+    animateLayoutChanges: () => false,
   });
 
   const style: React.CSSProperties = isOverlay

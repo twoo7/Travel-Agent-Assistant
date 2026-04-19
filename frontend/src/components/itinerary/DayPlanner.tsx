@@ -16,6 +16,7 @@ import { arrayMove } from "@dnd-kit/sortable";
 import type { DayPlan, DayItem, POI, SavedHotel, HopMode } from "@/types/trip";
 import { DayColumn } from "./DayColumn";
 import { DayItemCard } from "./DayItemCard";
+import { useToast } from "@/components/ui/Toast";
 
 interface Props {
   days: DayPlan[];
@@ -39,70 +40,84 @@ export function DayPlanner({
   onFocusedDayChange,
   onSaveHotel,
 }: Props) {
+  const { toast } = useToast();
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeItem, setActiveItem] = useState<DayItem | null>(null);
 
-  // Snapshot of days at drag-start — used for cancel revert
+  // Snapshot at drag-start for cancel revert
   const preDragDays = useRef<DayPlan[] | null>(null);
 
-  // Working copy during drag (for optimistic cross-day moves)
+  // Working copy during drag
   const [workingDays, setWorkingDays] = useState<DayPlan[] | null>(null);
+
+  // Track dragged item by reference so we can find it even after cross-day moves
+  const dragItemRef = useRef<DayItem | null>(null);
+  const dragCurrentDayRef = useRef<number | null>(null);
 
   const displayDays = workingDays ?? days;
 
   function handleDragStart(e: DragStartEvent) {
     const id = String(e.active.id);
-    setActiveId(id);
-    preDragDays.current = days;
-    setWorkingDays([...days]);
-
     const { dayNumber, idx } = parseId(id);
     const day = days.find((d) => d.day_number === dayNumber);
-    setActiveItem(day?.items[idx] ?? null);
+    const item = day?.items[idx];
+    if (!item || item.type === "hotel") return;
+
+    dragItemRef.current = item;
+    dragCurrentDayRef.current = dayNumber;
+    preDragDays.current = days;
+    setWorkingDays([...days]);
+    setActiveItem(item);
+    setActiveId(id);
   }
 
   const handleDragOver = useCallback(
     (e: DragOverEvent) => {
-      const { active, over } = e;
-      if (!over || active.id === over.id) return;
+      const { over } = e;
+      if (!over || !dragItemRef.current) return;
 
-      const activeStr = String(active.id);
       const overStr = String(over.id);
-
-      const { dayNumber: activeDayNum, idx: activeIdx } = parseId(activeStr);
-      // over can be an item id or a droppable day container id ("day-N")
       const overIsDayContainer = overStr.startsWith("day-");
       const overDayNum = overIsDayContainer
         ? parseInt(overStr.replace("day-", ""))
         : parseId(overStr).dayNumber;
+      const sourceDayNum = dragCurrentDayRef.current;
+      if (sourceDayNum == null) return;
 
-      if (activeDayNum === overDayNum) return; // same day — handled by sortable
+      // Same day — let SortableContext handle intra-day ordering on drop
+      if (sourceDayNum === overDayNum) return;
 
       setWorkingDays((prev) => {
         const base = prev ?? days;
-        const sourceDayIdx = base.findIndex((d) => d.day_number === activeDayNum);
-        const targetDayIdx = base.findIndex((d) => d.day_number === overDayNum);
-        if (sourceDayIdx === -1 || targetDayIdx === -1) return prev;
 
-        const item = base[sourceDayIdx].items[activeIdx];
-        if (!item || item.type === "hotel") return prev; // hotels can't be dragged
+        // Find item by reference equality in the current source day
+        const srcDayData = base.find((d) => d.day_number === sourceDayNum);
+        const srcIdx = srcDayData?.items.findIndex((it) => it === dragItemRef.current) ?? -1;
+        if (srcIdx === -1) return prev;
 
-        const newDays = base.map((d, i) => {
-          if (i === sourceDayIdx) {
-            return { ...d, items: d.items.filter((_, idx) => idx !== activeIdx) };
+        const targetDayData = base.find((d) => d.day_number === overDayNum);
+        if (!targetDayData) return prev;
+
+        const overIdx = overIsDayContainer
+          ? targetDayData.items.length
+          : parseId(overStr).idx;
+
+        const next = base.map((d) => {
+          if (d.day_number === sourceDayNum) {
+            return { ...d, items: d.items.filter((_, i) => i !== srcIdx) };
           }
-          if (i === targetDayIdx) {
-            const overIdx = overIsDayContainer
-              ? d.items.length
-              : parseId(overStr).idx;
-            const newItems = [...d.items];
-            newItems.splice(isNaN(overIdx) ? newItems.length : overIdx, 0, item);
-            return { ...d, items: newItems };
+          if (d.day_number === overDayNum) {
+            const items = [...d.items];
+            items.splice(isNaN(overIdx) ? items.length : overIdx, 0, dragItemRef.current!);
+            return { ...d, items };
           }
           return d;
         });
-        return newDays;
+
+        // Update source day so subsequent drag-overs compute correctly
+        dragCurrentDayRef.current = overDayNum;
+        return next;
       });
     },
     [days]
@@ -110,9 +125,10 @@ export function DayPlanner({
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
+    const base = workingDays ?? days;
 
-    if (!over || active.id === over.id) {
-      // No valid drop — commit working state as-is or revert
+    if (!over || !dragItemRef.current) {
+      // No valid drop — commit working state or revert
       if (workingDays) onDaysChange(workingDays);
       cleanup();
       return;
@@ -120,37 +136,39 @@ export function DayPlanner({
 
     const activeStr = String(active.id);
     const overStr = String(over.id);
-
-    const { dayNumber: activeDayNum, idx: activeIdxOrig } = parseId(activeStr);
     const overIsDayContainer = overStr.startsWith("day-");
     const overDayNum = overIsDayContainer
       ? parseInt(overStr.replace("day-", ""))
       : parseId(overStr).dayNumber;
+    const currentDayNum = dragCurrentDayRef.current;
 
-    const base = workingDays ?? days;
+    if (currentDayNum != null && currentDayNum === overDayNum) {
+      // Intra-day reorder: apply arrayMove on the current working day
+      const dayIndex = base.findIndex((d) => d.day_number === currentDayNum);
+      if (dayIndex === -1) { onDaysChange(base); cleanup(); return; }
 
-    if (activeDayNum === overDayNum) {
-      // Same-day reorder (workingDays may already be correct, but apply arrayMove to be safe)
-      const dayIndex = base.findIndex((d) => d.day_number === activeDayNum);
-      if (dayIndex === -1) { if (workingDays) onDaysChange(workingDays); cleanup(); return; }
+      const currentItems = base[dayIndex].items;
+      const srcIdx = currentItems.findIndex((it) => it === dragItemRef.current);
+      const overIdx = overIsDayContainer
+        ? currentItems.length - 1
+        : parseId(overStr).idx;
 
-      // Find active item's current position in working copy
-      const currentDayItems = base[dayIndex].items;
-      const overIdx = overIsDayContainer ? currentDayItems.length - 1 : parseId(overStr).idx;
-      // Find active item current idx (may differ from original after drag-over moves)
-      const activeCurrentIdx = currentDayItems.findIndex(
-        (_, i) => `${activeDayNum}-${i}` === activeStr
-      );
-      const fromIdx = activeCurrentIdx !== -1 ? activeCurrentIdx : activeIdxOrig;
-      const newItems = arrayMove(currentDayItems, fromIdx, overIdx);
-      const newDays = base.map((d) =>
-        d.day_number === activeDayNum ? { ...d, items: newItems } : d
-      );
-      onDaysChange(newDays);
+      if (srcIdx !== -1 && srcIdx !== overIdx) {
+        const newItems = arrayMove(currentItems, srcIdx, overIdx);
+        const newDays = base.map((d) =>
+          d.day_number === currentDayNum ? { ...d, items: newItems } : d
+        );
+        onDaysChange(newDays);
+      } else {
+        onDaysChange(base);
+      }
     } else {
-      // Cross-day: workingDays already reflects the optimistic move from handleDragOver
+      // Cross-day move: workingDays already has the correct state from handleDragOver
       onDaysChange(base);
     }
+
+    // Suppress unused variable warning — activeStr used for parseId in same-day fallback
+    void activeStr;
 
     cleanup();
   }
@@ -165,6 +183,8 @@ export function DayPlanner({
     setActiveItem(null);
     preDragDays.current = null;
     setWorkingDays(null);
+    dragItemRef.current = null;
+    dragCurrentDayRef.current = null;
   }
 
   function handleModeChange(dayNumber: number, itemIndex: number, mode: HopMode) {
@@ -184,23 +204,35 @@ export function DayPlanner({
     const day = displayDays.find((d) => d.day_number === dayNumber);
     const item = day?.items[itemIndex];
 
-    if (item?.type === "hotel") {
-      // Hotel delete: persist to saved_hotels via callback, remove from local days
-      onSaveHotel?.({
-        id: `hotel-${dayNumber}-${Date.now()}`,
-        item,
-        day_number: dayNumber,
-        leg_number: day!.leg_number,
-        original_day_index: itemIndex,
-      });
-    }
-
-    // Always remove from local days (for hotels the SAVE_HOTEL context action handles persistence)
     const newDays = displayDays.map((d) => {
       if (d.day_number !== dayNumber) return d;
       return { ...d, items: d.items.filter((_, i) => i !== itemIndex) };
     });
     onDaysChange(newDays);
+
+    if (item?.type === "hotel") {
+      const savedHotel: SavedHotel = {
+        id: `hotel-${dayNumber}-${Date.now()}`,
+        item,
+        day_number: dayNumber,
+        leg_number: day!.leg_number,
+        original_day_index: itemIndex,
+      };
+      onSaveHotel?.(savedHotel);
+
+      toast(`${item.name} removed`, {
+        onUndo: () => {
+          onDaysChange(
+            displayDays.map((d) => {
+              if (d.day_number !== dayNumber) return d;
+              const items = [...d.items];
+              items.splice(itemIndex, 0, item);
+              return { ...d, items };
+            })
+          );
+        },
+      });
+    }
   }
 
   if (displayDays.length === 0) {

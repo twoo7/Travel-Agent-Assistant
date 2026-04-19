@@ -4,12 +4,14 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
+import { APIProvider } from "@vis.gl/react-google-maps";
 import { useTripContext } from "@/context/TripContext";
 import { api } from "@/services/api";
 import { SuggestionsSidebar } from "@/components/itinerary/SuggestionsSidebar";
 import { DayPlanner } from "@/components/itinerary/DayPlanner";
 import { TripMap } from "@/components/itinerary/TripMap";
 import { Button } from "@/components/ui/Button";
+import { useToast } from "@/components/ui/Toast";
 import type { DayPlan, DayItem, POI, TripContext } from "@/types/trip";
 import { Sparkles, ArrowLeft, ArrowRight, CalendarDays, Lightbulb, Map } from "lucide-react";
 import { iataToCityName } from "@/utils/airportNames";
@@ -74,6 +76,7 @@ export default function ItineraryPage() {
   const { state, dispatch } = useTripContext();
   const { tripContext } = state;
 
+  const { toast } = useToast();
   const [days, setDays] = useState<DayPlan[]>([]);
   const [pois, setPois] = useState<POI[]>([]);
   const [loadingPois, setLoadingPois] = useState(false);
@@ -82,6 +85,7 @@ export default function ItineraryPage() {
   const [isMobile, setIsMobile] = useState(false);
   const [mobileTab, setMobileTab] = useState<MobileTab>("plan");
   const [focusedDay, setFocusedDay] = useState<number | null>(null);
+  const [scheduledPoiIds, setScheduledPoiIds] = useState<Set<string>>(new Set());
   const autoFetched = useRef(false);
 
   useEffect(() => {
@@ -110,7 +114,9 @@ export default function ItineraryPage() {
   }, [currentLeg]);
 
   async function handleFetchPOIs() {
-    if (!tripContext.legs[currentLeg - 1]) return;
+    const leg = tripContext.legs[currentLeg - 1];
+    if (!leg) return;
+    if (leg.destination === tripContext.home_origin) return;
     setLoadingPois(true);
     try {
       const results = await api.suggestPOIs({
@@ -135,13 +141,7 @@ export default function ItineraryPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentLeg, tripContext]);
 
-  function handleAddPOI(poi: POI) {
-    dispatch({ type: "ADD_UNSCHEDULED_POI", payload: poi });
-    const legDays = days.filter((d) => d.leg_number === currentLeg);
-    if (legDays.length === 0) return;
-    const targetDay = focusedDay
-      ? legDays.find((d) => d.day_number === focusedDay) ?? legDays[0]
-      : legDays[0];
+  function handleAddPOIToDay(poi: POI, dayNumber: number) {
     const newItem: DayItem = {
       type: "poi",
       name: poi.name,
@@ -153,16 +153,30 @@ export default function ItineraryPage() {
     };
     setDays((prev) =>
       prev.map((d) =>
-        d.day_number === targetDay.day_number
-          ? { ...d, items: [...d.items, newItem] }
-          : d
+        d.day_number === dayNumber ? { ...d, items: [...d.items, newItem] } : d
       )
     );
+    // Remove from saved/unscheduled if present, track as scheduled
+    if (tripContext.unscheduled_pois.some((p) => p.id === poi.id)) {
+      dispatch({ type: "REMOVE_UNSCHEDULED_POI", payload: { poi_id: poi.id } });
+    }
+    setScheduledPoiIds((prev) => { const next = new Set(prev); next.add(poi.id); return next; });
   }
 
-  const addedIds = new Set(
-    [...tripContext.unscheduled_pois, ...tripContext.saved_pois].map((p) => p.id)
-  );
+  function handleSavePOI(poi: POI) {
+    dispatch({ type: "ADD_UNSCHEDULED_POI", payload: poi });
+    toast("Saved for later");
+  }
+
+  function handleRemoveSavedPOI(id: string) {
+    dispatch({ type: "REMOVE_UNSCHEDULED_POI", payload: { poi_id: id } });
+  }
+
+  const addedIds = new Set([
+    ...tripContext.unscheduled_pois.map((p) => p.id),
+    ...tripContext.saved_pois.map((p) => p.id),
+    ...Array.from(scheduledPoiIds),
+  ]);
 
   async function handleGenerateItinerary() {
     setGeneratingItinerary(true);
@@ -209,17 +223,31 @@ export default function ItineraryPage() {
     );
   }
 
+  const currentLegData = tripContext.legs[currentLeg - 1];
+  const locationBias = (() => {
+    const hotel = currentLegData?.hotel_stays[0]?.hotel;
+    if (hotel?.lat && hotel?.lng) return { lat: hotel.lat, lng: hotel.lng };
+    return undefined;
+  })();
+
+  const currentLegDays = days.filter((d) => d.leg_number === currentLeg);
+
   const suggestionsSidebar = (
     <SuggestionsSidebar
       pois={pois}
       addedIds={addedIds}
-      onAdd={handleAddPOI}
+      onAddToDay={handleAddPOIToDay}
+      onSave={handleSavePOI}
       loading={loadingPois}
       onRefresh={handleRefreshPOIs}
       refreshing={loadingPois}
       defaultCollapsed={false}
       savedHotels={tripContext.saved_hotels}
       onRestoreHotel={(id) => dispatch({ type: "RESTORE_HOTEL", payload: { saved_hotel_id: id } })}
+      locationBias={locationBias}
+      days={currentLegDays}
+      savedPois={tripContext.unscheduled_pois}
+      onRemoveSaved={handleRemoveSavedPOI}
     />
   );
 
@@ -242,7 +270,10 @@ export default function ItineraryPage() {
     />
   );
 
+  const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
+
   return (
+    <APIProvider apiKey={mapsApiKey}>
     <div className="flex flex-col gap-4 h-[calc(100dvh-2.75rem)] md:h-screen">
       {/* Top bar */}
       <div className="flex flex-col gap-2">
@@ -269,17 +300,19 @@ export default function ItineraryPage() {
             </div>
           )}
 
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleFetchPOIs}
-            loading={loadingPois}
-            icon={<Sparkles size={13} />}
-          >
-            {loadingPois
-              ? "Loading…"
-              : `Suggest places in ${iataToCityName(tripContext.legs[currentLeg - 1]?.destination ?? "")}`}
-          </Button>
+          {currentLegData?.destination !== tripContext.home_origin && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleFetchPOIs}
+              loading={loadingPois}
+              icon={<Sparkles size={13} />}
+            >
+              {loadingPois
+                ? "Loading…"
+                : `Suggest places in ${iataToCityName(currentLegData?.destination ?? "")}`}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -383,5 +416,6 @@ export default function ItineraryPage() {
         </Button>
       </div>
     </div>
+    </APIProvider>
   );
 }

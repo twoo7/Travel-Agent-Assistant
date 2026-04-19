@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import {
-  APIProvider,
   Map,
   AdvancedMarker,
   InfoWindow,
@@ -10,7 +9,6 @@ import {
   useMap,
 } from "@vis.gl/react-google-maps";
 import type { DayPlan, HopMode } from "@/types/trip";
-import { MapPin } from "lucide-react";
 
 interface Props {
   days: DayPlan[];
@@ -74,7 +72,6 @@ function BoundsFitter({ points }: { points: LatLng[] }) {
 }
 
 export function TripMap({ days, currentLeg, focusedDay, onFocusedDayChange }: Props) {
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
   const [infoMarker, setInfoMarker] = useState<MarkerInfo | null>(null);
   const [infoPos, setInfoPos] = useState<LatLng | null>(null);
 
@@ -84,23 +81,8 @@ export function TripMap({ days, currentLeg, focusedDay, onFocusedDayChange }: Pr
   const allItems = legDays.flatMap((d) => d.items).filter((i) => i.lat !== 0 || i.lng !== 0);
   const center = allItems.length > 0 ? { lat: allItems[0].lat, lng: allItems[0].lng } : { lat: 48.8566, lng: 2.3522 };
 
-  if (!apiKey || apiKey === "your_google_maps_api_key_here") {
-    return (
-      <div
-        className="flex-1 rounded-xl flex items-center justify-center min-h-[400px]"
-        style={{ background: "var(--glass-1)", border: "1px solid var(--glass-border-1)" }}
-      >
-        <div className="text-center">
-          <MapPin size={32} className="mx-auto mb-2" style={{ color: "var(--text-subtle)" }} />
-          <p className="text-sm font-body" style={{ color: "var(--text-muted)" }}>Map unavailable</p>
-          <p className="text-xs mt-1 font-body" style={{ color: "var(--text-subtle)" }}>Add NEXT_PUBLIC_GOOGLE_MAPS_API_KEY to .env.local</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex-1 flex flex-col gap-2 min-h-[400px]">
+    <div className="h-full flex flex-col gap-2 min-h-[400px]">
       {/* Map header — focused day indicator + All days reset */}
       {focusedDay != null && (
         <div
@@ -120,14 +102,13 @@ export function TripMap({ days, currentLeg, focusedDay, onFocusedDayChange }: Pr
         </div>
       )}
 
-      <APIProvider apiKey={apiKey}>
-        <Map
-          defaultCenter={center}
-          defaultZoom={allItems.length === 0 ? 3 : 13}
-          mapId="travel-agent-map"
-          className="flex-1 rounded-xl min-h-[400px]"
-          style={{ border: "1px solid var(--glass-border-1)", borderRadius: "12px", overflow: "hidden" }}
-        >
+      <Map
+        defaultCenter={center}
+        defaultZoom={allItems.length === 0 ? 3 : 13}
+        mapId="travel-agent-map"
+        className="flex-1 rounded-xl min-h-[400px]"
+        style={{ border: "1px solid var(--glass-border-1)", borderRadius: "12px", overflow: "hidden" }}
+      >
           <BoundsFitter
             points={visibleDays.flatMap((d) => d.items).filter((i) => i.lat !== 0 || i.lng !== 0).map((i) => ({ lat: i.lat, lng: i.lng }))}
           />
@@ -182,8 +163,7 @@ export function TripMap({ days, currentLeg, focusedDay, onFocusedDayChange }: Pr
               </div>
             </InfoWindow>
           )}
-        </Map>
-      </APIProvider>
+      </Map>
     </div>
   );
 }
