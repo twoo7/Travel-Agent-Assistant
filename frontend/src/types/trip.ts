@@ -120,7 +120,7 @@ export interface POI {
 
 export interface SavedHotel {
   id: string;
-  hotel: HotelOffer;
+  item: DayItem;
   day_number: number;
   leg_number: number;
   original_day_index: number;

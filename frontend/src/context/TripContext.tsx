@@ -262,62 +262,17 @@ function reducer(state: TripState, action: TripAction): TripState {
         tripContext: {
           ...ctx,
           saved_hotels: [...ctx.saved_hotels, action.payload],
-          legs: ctx.legs.map((l) =>
-            l.leg_number === action.payload.leg_number
-              ? {
-                  ...l,
-                  days: l.days.map((d) =>
-                    d.day_number === action.payload.day_number
-                      ? {
-                          ...d,
-                          items: d.items.filter(
-                            (item) => !(item.type === "hotel" && item.name === action.payload.hotel.name)
-                          ),
-                        }
-                      : d
-                  ),
-                }
-              : l
-          ),
         },
       };
 
-    case "RESTORE_HOTEL": {
-      const saved = ctx.saved_hotels.find((h) => h.id === action.payload.saved_hotel_id);
-      if (!saved) return state;
+    case "RESTORE_HOTEL":
       return {
         ...state,
         tripContext: {
           ...ctx,
           saved_hotels: ctx.saved_hotels.filter((h) => h.id !== action.payload.saved_hotel_id),
-          legs: ctx.legs.map((l) =>
-            l.leg_number === saved.leg_number
-              ? {
-                  ...l,
-                  days: l.days.map((d) =>
-                    d.day_number === saved.day_number
-                      ? {
-                          ...d,
-                          items: [
-                            ...d.items.slice(0, saved.original_day_index),
-                            {
-                              type: "hotel" as const,
-                              name: saved.hotel.name,
-                              address: saved.hotel.address,
-                              lat: saved.hotel.lat,
-                              lng: saved.hotel.lng,
-                            },
-                            ...d.items.slice(saved.original_day_index),
-                          ],
-                        }
-                      : d
-                  ),
-                }
-              : l
-          ),
         },
       };
-    }
 
     case "SET_ITINERARY":
       return { ...state, itinerary: action.payload };
