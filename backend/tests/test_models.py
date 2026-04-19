@@ -44,7 +44,7 @@ def test_poi_model_full():
     poi = POI(
         id="place_abc",
         name="Eiffel Tower",
-        category="Landmark",
+        category="attraction",
         address="Champ de Mars, Paris",
         lat=48.8584,
         lng=2.2945,

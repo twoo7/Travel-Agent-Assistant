@@ -4,6 +4,10 @@ export type DayItemType = "poi" | "hotel" | "airport";
 
 export type TransportMode = "flight" | "train" | "ferry" | "car";
 
+export type POICategory = "activity" | "restaurant" | "sightseeing" | "attraction";
+
+export type HopMode = "walking" | "driving" | "transit";
+
 export type AccommodationType = "hotel" | "ferry_cabin" | "sleeper_train";
 
 export interface DayItem {
@@ -18,7 +22,7 @@ export interface DayItem {
   distance_to_next_km?: number;
   travel_time_to_next_mins?: number;
   route_polyline_to_next?: string;
-  transport_mode?: TransportMode;
+  transport_mode?: HopMode;
   spans_days?: number;
 }
 
@@ -91,7 +95,7 @@ export interface TripLeg {
 export interface POI {
   id: string;
   name: string;
-  category: string;
+  category: POICategory;
   address: string;
   lat: number;
   lng: number;
@@ -110,6 +114,16 @@ export interface POI {
   claude_booking_tip?: string;
   ai_recommended?: boolean;
   ai_reason?: string;
+  theme_tags: string[];
+  neighborhood?: string;
+}
+
+export interface SavedHotel {
+  id: string;
+  hotel: HotelOffer;
+  day_number: number;
+  leg_number: number;
+  original_day_index: number;
 }
 
 export interface TripContext {
@@ -120,6 +134,7 @@ export interface TripContext {
   legs: TripLeg[];
   unscheduled_pois: POI[];
   saved_pois: POI[];
+  saved_hotels: SavedHotel[];
 }
 
 export interface ItineraryDay {
@@ -153,6 +168,7 @@ export interface RouteSegment {
   distance_km: number | null;
   travel_time_mins: number | null;
   encoded_polyline: string | null;
+  mode: HopMode;
 }
 
 export interface TripMeta {

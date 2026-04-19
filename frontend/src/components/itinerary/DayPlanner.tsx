@@ -19,9 +19,12 @@ interface Props {
   days: DayPlan[];
   onDaysChange: (days: DayPlan[]) => void;
   unscheduledPois?: POI[];
+  focusedDay?: number | null;
+  onFocusedDayChange?: (day: number | null) => void;
 }
 
-export function DayPlanner({ days, onDaysChange }: Props) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function DayPlanner({ days, onDaysChange, focusedDay, onFocusedDayChange }: Props) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const [activeId, setActiveId] = useState<string | null>(null);
 

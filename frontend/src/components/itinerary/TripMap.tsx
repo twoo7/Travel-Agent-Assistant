@@ -14,6 +14,8 @@ import { MapPin } from "lucide-react";
 interface Props {
   days: DayPlan[];
   currentLeg?: number;
+  focusedDay?: number | null;
+  onFocusedDayChange?: (day: number | null) => void;
 }
 
 // Design-token-aligned day colors (cycle through primary, accent, success, warning shades)

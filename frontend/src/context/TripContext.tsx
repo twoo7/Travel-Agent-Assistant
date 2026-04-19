@@ -10,6 +10,7 @@ import type {
   HotelStay,
   DayPlan,
   POI,
+  SavedHotel,
   ItineraryDay,
   TransportMode,
 } from "@/types/trip";
@@ -36,6 +37,8 @@ type TripAction =
   | { type: "REMOVE_UNSCHEDULED_POI"; payload: { poi_id: string } }
   | { type: "SAVE_POI"; payload: { poi_id: string } }
   | { type: "RESTORE_POI"; payload: { poi_id: string } }
+  | { type: "SAVE_HOTEL"; payload: SavedHotel }
+  | { type: "RESTORE_HOTEL"; payload: { saved_hotel_id: string } }
   | { type: "SET_ITINERARY"; payload: ItineraryDay[] }
   | { type: "SET_TRANSPORT_MODE"; payload: { leg_number: number; mode: TransportMode } }
   | { type: "SET_FLIGHT_RESULTS"; payload: { leg_number: number; results: FlightOffer[] } }
@@ -55,6 +58,7 @@ const EMPTY_CONTEXT: TripContextType = {
   legs: [],
   unscheduled_pois: [],
   saved_pois: [],
+  saved_hotels: [],
 };
 
 const INITIAL_STATE: TripState = {
@@ -252,6 +256,69 @@ function reducer(state: TripState, action: TripAction): TripState {
       };
     }
 
+    case "SAVE_HOTEL":
+      return {
+        ...state,
+        tripContext: {
+          ...ctx,
+          saved_hotels: [...ctx.saved_hotels, action.payload],
+          legs: ctx.legs.map((l) =>
+            l.leg_number === action.payload.leg_number
+              ? {
+                  ...l,
+                  days: l.days.map((d) =>
+                    d.day_number === action.payload.day_number
+                      ? {
+                          ...d,
+                          items: d.items.filter(
+                            (item) => !(item.type === "hotel" && item.name === action.payload.hotel.name)
+                          ),
+                        }
+                      : d
+                  ),
+                }
+              : l
+          ),
+        },
+      };
+
+    case "RESTORE_HOTEL": {
+      const saved = ctx.saved_hotels.find((h) => h.id === action.payload.saved_hotel_id);
+      if (!saved) return state;
+      return {
+        ...state,
+        tripContext: {
+          ...ctx,
+          saved_hotels: ctx.saved_hotels.filter((h) => h.id !== action.payload.saved_hotel_id),
+          legs: ctx.legs.map((l) =>
+            l.leg_number === saved.leg_number
+              ? {
+                  ...l,
+                  days: l.days.map((d) =>
+                    d.day_number === saved.day_number
+                      ? {
+                          ...d,
+                          items: [
+                            ...d.items.slice(0, saved.original_day_index),
+                            {
+                              type: "hotel" as const,
+                              name: saved.hotel.name,
+                              address: saved.hotel.address,
+                              lat: saved.hotel.lat,
+                              lng: saved.hotel.lng,
+                            },
+                            ...d.items.slice(saved.original_day_index),
+                          ],
+                        }
+                      : d
+                  ),
+                }
+              : l
+          ),
+        },
+      };
+    }
+
     case "SET_ITINERARY":
       return { ...state, itinerary: action.payload };
 
@@ -334,6 +401,7 @@ function reducer(state: TripState, action: TripAction): TripState {
           ...(action.payload.tripContext ?? {}),
           unscheduled_pois: action.payload.tripContext?.unscheduled_pois ?? [],
           saved_pois: action.payload.tripContext?.saved_pois ?? [],
+          saved_hotels: action.payload.tripContext?.saved_hotels ?? [],
         },
       };
 

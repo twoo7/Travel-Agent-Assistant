@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { useTripContext } from "@/context/TripContext";
 import { api } from "@/services/api";
 import { SuggestionsSidebar } from "@/components/itinerary/SuggestionsSidebar";
@@ -10,8 +11,10 @@ import { DayPlanner } from "@/components/itinerary/DayPlanner";
 import { TripMap } from "@/components/itinerary/TripMap";
 import { Button } from "@/components/ui/Button";
 import type { DayPlan, DayItem, POI, TripContext } from "@/types/trip";
-import { Sparkles, ArrowLeft, ArrowRight } from "lucide-react";
+import { Sparkles, ArrowLeft, ArrowRight, CalendarDays, Lightbulb, Map } from "lucide-react";
 import { iataToCityName } from "@/utils/airportNames";
+
+type MobileTab = "plan" | "suggest" | "map";
 
 function buildInitialDays(tripContext: TripContext): DayPlan[] {
   const days: DayPlan[] = [];
@@ -77,10 +80,12 @@ export default function ItineraryPage() {
   const [generatingItinerary, setGeneratingItinerary] = useState(false);
   const [currentLeg, setCurrentLeg] = useState(1);
   const [isMobile, setIsMobile] = useState(false);
+  const [mobileTab, setMobileTab] = useState<MobileTab>("plan");
+  const [focusedDay, setFocusedDay] = useState<number | null>(null);
   const autoFetched = useRef(false);
 
   useEffect(() => {
-    const mq = window.matchMedia("(max-width: 639px)");
+    const mq = window.matchMedia("(max-width: 1023px)");
     setIsMobile(mq.matches);
     const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
     mq.addEventListener("change", handler);
@@ -95,7 +100,6 @@ export default function ItineraryPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tripContext.legs]);
 
-  // Auto-fetch POI suggestions when leg changes (or on initial mount)
   useEffect(() => {
     autoFetched.current = false;
     if (pois.length === 0 && tripContext.legs.length > 0) {
@@ -135,7 +139,9 @@ export default function ItineraryPage() {
     dispatch({ type: "ADD_UNSCHEDULED_POI", payload: poi });
     const legDays = days.filter((d) => d.leg_number === currentLeg);
     if (legDays.length === 0) return;
-    const targetDay = legDays[0];
+    const targetDay = focusedDay
+      ? legDays.find((d) => d.day_number === focusedDay) ?? legDays[0]
+      : legDays[0];
     const newItem: DayItem = {
       type: "poi",
       name: poi.name,
@@ -203,13 +209,45 @@ export default function ItineraryPage() {
     );
   }
 
+  const suggestionsSidebar = (
+    <SuggestionsSidebar
+      pois={pois}
+      addedIds={addedIds}
+      onAdd={handleAddPOI}
+      loading={loadingPois}
+      onRefresh={handleRefreshPOIs}
+      refreshing={loadingPois}
+      defaultCollapsed={false}
+      savedHotels={tripContext.saved_hotels}
+      onRestoreHotel={(id) => dispatch({ type: "RESTORE_HOTEL", payload: { saved_hotel_id: id } })}
+    />
+  );
+
+  const dayPlanner = (
+    <DayPlanner
+      days={days}
+      onDaysChange={handleDaysChange}
+      unscheduledPois={tripContext.unscheduled_pois}
+      focusedDay={focusedDay}
+      onFocusedDayChange={setFocusedDay}
+    />
+  );
+
+  const tripMap = (
+    <TripMap
+      days={days}
+      currentLeg={currentLeg}
+      focusedDay={focusedDay}
+      onFocusedDayChange={setFocusedDay}
+    />
+  );
+
   return (
     <div className="flex flex-col gap-4 h-[calc(100dvh-2.75rem)] md:h-screen">
       {/* Top bar */}
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold font-display" style={{ color: "var(--text-primary)" }}>Itinerary Builder</h1>
         <div className="flex items-center gap-3">
-          {/* Leg selector */}
           {tripContext.legs.length > 1 && (
             <div
               className="flex gap-1 p-1 rounded-lg"
@@ -246,35 +284,90 @@ export default function ItineraryPage() {
       </div>
 
       {/* Three-panel layout */}
-      <div className="flex gap-4 flex-1 min-h-0">
-        {/* Left: Suggestions sidebar */}
-        <SuggestionsSidebar
-          pois={pois}
-          addedIds={addedIds}
-          onAdd={handleAddPOI}
-          loading={loadingPois}
-          onRefresh={handleRefreshPOIs}
-          refreshing={loadingPois}
-          defaultCollapsed={isMobile}
-        />
+      {isMobile ? (
+        /* Mobile: tabbed layout — all three panels stay mounted, hidden via visibility */
+        <div className="flex flex-col flex-1 min-h-0">
+          {/* Tab bar */}
+          <div
+            className="flex gap-1 p-1 rounded-xl mb-3 shrink-0"
+            style={{ background: "var(--glass-2)", border: "1px solid var(--glass-border-2)" }}
+          >
+            {([
+              { id: "suggest" as MobileTab, label: "Suggest", icon: <Lightbulb size={14} /> },
+              { id: "plan" as MobileTab, label: "Plan", icon: <CalendarDays size={14} /> },
+              { id: "map" as MobileTab, label: "Map", icon: <Map size={14} /> },
+            ] as const).map(({ id, label, icon }) => (
+              <button
+                key={id}
+                onClick={() => setMobileTab(id)}
+                className="flex-1 flex items-center justify-center gap-1.5 text-xs py-2 rounded-lg transition-colors font-body font-medium"
+                style={mobileTab === id
+                  ? { background: "var(--accent)", color: "white" }
+                  : { color: "var(--text-muted)" }
+                }
+              >
+                {icon}{label}
+              </button>
+            ))}
+          </div>
 
-        {/* Middle: Day planner */}
-        <div className="flex-1 overflow-y-auto">
-          <DayPlanner
-            days={days}
-            onDaysChange={handleDaysChange}
-            unscheduledPois={tripContext.unscheduled_pois}
+          <div className="flex-1 min-h-0 relative">
+            <div className={`absolute inset-0 overflow-y-auto ${mobileTab !== "suggest" ? "invisible" : ""}`}>
+              {suggestionsSidebar}
+            </div>
+            <div className={`absolute inset-0 overflow-y-auto ${mobileTab !== "plan" ? "invisible" : ""}`}>
+              {dayPlanner}
+            </div>
+            <div className={`absolute inset-0 ${mobileTab !== "map" ? "invisible" : ""}`}>
+              {tripMap}
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* Desktop: resizable panels */
+        <PanelGroup
+          direction="horizontal"
+          autoSaveId="itinerary-layout"
+          className="flex-1 min-h-0 gap-2"
+        >
+          <Panel defaultSize={24} minSize={18} maxSize={40} collapsible>
+            <div className="h-full overflow-y-auto">
+              {suggestionsSidebar}
+            </div>
+          </Panel>
+
+          <PanelResizeHandle
+            className="w-1 rounded-full transition-colors cursor-col-resize"
+            style={{ background: "var(--glass-border-2)" }}
+            onDragging={(isDragging) => {
+              document.body.style.cursor = isDragging ? "col-resize" : "";
+            }}
           />
-        </div>
 
-        {/* Right: Map */}
-        <div className="w-80 shrink-0 hidden lg:flex flex-col">
-          <TripMap days={days} currentLeg={currentLeg} />
-        </div>
-      </div>
+          <Panel minSize={30}>
+            <div className="h-full overflow-y-auto">
+              {dayPlanner}
+            </div>
+          </Panel>
+
+          <PanelResizeHandle
+            className="w-1 rounded-full transition-colors cursor-col-resize"
+            style={{ background: "var(--glass-border-2)" }}
+            onDragging={(isDragging) => {
+              document.body.style.cursor = isDragging ? "col-resize" : "";
+            }}
+          />
+
+          <Panel defaultSize={30} minSize={20} maxSize={45}>
+            <div className="h-full">
+              {tripMap}
+            </div>
+          </Panel>
+        </PanelGroup>
+      )}
 
       {/* Bottom actions */}
-      <div className="flex justify-between pt-2 border-t" style={{ borderColor: "var(--glass-border-1)" }}>
+      <div className="flex justify-between pt-2 border-t shrink-0" style={{ borderColor: "var(--glass-border-1)" }}>
         <Button variant="ghost" size="md" onClick={() => router.push("/hotels")} icon={<ArrowLeft size={14} />}>
           Back to Hotels
         </Button>

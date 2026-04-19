@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { POI } from "@/types/trip";
+import type { POI, SavedHotel } from "@/types/trip";
 import { BusyTimesBar } from "./BusyTimesBar";
 import { Sparkles, ChevronRight, Check, Clock, Ticket, Plus, RefreshCw } from "lucide-react";
 import { Skeleton, SkeletonText } from "@/components/ui/Skeleton";
@@ -15,13 +15,16 @@ interface Props {
   onRefresh?: () => void;
   refreshing?: boolean;
   defaultCollapsed?: boolean;
+  savedHotels?: SavedHotel[];
+  onRestoreHotel?: (id: string) => void;
 }
 
 const CATEGORIES = ["All", "Landmark", "Museum", "Restaurant", "Park", "Neighborhood"];
 
 const PRICE_LABELS: Record<number, string> = { 0: "Free", 1: "$", 2: "$$", 3: "$$$", 4: "$$$$" };
 
-export function SuggestionsSidebar({ pois, addedIds, onAdd, loading, onRefresh, refreshing, defaultCollapsed = false }: Props) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function SuggestionsSidebar({ pois, addedIds, onAdd, loading, onRefresh, refreshing, defaultCollapsed = false, savedHotels, onRestoreHotel }: Props) {
   const [filter, setFilter] = useState("All");
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
 
