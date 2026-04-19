@@ -20,25 +20,25 @@ interface BadgeProps {
   className?: string;
 }
 
-const variantClasses: Record<BadgeVariant, string> = {
-  "ai-pick": "bg-accent text-white",
-  selected: "bg-success/15 text-success-dark border border-success/30",
-  stale: "bg-warning/15 text-warning-dark border border-warning/30",
-  status: "bg-gray-100 text-muted border border-gray-200",
-  auto: "bg-success/15 text-success-dark border border-success/30",
-  default: "bg-gray-100 text-gray-700 border border-gray-200",
-  primary: "bg-primary/10 text-primary border border-primary/20",
-  success: "bg-success/15 text-success-dark border border-success/30",
-  warning: "bg-warning/15 text-warning-dark border border-warning/30",
-  danger: "bg-red-50 text-red-700 border border-red-200",
+const variantStyles: Record<BadgeVariant, React.CSSProperties> = {
+  "ai-pick":  { background: "var(--accent)", color: "white" },
+  selected:   { background: "rgba(107,144,128,0.15)", color: "var(--success)", border: "1px solid rgba(107,144,128,0.3)" },
+  stale:      { background: "rgba(212,165,116,0.15)", color: "var(--warning)", border: "1px solid rgba(212,165,116,0.3)" },
+  status:     { background: "var(--glass-1)", color: "var(--text-muted)", border: "1px solid var(--glass-border-1)" },
+  auto:       { background: "rgba(107,144,128,0.15)", color: "var(--success)", border: "1px solid rgba(107,144,128,0.3)" },
+  default:    { background: "var(--glass-1)", color: "var(--text-muted)", border: "1px solid var(--glass-border-1)" },
+  primary:    { background: "rgba(224,122,95,0.1)", color: "var(--accent)", border: "1px solid rgba(224,122,95,0.2)" },
+  success:    { background: "rgba(107,144,128,0.15)", color: "var(--success)", border: "1px solid rgba(107,144,128,0.3)" },
+  warning:    { background: "rgba(212,165,116,0.15)", color: "var(--warning)", border: "1px solid rgba(212,165,116,0.3)" },
+  danger:     { background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.3)" },
 };
 
 export function Badge({ variant = "default", children, className = "" }: BadgeProps) {
   return (
     <span
+      style={variantStyles[variant]}
       className={[
         "inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full",
-        variantClasses[variant],
         className,
       ]
         .filter(Boolean)

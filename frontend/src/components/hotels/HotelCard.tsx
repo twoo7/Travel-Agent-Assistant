@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import type { HotelOffer } from "@/types/trip";
 import { calcNights } from "@/utils/dateUtils";
 import { formatPrice } from "@/utils/formatPrice";
 import { Sparkles, ChevronRight, Check } from "lucide-react";
+import { AIPulseBadge } from "@/components/ui/AIPulseBadge";
 
 interface Props {
   offer: HotelOffer;
@@ -21,46 +22,59 @@ function StarRating({ rating }: { rating?: number }) {
   if (!rating) return null;
   const filled = Math.round(rating);
   return (
-    <span className="text-xs text-warning-dark">
+    <span className="text-xs" style={{ color: "var(--warning)" }}>
       {"★".repeat(filled)}{"☆".repeat(5 - filled)}
-      <span className="text-muted ml-1 font-body">{rating.toFixed(1)}</span>
+      <span className="ml-1 font-body" style={{ color: "var(--text-muted)" }}>{rating.toFixed(1)}</span>
     </span>
   );
 }
 
-export function HotelCard({ offer, selected, confirmed, onSelect, checkIn, checkOut, index = 0 }: Props) {
+export function HotelCard({ offer, selected, confirmed, onSelect, checkIn, checkOut }: Props) {
   const [expanded, setExpanded] = useState(false);
   const hasBullets = offer.ai_reason_bullets && offer.ai_reason_bullets.length > 0;
 
+  const cardStyle: React.CSSProperties = confirmed || selected
+    ? {
+        background: "var(--glass-3)",
+        border: "1px solid var(--success)",
+        boxShadow: "0 0 0 2px var(--success), 0 0 20px var(--success-glow), 0 8px 32px rgba(0,0,0,0.4)",
+        backdropFilter: "blur(12px)",
+      }
+    : offer.ai_recommended
+    ? {
+        background: "var(--glass-2)",
+        border: "1px solid rgba(224,122,95,0.4)",
+        boxShadow: "0 0 20px var(--accent-glow), 0 4px 24px rgba(0,0,0,0.3)",
+        backdropFilter: "blur(12px)",
+      }
+    : {
+        background: "var(--glass-2)",
+        border: "1px solid var(--glass-border-2)",
+        boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+        backdropFilter: "blur(12px)",
+      };
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2, delay: index * 0.05, ease: "easeOut" }}
+      whileHover={confirmed ? undefined : { y: -2 }}
+      whileTap={confirmed ? undefined : { scale: 0.99 }}
       onClick={() => { if (!confirmed) onSelect(offer); }}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => { if ((e.key === "Enter" || e.key === " ") && !confirmed) { e.preventDefault(); onSelect(offer); } }}
-      className={[
-        "relative border rounded-xl p-4 transition-all duration-200 outline-none",
-        confirmed
-          ? "border-success bg-success/5 ring-2 ring-success cursor-default"
-          : selected
-          ? "border-primary bg-primary/5 ring-2 ring-primary/30 cursor-pointer"
-          : "border-gray-200 bg-white hover:border-primary/30 hover:shadow-card cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/30",
-      ].join(" ")}
+      style={cardStyle}
+      className="relative rounded-2xl p-4 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
     >
-      {/* AI Pick badge */}
       {offer.ai_recommended && !confirmed && (
-        <span className="absolute top-3 right-3 inline-flex items-center gap-1 bg-accent text-white text-xs font-bold px-2 py-0.5 rounded-full font-body">
-          <Sparkles size={10} />
-          AI Pick
+        <span className="absolute top-3 right-3">
+          <AIPulseBadge />
         </span>
       )}
-
-      {/* Stay confirmed badge */}
       {confirmed && (
-        <span className="absolute top-3 left-3 inline-flex items-center gap-1 text-xs font-bold text-success bg-success/10 border border-success/20 px-2 py-0.5 rounded-full font-body">
+        <span
+          className="absolute top-3 left-3 inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full font-body"
+          style={{ color: "var(--success)", background: "rgba(107,144,128,0.15)", border: "1px solid rgba(107,144,128,0.3)" }}
+        >
           <Check size={10} />
           Stay Confirmed
         </span>
@@ -68,21 +82,23 @@ export function HotelCard({ offer, selected, confirmed, onSelect, checkIn, check
 
       <div className={`flex items-start justify-between ${confirmed ? "pl-32" : ""} pr-20`}>
         <div className="flex-1">
-          <h3 className="font-semibold text-charcoal font-body">{offer.name}</h3>
-          <p className="text-xs text-muted mt-0.5 font-body">{offer.address}</p>
+          <h3 className="font-semibold font-display text-base" style={{ color: "var(--text-primary)" }}>
+            {offer.name}
+          </h3>
+          <p className="text-xs mt-0.5 font-body" style={{ color: "var(--text-muted)" }}>{offer.address}</p>
           <div className="mt-1">
             <StarRating rating={offer.rating} />
           </div>
         </div>
         <div className="text-right ml-4 shrink-0">
-          <div className="text-xl font-bold text-primary font-display">
+          <div className="text-xl font-bold font-display" style={{ color: "var(--accent)" }}>
             {formatPrice(offer.price_per_night, offer.currency)}
           </div>
-          <div className="text-xs text-muted font-body">per night</div>
+          <div className="text-xs font-body" style={{ color: "var(--text-muted)" }}>per night</div>
           {checkIn && checkOut && (() => {
             const nights = calcNights(checkIn, checkOut);
             return (
-              <div className="text-xs text-muted font-body mt-0.5">
+              <div className="text-xs font-body mt-0.5" style={{ color: "var(--text-muted)" }}>
                 {formatPrice(offer.price_per_night * nights, offer.currency)} total ({nights} night{nights !== 1 ? "s" : ""})
               </div>
             );
@@ -90,41 +106,41 @@ export function HotelCard({ offer, selected, confirmed, onSelect, checkIn, check
         </div>
       </div>
 
-      {/* AI reason expand */}
       {offer.ai_recommended && (hasBullets || offer.ai_reason) && (
-        <div className="mt-3 border-t border-gray-100 pt-2">
+        <div className="mt-3 pt-2" style={{ borderTop: "1px solid var(--glass-border-1)" }}>
           <button
             onClick={(e) => { e.stopPropagation(); setExpanded((prev) => !prev); }}
-            className="text-xs text-accent hover:text-accent-dark font-medium flex items-center gap-1 transition-colors font-body focus:outline-none"
+            className="text-xs font-medium flex items-center gap-1 transition-colors font-body focus:outline-none"
+            style={{ color: "var(--accent)" }}
           >
             <Sparkles size={11} />
             <span>Why AI picked this</span>
-            <ChevronRight
-              size={13}
-              className="transition-transform duration-200"
-              style={{ transform: expanded ? "rotate(90deg)" : "rotate(0deg)" }}
-            />
+            <ChevronRight size={13} className="transition-transform duration-200"
+              style={{ transform: expanded ? "rotate(90deg)" : "rotate(0deg)" }} />
           </button>
-          {expanded && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              transition={{ duration: 0.2 }}
-              className="mt-2 bg-accent/5 border border-accent/10 rounded-lg p-3"
-            >
-              {hasBullets ? (
-                <ul className="space-y-1">
-                  {offer.ai_reason_bullets!.map((bullet, idx) => (
-                    <li key={idx} className="text-sm text-charcoal/80 leading-snug font-body">
-                      {bullet}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-charcoal/80 font-body">{offer.ai_reason}</p>
-              )}
-            </motion.div>
-          )}
+          <AnimatePresence>
+            {expanded && (
+              <motion.div
+                key="ai-reason"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                className="mt-2 rounded-lg p-3 overflow-hidden"
+                style={{ background: "rgba(224,122,95,0.08)", border: "1px solid rgba(224,122,95,0.15)" }}
+              >
+                {hasBullets ? (
+                  <ul className="space-y-1">
+                    {offer.ai_reason_bullets!.map((bullet, idx) => (
+                      <li key={idx} className="text-sm leading-snug font-body" style={{ color: "var(--text-muted)" }}>{bullet}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm font-body" style={{ color: "var(--text-muted)" }}>{offer.ai_reason}</p>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       )}
     </motion.div>

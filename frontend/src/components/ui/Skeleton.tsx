@@ -13,6 +13,7 @@ export function Skeleton({ className = "", width, height }: SkeletonProps) {
     <div
       className={["skeleton-shimmer rounded-lg", className].filter(Boolean).join(" ")}
       style={{ width, height }}
+      aria-hidden="true"
     />
   );
 }
@@ -34,12 +35,13 @@ export function SkeletonText({ lines = 1, className = "" }: { lines?: number; cl
 export function SkeletonCard({ className = "" }: { className?: string }) {
   return (
     <div
-      className={[
-        "card-base p-4 space-y-3",
-        className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
+      className={["rounded-2xl p-4 space-y-3", className].filter(Boolean).join(" ")}
+      style={{
+        background: "var(--glass-2)",
+        border: "1px solid var(--glass-border-2)",
+        backdropFilter: "blur(12px)",
+        boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+      }}
     >
       <div className="flex justify-between items-start">
         <div className="space-y-2 flex-1">

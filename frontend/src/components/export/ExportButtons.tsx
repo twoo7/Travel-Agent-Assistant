@@ -24,10 +24,12 @@ export function ExportButtons({ exportRequest }: Props) {
       const a = document.createElement("a");
       a.href = url;
       a.download = "travel-plan.pdf";
+      document.body.appendChild(a);
       a.click();
-      URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 100);
     } catch (e) {
-      setError(`PDF export failed: ${e}`);
+      setError(e instanceof Error ? e.message : `PDF export failed: ${e}`);
     } finally {
       setLoadingPdf(false);
     }
@@ -46,7 +48,7 @@ export function ExportButtons({ exportRequest }: Props) {
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
-      setError(`JSON export failed: ${e}`);
+      setError(e instanceof Error ? e.message : `JSON export failed: ${e}`);
     } finally {
       setLoadingJson(false);
     }
@@ -55,7 +57,14 @@ export function ExportButtons({ exportRequest }: Props) {
   return (
     <div className="flex flex-col gap-3">
       {error && (
-        <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2 flex items-center gap-2 font-body">
+        <p
+          className="text-sm rounded-lg px-3 py-2 flex items-center gap-2 font-body"
+          style={{
+            color: "var(--accent)",
+            background: "rgba(224,122,95,0.10)",
+            border: "1px solid rgba(224,122,95,0.25)",
+          }}
+        >
           <AlertTriangle size={14} className="shrink-0" />
           {error}
         </p>
@@ -63,26 +72,26 @@ export function ExportButtons({ exportRequest }: Props) {
       <div className="flex gap-3">
         <Button
           variant="primary"
-          size="md"
+          size="lg"
+          fullWidth
           onClick={handlePDF}
           loading={loadingPdf}
           icon={<Download size={15} />}
-          className="flex-1 justify-center"
         >
           {loadingPdf ? "Generating PDF…" : "Download PDF"}
         </Button>
         <Button
           variant="secondary"
-          size="md"
+          size="lg"
+          fullWidth
           onClick={handleJSON}
           loading={loadingJson}
           icon={<FileJson size={15} />}
-          className="flex-1 justify-center"
         >
           {loadingJson ? "Exporting…" : "Download JSON"}
         </Button>
       </div>
-      <p className="text-xs text-subtle text-center font-body">
+      <p className="text-xs text-center font-body" style={{ color: "var(--text-subtle)" }}>
         PDF is polished and print-ready · JSON can be re-imported in a future session
       </p>
     </div>

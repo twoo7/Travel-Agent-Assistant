@@ -79,6 +79,8 @@ export interface TripLeg {
   destination: string;
   departure_date: string;
   transport_mode?: TransportMode;
+  origin_airports?: string[];
+  destination_airports?: string[];
   selected_flight?: FlightOffer;
   hotel_stays: HotelStay[];
   days: DayPlan[];
@@ -106,6 +108,8 @@ export interface POI {
   claude_note: string;
   claude_best_time?: string;
   claude_booking_tip?: string;
+  ai_recommended?: boolean;
+  ai_reason?: string;
 }
 
 export interface TripContext {
@@ -149,4 +153,12 @@ export interface RouteSegment {
   distance_km: number | null;
   travel_time_mins: number | null;
   encoded_polyline: string | null;
+}
+
+export interface TripMeta {
+  trip_id: string;
+  name: string | null;
+  is_draft: boolean;
+  created_at: string;
+  updated_at: string;
 }

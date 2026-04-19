@@ -7,28 +7,44 @@ interface Props {
 
 export function FerrySegmentCard({ leg }: Props) {
   return (
-    <div className="bg-primary/5 border border-primary/15 rounded-xl p-5 relative">
-      <span className="absolute top-4 right-4 inline-flex items-center gap-1 text-xs font-semibold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full font-body">
+    <div
+      className="rounded-xl p-5 relative"
+      style={{
+        background: "var(--glass-2)",
+        border: "1px solid var(--glass-border-2)",
+        boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+        backdropFilter: "blur(12px)",
+      }}
+    >
+      <span
+        className="absolute top-4 right-4 inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full font-body"
+        style={{ color: "var(--success)", background: "rgba(107,144,128,0.15)", border: "1px solid rgba(107,144,128,0.3)" }}
+      >
         <Check size={10} />
         Confirmed
       </span>
 
       <div className="flex items-center gap-2 mb-3">
-        <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-          <Ship size={18} className="text-primary" />
+        <div
+          className="w-9 h-9 rounded-lg flex items-center justify-center"
+          style={{ background: "rgba(224,122,95,0.15)" }}
+        >
+          <Ship size={18} style={{ color: "var(--accent)" }} />
         </div>
-        <h3 className="text-lg font-semibold text-primary font-display">Ferry</h3>
+        <h3 className="text-lg font-semibold font-display" style={{ color: "var(--text-primary)" }}>Ferry</h3>
       </div>
 
-      <p className="text-base font-medium text-charcoal mb-1 font-body">
+      <p className="text-base font-medium mb-1 font-body" style={{ color: "var(--text-primary)" }}>
         {leg.origin} → {leg.destination}
       </p>
-      <p className="text-sm text-muted mb-4 font-body">
+      <p className="text-sm mb-4 font-body" style={{ color: "var(--text-muted)" }}>
         Check schedules and book with your ferry operator.
       </p>
 
       <div className="mb-4">
-        <p className="text-xs font-semibold text-charcoal/50 uppercase tracking-wide mb-2 font-body">Popular operators</p>
+        <p className="text-[10px] font-semibold uppercase tracking-[2.5px] mb-2 font-body" style={{ color: "var(--text-eyebrow)" }}>
+          Popular operators
+        </p>
         <div className="flex flex-wrap gap-2">
           {[
             { label: "DFDS", href: "https://www.dfds.com" },
@@ -41,7 +57,8 @@ export function FerrySegmentCard({ leg }: Props) {
               href={link.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-sm text-primary font-medium hover:text-primary-dark underline underline-offset-2 font-body transition-colors"
+              className="inline-flex items-center gap-1 text-sm font-medium underline underline-offset-2 font-body transition-colors"
+              style={{ color: "var(--accent)" }}
             >
               {link.label}
               <ExternalLink size={11} />
@@ -50,16 +67,22 @@ export function FerrySegmentCard({ leg }: Props) {
         </div>
       </div>
 
-      <div className="flex items-start gap-2 bg-warning/10 border border-warning/20 rounded-lg px-3 py-2 mb-3">
-        <Bed size={13} className="text-warning-dark shrink-0 mt-0.5" />
-        <p className="text-xs text-warning-dark font-body">
+      <div
+        className="flex items-start gap-2 rounded-lg px-3 py-2 mb-3"
+        style={{ background: "rgba(212,165,116,0.08)", border: "1px solid rgba(212,165,116,0.15)" }}
+      >
+        <Bed size={13} className="shrink-0 mt-0.5" style={{ color: "var(--warning)" }} />
+        <p className="text-xs font-body" style={{ color: "var(--warning)" }}>
           Tip: Overnight ferries often include cabin accommodation — factor this into your hotel bookings.
         </p>
       </div>
 
-      <div className="flex items-start gap-2 bg-primary/5 rounded-lg px-3 py-2">
-        <Info size={13} className="text-primary shrink-0 mt-0.5" />
-        <p className="text-xs text-charcoal/60 font-body">
+      <div
+        className="flex items-start gap-2 rounded-lg px-3 py-2"
+        style={{ background: "rgba(224,122,95,0.08)", border: "1px solid rgba(224,122,95,0.15)" }}
+      >
+        <Info size={13} className="shrink-0 mt-0.5" style={{ color: "var(--accent)" }} />
+        <p className="text-xs font-body" style={{ color: "var(--text-muted)" }}>
           Ferry tickets are not bookable in-app. Use the links above to find schedules.
         </p>
       </div>

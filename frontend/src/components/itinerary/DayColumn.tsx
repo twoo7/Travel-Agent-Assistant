@@ -17,13 +17,22 @@ export function DayColumn({ day, onRemoveItem }: Props) {
   const itemIds = day.items.map((_, i) => `${day.day_number}-${i}`);
 
   return (
-    <div className="bg-background rounded-xl border border-gray-100 overflow-hidden shadow-card">
-      <div className="bg-white border-b border-gray-100 px-4 py-2.5 flex items-center justify-between">
+    <div
+      className="rounded-xl overflow-hidden"
+      style={{ background: "var(--glass-1)", border: "1px solid var(--glass-border-1)", ...(isOver ? { borderColor: "rgba(224,122,95,0.5)" } : {}) }}
+    >
+      <div
+        className="px-4 py-2.5 flex items-center justify-between"
+        style={{ background: "var(--glass-2)", borderBottom: "1px solid var(--glass-border-1)" }}
+      >
         <div>
-          <span className="font-semibold text-charcoal text-sm font-body">Day {day.day_number}</span>
-          <span className="text-muted text-xs ml-2 font-body">{day.date}</span>
+          <span className="font-semibold text-sm font-body" style={{ color: "var(--text-primary)" }}>Day {day.day_number}</span>
+          <span className="text-xs ml-2 font-body" style={{ color: "var(--text-muted)" }}>{day.date}</span>
         </div>
-        <span className="text-xs text-primary font-medium bg-primary/10 px-2 py-0.5 rounded-full font-body">
+        <span
+          className="text-xs font-medium px-2 py-0.5 rounded-full font-body"
+          style={{ color: "var(--accent)", background: "rgba(224,122,95,0.15)" }}
+        >
           {day.city}
         </span>
       </div>
@@ -31,12 +40,14 @@ export function DayColumn({ day, onRemoveItem }: Props) {
       <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
         <div
           ref={setNodeRef}
-          className={`p-3 space-y-1 min-h-[80px] transition-colors duration-150 ${
-            isOver ? "bg-primary/5" : ""
-          }`}
+          className="p-3 space-y-1 min-h-[80px] transition-colors duration-150"
+          style={{}}
         >
           {day.items.length === 0 && (
-            <div className="text-center text-xs text-subtle py-4 border-2 border-dashed border-gray-200 rounded-lg font-body">
+            <div
+              className="text-center text-xs py-4 rounded-lg font-body"
+              style={{ border: "2px dashed rgba(255,255,255,0.12)", color: "var(--text-subtle)" }}
+            >
               Drop items here
             </div>
           )}

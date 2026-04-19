@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useContext, useReducer, useEffect, ReactNode } from "react";
+import { createContext, useContext, useReducer, useEffect, useRef, ReactNode } from "react";
+import { api } from "@/services/api";
 import type {
   TripContext as TripContextType,
   TripLeg,
@@ -17,6 +18,8 @@ interface TripState {
   tripContext: TripContextType;
   itinerary: ItineraryDay[];
   staleSteps: string[];
+  activeTripId: string | null;
+  tripName: string | null;
 }
 
 type TripAction =
@@ -39,6 +42,9 @@ type TripAction =
   | { type: "SET_HOTEL_RESULTS"; payload: { leg_number: number; results: HotelOffer[] } }
   | { type: "MARK_STALE"; payload: { keys: string[] } }
   | { type: "CLEAR_STALE"; payload: { key: string } }
+  | { type: "SET_STATE"; payload: TripState }
+  | { type: "SET_ACTIVE_TRIP_ID"; payload: string | null }
+  | { type: "SET_TRIP_NAME"; payload: string | null }
   | { type: "RESET" };
 
 const EMPTY_CONTEXT: TripContextType = {
@@ -55,13 +61,15 @@ const INITIAL_STATE: TripState = {
   tripContext: EMPTY_CONTEXT,
   itinerary: [],
   staleSteps: [],
+  activeTripId: null,
+  tripName: null,
 };
 
-const SESSION_KEY = "trip-context";
+const LOCAL_KEY = "trip-context:draft";
 
-function loadFromSession(): TripState {
+function loadFromLocal(): TripState {
   try {
-    const raw = sessionStorage.getItem(SESSION_KEY);
+    const raw = localStorage.getItem(LOCAL_KEY);
     if (!raw) return INITIAL_STATE;
     const parsed = JSON.parse(raw) as TripState;
     // Minimal validation: must have a tripContext with legs array
@@ -74,11 +82,11 @@ function loadFromSession(): TripState {
   }
 }
 
-function saveToSession(state: TripState): void {
+function saveToLocal(state: TripState): void {
   try {
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(state));
+    localStorage.setItem(LOCAL_KEY, JSON.stringify(state));
   } catch {
-    // sessionStorage unavailable (e.g. private mode quota exceeded) — silently skip
+    // localStorage unavailable — silently skip
   }
 }
 
@@ -314,6 +322,27 @@ function reducer(state: TripState, action: TripAction): TripState {
         staleSteps: state.staleSteps.filter((k) => k !== action.payload.key),
       };
 
+    case "SET_STATE":
+      return {
+        ...INITIAL_STATE,
+        ...action.payload,
+        staleSteps: action.payload.staleSteps ?? [],
+        itinerary: action.payload.itinerary ?? [],
+        tripName: action.payload.tripName ?? null,
+        tripContext: {
+          ...EMPTY_CONTEXT,
+          ...(action.payload.tripContext ?? {}),
+          unscheduled_pois: action.payload.tripContext?.unscheduled_pois ?? [],
+          saved_pois: action.payload.tripContext?.saved_pois ?? [],
+        },
+      };
+
+    case "SET_ACTIVE_TRIP_ID":
+      return { ...state, activeTripId: action.payload };
+
+    case "SET_TRIP_NAME":
+      return { ...state, tripName: action.payload };
+
     case "RESET":
       return INITIAL_STATE;
 
@@ -328,15 +357,45 @@ const TripContextCtx = createContext<{
 } | null>(null);
 
 export function TripContextProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, INITIAL_STATE, () => {
-    // Load persisted state on first render (client-only: sessionStorage is not available on server)
-    if (typeof window === "undefined") return INITIAL_STATE;
-    return loadFromSession();
-  });
+  const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
 
-  // Persist to sessionStorage after every state change
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isCreatingTrip = useRef(false);
+  const localLoaded = useRef(false);
+
+  // Load persisted state after hydration — never runs on the server
   useEffect(() => {
-    saveToSession(state);
+    if (localLoaded.current) return;
+    localLoaded.current = true;
+    const saved = loadFromLocal();
+    if (saved.tripContext.home_origin || saved.activeTripId || saved.tripContext.legs.length > 0) {
+      dispatch({ type: "SET_STATE", payload: saved });
+    }
+  }, []);
+
+  useEffect(() => {
+    // Always keep localStorage in sync as offline fallback
+    saveToLocal(state);
+
+    if (state.activeTripId) {
+      // Debounced PUT to backend — 1s after last change
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+      saveTimer.current = setTimeout(() => {
+        api.saveTrip(state.activeTripId!, state).catch((err) => {
+          console.error("Autosave failed:", err);
+        });
+      }, 1000);
+    } else if (!isCreatingTrip.current && state.tripContext.home_origin) {
+      // First meaningful mutation — mint a draft trip
+      isCreatingTrip.current = true;
+      api.createTrip().then(({ trip_id }) => {
+        dispatch({ type: "SET_ACTIVE_TRIP_ID", payload: trip_id });
+      }).catch((err) => {
+        console.error("Failed to create trip:", err);
+      }).finally(() => {
+        isCreatingTrip.current = false;
+      });
+    }
   }, [state]);
 
   return (

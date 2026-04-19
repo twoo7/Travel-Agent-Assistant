@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 
 from backend.src.agents.poi_agent import POIAgent
 from backend.src.models.poi import DistancesRequest, POI, POISuggestRequest
@@ -12,9 +12,16 @@ router = APIRouter(prefix="/pois", tags=["pois"])
 
 
 @router.post("/suggest", response_model=List[POI])
-def suggest_pois(req: POISuggestRequest) -> List[POI]:
+async def suggest_pois(
+    req: POISuggestRequest, nocache: bool = Query(False)
+) -> List[POI]:
     agent = POIAgent()
-    return agent.suggest(req.trip_context, req.leg_number, user_prompt=req.user_prompt)
+    return await agent.async_suggest(
+        req.trip_context,
+        req.leg_number,
+        user_prompt=req.user_prompt,
+        bypass_cache=nocache,
+    )
 
 
 @router.post("/distances", response_model=List[Dict[str, Any]])

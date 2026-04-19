@@ -10,7 +10,7 @@ import type { ModeAvailability } from "@/utils/transportAvailability";
 import airportsData from "@/data/airports.json";
 import ferryRoutesData from "@/data/ferry_routes.json";
 import { Button } from "@/components/ui/Button";
-import { PageTransition } from "@/components/ui/PageTransition";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Plane,
   Train,
@@ -31,6 +31,8 @@ interface LegDraft {
   destination: string;
   date: string;
   transport_mode: TransportMode;
+  originAirports?: string[];
+  destAirports?: string[];
 }
 
 // ─── Stale step labels ────────────────────────────────────────────────────────
@@ -63,34 +65,24 @@ const CURRENCIES = [
 type ModeMeta = {
   Icon: LucideIcon;
   label: string;
-  selectedClass: string;
-  dotClass: string;
 };
 
 const MODE_META: Record<TransportMode, ModeMeta> = {
   flight: {
     Icon: Plane,
     label: "Flight",
-    selectedClass: "border-primary bg-primary/5 text-primary",
-    dotClass: "text-primary",
   },
   train: {
     Icon: Train,
     label: "Train",
-    selectedClass: "border-success bg-success/5 text-success-dark",
-    dotClass: "text-success",
   },
   ferry: {
     Icon: Ship,
     label: "Ferry",
-    selectedClass: "border-sky-500 bg-sky-50 text-sky-700",
-    dotClass: "text-sky-500",
   },
   car: {
     Icon: Car,
     label: "Bus/Car",
-    selectedClass: "border-warning bg-warning/5 text-warning-dark",
-    dotClass: "text-warning",
   },
 };
 
@@ -140,7 +132,10 @@ function TransportSelector({
 
   return (
     <div>
-      <label className="block text-xs font-medium text-charcoal/70 mb-1.5 font-body">
+      <label
+        className="block text-[10px] font-semibold uppercase tracking-[2.5px] mb-1.5 font-body"
+        style={{ color: "var(--text-eyebrow)" }}
+      >
         How are you getting there?
       </label>
       <div className="flex gap-2 flex-wrap">
@@ -154,27 +149,24 @@ function TransportSelector({
               type="button"
               onClick={() => onSelect(m.mode)}
               aria-pressed={isSelected}
-              className={[
-                "flex-1 min-w-0 py-2 px-3 rounded-lg border-2 text-sm font-medium font-body transition-all",
-                "flex items-center justify-center gap-1.5",
+              className="flex-1 min-w-0 py-2 px-3 rounded-lg text-sm font-medium font-body transition-all flex items-center justify-center gap-1.5"
+              style={
                 isSelected
-                  ? meta.selectedClass
-                  : "border-gray-200 text-muted hover:border-gray-300 hover:text-charcoal",
-              ]
-                .filter(Boolean)
-                .join(" ")}
+                  ? { border: "2px solid var(--accent)", background: "rgba(224,122,95,0.1)", color: "var(--accent)" }
+                  : { border: "1px solid rgba(255,255,255,0.12)", color: "var(--text-muted)", background: "var(--glass-1)" }
+              }
             >
               <Icon size={14} />
               {m.label}
               {!isSelected && m.recommended && (
-                <span className={`${meta.dotClass} text-lg leading-none`}>•</span>
+                <span className="text-lg leading-none" style={{ color: "var(--accent)" }}>•</span>
               )}
             </button>
           );
         })}
       </div>
       {availability.primaryHint && (
-        <p className="text-xs text-muted mt-1 italic font-body">
+        <p className="text-xs mt-1 italic font-body" style={{ color: "var(--text-muted)" }}>
           {availability.primaryHint}
         </p>
       )}
@@ -204,7 +196,7 @@ function LegCard({
   const handleDestinationChange = useCallback(
     (iata: string) => {
       if (!iata) {
-        onChange({ ...leg, destination: "" });
+        onChange({ ...leg, destination: "", destAirports: [] });
         return;
       }
       const availability = getTransportAvailability(
@@ -222,19 +214,26 @@ function LegCard({
   );
 
   return (
-    <div className="border border-gray-100 rounded-xl p-4 space-y-3 relative bg-white shadow-card">
+    <div
+      className="rounded-xl p-4 space-y-3 relative"
+      style={{ background: "var(--glass-2)", border: "1px solid var(--glass-border-2)" }}
+    >
       {!isFirst && !isOnly && (
         <button
           type="button"
           onClick={onRemove}
-          className="absolute top-3 right-3 text-muted hover:text-red-500 transition-colors rounded-lg p-1 hover:bg-red-50"
+          className="absolute top-3 right-3 hover:text-red-500 transition-colors rounded-lg p-1 hover:bg-red-50"
+          style={{ color: "var(--text-muted)" }}
           aria-label="Remove leg"
         >
           <X size={16} />
         </button>
       )}
 
-      <div className="text-xs font-semibold text-muted uppercase tracking-wide font-body">
+      <div
+        className="text-xs font-semibold uppercase tracking-wide font-body"
+        style={{ color: "var(--text-muted)" }}
+      >
         Leg {index + 1}
       </div>
 
@@ -243,6 +242,7 @@ function LegCard({
           label="From"
           value={leg.origin}
           onChange={(iata) => onChange({ ...leg, origin: iata })}
+          onAirportsChange={(airports) => onChange({ ...leg, originAirports: airports })}
           placeholder="Origin airport"
           disabled={isFirst || index > 0}
         />
@@ -250,6 +250,7 @@ function LegCard({
           label="To"
           value={leg.destination}
           onChange={handleDestinationChange}
+          onAirportsChange={(airports) => onChange({ ...leg, destAirports: airports })}
           placeholder="Destination airport"
         />
       </div>
@@ -259,14 +260,17 @@ function LegCard({
       )}
 
       <div>
-        <label className="block text-xs font-medium text-charcoal/70 mb-1 font-body">
+        <label
+          className="block text-[10px] font-semibold uppercase tracking-[2.5px] mb-1.5 font-body"
+          style={{ color: "var(--text-eyebrow)" }}
+        >
           Departure date
         </label>
         <input
           type="date"
           value={leg.date}
           onChange={(e) => onChange({ ...leg, date: e.target.value })}
-          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm font-body focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+          className="w-full px-3 py-2.5 text-sm font-body"
         />
       </div>
 
@@ -288,9 +292,13 @@ export default function TripSetupPage() {
   const { tripContext } = state;
 
   const [homeOrigin, setHomeOrigin] = useState("");
+  const [homeOriginAirports, setHomeOriginAirports] = useState<string[]>([]);
   const [singleDest, setSingleDest] = useState("");
+  const [singleDestAirports, setSingleDestAirports] = useState<string[]>([]);
   const [departureDate, setDepartureDate] = useState("");
   const [returnDate, setReturnDate] = useState("");
+
+  const today = useMemo(() => new Date().toISOString().split("T")[0], []);
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
 
@@ -344,20 +352,6 @@ export default function TripSetupPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const handleHomeOriginChange = useCallback(
-    (iata: string) => {
-      setHomeOrigin(iata);
-      setLegs((prev) => {
-        const updated = [...prev];
-        updated[0] = { ...updated[0], origin: iata };
-        return updated;
-      });
-      markStaleIfEditing([1], ["segments"]);
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [tripContext.legs.length]
-  );
 
   const handleMultiToggle = useCallback(
     (checked: boolean) => {
@@ -438,8 +432,33 @@ export default function TripSetupPage() {
         (l) => l.origin && l.destination && l.date && l.origin !== l.destination
       );
     }
-    return !!singleDest && !!departureDate && homeOrigin !== singleDest;
-  }, [homeOrigin, multiMode, legs, singleDest, departureDate]);
+    const datesOk = !departureDate || !returnDate || returnDate >= departureDate;
+    return !!singleDest && !!departureDate && homeOrigin !== singleDest && datesOk;
+  }, [homeOrigin, multiMode, legs, singleDest, departureDate, returnDate]);
+
+  const handleHomeOriginChange = useCallback(
+    (iata: string) => {
+      setHomeOrigin(iata);
+      setLegs((prev) => {
+        const updated = [...prev];
+        updated[0] = { ...updated[0], origin: iata };
+        return updated;
+      });
+      if (!isValid) return;
+      markStaleIfEditing([1], ["segments"]);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tripContext.legs.length, isValid]
+  );
+
+  const handleHomeOriginAirportsChange = useCallback((airports: string[]) => {
+    setHomeOriginAirports(airports);
+    setLegs((prev) => {
+      const updated = [...prev];
+      updated[0] = { ...updated[0], originAirports: airports };
+      return updated;
+    });
+  }, []);
 
   function markStaleIfEditing(legNumbers: number[], steps: string[]) {
     if (tripContext.legs.length === 0) return;
@@ -464,6 +483,8 @@ export default function TripSetupPage() {
             origin: homeOrigin,
             destination: singleDest,
             date: departureDate,
+            originAirports: homeOriginAirports,
+            destAirports: singleDestAirports,
             transport_mode: (() => {
               if (!homeOrigin || !singleDest) return "flight";
               const av = getTransportAvailability(
@@ -506,6 +527,8 @@ export default function TripSetupPage() {
           destination: leg.destination,
           departure_date: leg.date,
           transport_mode: leg.transport_mode,
+          origin_airports: leg.originAirports && leg.originAirports.length > 1 ? leg.originAirports : undefined,
+          destination_airports: leg.destAirports && leg.destAirports.length > 1 ? leg.destAirports : undefined,
           hotel_stays: [],
           days: [],
         },
@@ -542,66 +565,96 @@ export default function TripSetupPage() {
   }
 
   return (
-    <PageTransition>
-      <div className="max-w-lg mx-auto py-10 px-4 md:px-0">
+    <div className="max-w-lg mx-auto py-10 px-4 md:px-0 min-h-screen flex flex-col justify-center">
         {/* Stale banner */}
-        {state.staleSteps.length > 0 && (
-          <div className="mb-6 bg-warning/10 border border-warning/30 rounded-xl p-4 space-y-3">
-            <p className="text-sm font-semibold text-warning-dark flex items-center gap-2 font-body">
-              <AlertTriangle size={16} />
-              Changes detected — {state.staleSteps.length} step
-              {state.staleSteps.length > 1 ? "s" : ""} need attention
-            </p>
-            <div className="space-y-2">
-              {state.staleSteps.map((key) => {
-                const [stepName, legNum] = key.split("-");
-                const label = STEP_LABELS[stepName] ?? stepName;
-                const action = STALE_ACTIONS[stepName] ?? "review this step";
-                const href = stepName === "segments" ? "/segments" : "/hotels";
-                return (
-                  <div key={key} className="flex items-center justify-between gap-3">
-                    <p className="text-sm text-warning-dark font-body">
-                      •{" "}
-                      <span className="font-medium">
-                        {label} (Leg {legNum})
-                      </span>
-                      : {action}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => router.push(href)}
-                      className="shrink-0 text-xs font-medium text-warning-dark bg-warning/20 hover:bg-warning/30 px-3 py-1 rounded-lg transition-colors font-body"
-                    >
-                      Go to {label} →
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        <AnimatePresence>
+          {state.staleSteps.length > 0 && (
+            <motion.div
+              key="stale-banner"
+              initial={{ opacity: 0, y: -12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="mb-6 rounded-xl p-4 space-y-3"
+              style={{
+                background: "rgba(212,165,116,0.1)",
+                border: "1px solid rgba(212,165,116,0.3)",
+              }}
+            >
+              <p
+                className="text-sm font-semibold flex items-center gap-2 font-body"
+                style={{ color: "var(--warning)" }}
+              >
+                <AlertTriangle size={16} />
+                Changes detected — {state.staleSteps.length} step
+                {state.staleSteps.length > 1 ? "s" : ""} need attention
+              </p>
+              <div className="space-y-2">
+                {state.staleSteps.map((key) => {
+                  const [stepName, legNum] = key.split("-");
+                  const label = STEP_LABELS[stepName] ?? stepName;
+                  const action = STALE_ACTIONS[stepName] ?? "review this step";
+                  const href = stepName === "segments" ? "/segments" : "/hotels";
+                  return (
+                    <div key={key} className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-body" style={{ color: "var(--warning)" }}>
+                        •{" "}
+                        <span className="font-medium">
+                          {label} (Leg {legNum})
+                        </span>
+                        : {action}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => router.push(href)}
+                        className="shrink-0 text-xs font-medium bg-warning/20 hover:bg-warning/30 px-3 py-1 rounded-lg transition-colors font-body"
+                        style={{ color: "var(--warning)" }}
+                      >
+                        Go to {label} →
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* Header */}
+        {/* Hero section */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-accent/10 mb-4">
-            <Plane size={28} className="text-accent" />
-          </div>
-          <h1 className="font-display text-4xl text-primary mb-2">Plan Your Trip</h1>
-          <p className="text-muted font-body">Tell us where you&apos;re going to get started.</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[2.5px] mb-4 font-body"
+             style={{ color: "var(--text-eyebrow)" }}>
+            Step 1 of 5 · Trip Setup
+          </p>
+          <h1 className="font-display text-4xl mb-3 leading-tight">
+            <span style={{ color: "var(--text-primary)" }}>Where are you</span>
+            <br />
+            <span style={{ color: "var(--accent)" }}>headed?</span>
+          </h1>
+          <p className="font-body text-sm" style={{ color: "var(--text-muted)" }}>
+            Build your journey, one destination at a time.
+          </p>
         </div>
 
         <form
           onSubmit={handleSubmit}
-          className="card-base p-8 space-y-[22px]"
+          className="p-8 space-y-[22px] rounded-2xl"
+          style={{
+            background: "var(--glass-2)",
+            border: "1px solid var(--glass-border-2)",
+            backdropFilter: "blur(12px)",
+            boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+          }}
         >
           {/* ── Single-destination fields ── */}
           {!multiMode && (
             <>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <AirportSearch
                   label="From"
                   value={homeOrigin}
                   onChange={handleHomeOriginChange}
+                  onAirportsChange={handleHomeOriginAirportsChange}
                   placeholder="Home airport"
                 />
                 <AirportSearch
@@ -609,7 +662,11 @@ export default function TripSetupPage() {
                   value={singleDest}
                   onChange={(iata) => {
                     setSingleDest(iata);
+                    if (!isValid) return;
                     markStaleIfEditing([1], ["segments", "hotels"]);
+                  }}
+                  onAirportsChange={(airports) => {
+                    setSingleDestAirports(airports);
                   }}
                   placeholder="Destination airport"
                 />
@@ -621,14 +678,17 @@ export default function TripSetupPage() {
 
               {/* Transport hint */}
               {singleAvailability && singleAvailability.modes.length > 0 && (
-                <div className="bg-background rounded-lg px-3 py-2 flex items-center gap-2 border border-gray-100">
-                  <DefaultModeIcon size={18} className="text-primary" />
+                <div
+                  className="rounded-lg px-3 py-2 flex items-center gap-2"
+                  style={{ background: "var(--glass-1)", border: "1px solid var(--glass-border-1)" }}
+                >
+                  <DefaultModeIcon size={18} style={{ color: "var(--accent)" }} />
                   <div>
-                    <span className="text-sm font-medium text-charcoal font-body">
+                    <span className="text-sm font-medium font-body" style={{ color: "var(--text-primary)" }}>
                       {MODE_META[singleDefaultMode].label}
                     </span>
                     {singleAvailability.primaryHint && (
-                      <p className="text-xs text-muted italic font-body">
+                      <p className="text-xs italic font-body" style={{ color: "var(--text-muted)" }}>
                         {singleAvailability.primaryHint}
                       </p>
                     )}
@@ -636,33 +696,46 @@ export default function TripSetupPage() {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-muted mb-1 font-body">
+                  <label
+                    className="block text-[10px] font-semibold uppercase tracking-[2.5px] mb-1.5 font-body"
+                    style={{ color: "var(--text-eyebrow)" }}
+                  >
                     Departure Date
                   </label>
                   <input
                     type="date"
                     value={departureDate}
                     onChange={(e) => setDepartureDate(e.target.value)}
-                    onBlur={() => markStaleIfEditing([1], ["segments", "hotels"])}
+                    onBlur={() => { if (!isValid) return; markStaleIfEditing([1], ["segments", "hotels"]); }}
                     required={!multiMode}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm font-body focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                    min={today}
+                    className="w-full px-3 py-2.5 text-sm font-body"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-muted mb-1 font-body">
+                  <label
+                    className="block text-[10px] font-semibold uppercase tracking-[2.5px] mb-1.5 font-body"
+                    style={{ color: "var(--text-eyebrow)" }}
+                  >
                     Return Date{" "}
-                    <span className="text-subtle font-normal normal-case">(optional)</span>
+                    <span className="font-normal normal-case" style={{ color: "var(--text-subtle)" }}>(optional)</span>
                   </label>
                   <input
                     type="date"
                     value={returnDate}
                     onChange={(e) => setReturnDate(e.target.value)}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm font-body focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                    min={departureDate || today}
+                    className="w-full px-3 py-2.5 text-sm font-body"
                   />
+                  {returnDate && departureDate && returnDate < departureDate && (
+                    <p className="col-span-1 sm:col-span-2 text-xs mt-1 font-body" style={{ color: "var(--danger)" }}>
+                      Return date must be on or after the departure date.
+                    </p>
+                  )}
                   {returnDate && (
-                    <p className="text-xs text-muted mt-1 font-body">
+                    <p className="text-xs mt-1 font-body" style={{ color: "var(--text-muted)" }}>
                       Adds a return leg: {singleDest || "destination"} → {homeOrigin || "home"}
                     </p>
                   )}
@@ -692,7 +765,10 @@ export default function TripSetupPage() {
               ] as const
             ).map(({ label, value, set, min, ariaBase }) => (
               <div key={label}>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-muted mb-1 font-body">
+                <label
+                  className="block text-[10px] font-semibold uppercase tracking-[2.5px] mb-1.5 font-body"
+                  style={{ color: "var(--text-eyebrow)" }}
+                >
                   {label}
                 </label>
                 <div className="flex items-center gap-2">
@@ -700,26 +776,33 @@ export default function TripSetupPage() {
                     type="button"
                     onClick={() => {
                       set((v) => Math.max(min, v - 1));
+                      if (!isValid) return;
                       const keys = makeStaleKeys();
                       if (keys.length) dispatch({ type: "MARK_STALE", payload: { keys } });
                     }}
                     aria-label={`Decrease ${ariaBase}`}
-                    className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-200 text-muted hover:bg-gray-50 hover:text-charcoal transition-colors"
+                    className="w-8 h-8 flex items-center justify-center rounded-full transition-colors"
+                    style={{ border: "1px solid var(--glass-border-2)", color: "var(--text-muted)" }}
                   >
                     <Minus size={12} />
                   </button>
-                  <span className="text-base font-bold min-w-[2rem] text-center text-charcoal font-body">
+                  <span
+                    className="text-base font-bold min-w-[2rem] text-center font-body"
+                    style={{ color: "var(--text-primary)" }}
+                  >
                     {value}
                   </span>
                   <button
                     type="button"
                     onClick={() => {
                       set((v) => Math.min(9, v + 1));
+                      if (!isValid) return;
                       const keys = makeStaleKeys();
                       if (keys.length) dispatch({ type: "MARK_STALE", payload: { keys } });
                     }}
                     aria-label={`Increase ${ariaBase}`}
-                    className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-200 text-muted hover:bg-gray-50 hover:text-charcoal transition-colors"
+                    className="w-8 h-8 flex items-center justify-center rounded-full transition-colors"
+                    style={{ border: "1px solid var(--glass-border-2)", color: "var(--text-muted)" }}
                   >
                     <Plus size={12} />
                   </button>
@@ -730,13 +813,16 @@ export default function TripSetupPage() {
 
           {/* -- Currency -- */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-muted mb-1 font-body">
+            <label
+              className="block text-[10px] font-semibold uppercase tracking-[2.5px] mb-1.5 font-body"
+              style={{ color: "var(--text-eyebrow)" }}
+            >
               Currency
             </label>
             <select
               value={currency}
               onChange={(e) => setCurrency(e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm font-body focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+              className="w-full px-3 py-2.5 text-sm font-body"
             >
               {CURRENCIES.map((c) => (
                 <option key={c.code} value={c.code}>{c.label}</option>
@@ -750,9 +836,12 @@ export default function TripSetupPage() {
               type="checkbox"
               checked={multiMode}
               onChange={(e) => handleMultiToggle(e.target.checked)}
-              className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary/30 accent-primary"
+              className="w-4 h-4 rounded accent-accent"
             />
-            <span className="text-sm font-medium text-charcoal font-body">
+            <span
+              className="text-sm font-medium font-body"
+              style={{ color: "var(--text-primary)" }}
+            >
               Multi-destination trip
             </span>
           </label>
@@ -765,6 +854,7 @@ export default function TripSetupPage() {
                   label="Home airport (trip origin)"
                   value={homeOrigin}
                   onChange={handleHomeOriginChange}
+                  onAirportsChange={handleHomeOriginAirportsChange}
                   placeholder="Where are you flying from?"
                 />
               </div>
@@ -785,36 +875,48 @@ export default function TripSetupPage() {
               <button
                 type="button"
                 onClick={addLeg}
-                className="w-full py-2.5 px-4 border-2 border-dashed border-gray-200 rounded-xl text-sm font-medium font-body text-muted hover:border-primary/40 hover:text-primary transition-colors flex items-center justify-center gap-2"
+                className="w-full py-2.5 px-4 rounded-xl text-sm font-medium font-body flex items-center justify-center gap-2 transition-colors"
+                style={{ border: "2px dashed rgba(255,255,255,0.12)", color: "var(--text-muted)" }}
               >
                 <Plus size={14} />
                 Add destination
               </button>
 
               <div className="flex items-center gap-3 mt-1">
-                <label className="flex items-center gap-2 text-sm text-charcoal font-body cursor-pointer">
+                <label
+                  className="flex items-center gap-2 text-sm font-body cursor-pointer"
+                  style={{ color: "var(--text-primary)" }}
+                >
                   <input
                     type="checkbox"
                     checked={addReturnLeg}
                     onChange={(e) => setAddReturnLeg(e.target.checked)}
-                    className="rounded border-gray-300"
+                    className="rounded accent-accent"
                   />
                   Add return flight home
                 </label>
               </div>
 
               {addReturnLeg && (
-                <div className="bg-background border border-gray-100 rounded-xl p-3 space-y-2">
-                  <p className="text-sm text-muted font-body">
+                <div
+                  className="rounded-xl p-3 space-y-2"
+                  style={{ background: "var(--glass-1)", border: "1px solid var(--glass-border-1)" }}
+                >
+                  <p className="text-sm font-body" style={{ color: "var(--text-muted)" }}>
                     {legs[legs.length - 1]?.destination || "Last destination"} → {homeOrigin}
                   </p>
                   <div>
-                    <label className="block text-xs font-medium text-muted mb-1 font-body">Return Date</label>
+                    <label
+                      className="block text-[10px] font-semibold uppercase tracking-[2.5px] mb-1.5 font-body"
+                      style={{ color: "var(--text-eyebrow)" }}
+                    >
+                      Return Date
+                    </label>
                     <input
                       type="date"
                       value={multiReturnDate}
                       onChange={(e) => setMultiReturnDate(e.target.value)}
-                      className="border border-gray-200 rounded-lg px-3 py-2.5 text-sm font-body focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                      className="px-3 py-2.5 text-sm font-body"
                     />
                   </div>
                 </div>
@@ -836,6 +938,5 @@ export default function TripSetupPage() {
           </Button>
         </form>
       </div>
-    </PageTransition>
   );
 }

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, useId } from "react";
 import airportsData from "@/data/airports.json";
-import { AIRPORT_TO_CITY } from "@/utils/cityCodeMap";
+import { AIRPORT_TO_CITY, CITY_TO_AIRPORTS, getCityAirports } from "@/utils/cityCodeMap";
 import { COUNTRY_NAMES } from "@/utils/countryNames";
 
 interface Airport {
@@ -17,17 +17,25 @@ interface Airport {
 
 const airports: Airport[] = airportsData as Airport[];
 
+interface CityGroup {
+  type: "city";
+  cityCode: string;
+  iatas: string[];
+  cityName: string;
+}
+
+type SearchResult = { type: "airport"; airport: Airport } | CityGroup;
+
 interface AirportSearchProps {
   label: string;
   value: string;
   onChange: (iata: string) => void;
+  onAirportsChange?: (airports: string[]) => void;
   placeholder?: string;
   disabled?: boolean;
   showCityCode?: boolean;
   id?: string;
 }
-
-let moduleCounter = 0;
 
 function findAirport(iata: string): Airport | undefined {
   return airports.find((a) => a.iata === iata);
@@ -65,10 +73,47 @@ function filterAirports(query: string): Airport[] {
   return [...exactIata, ...rest].slice(0, 8);
 }
 
+function buildResults(query: string): SearchResult[] {
+  const matched = filterAirports(query);
+
+  // Group airports by city code to find multi-airport cities
+  const cityMap = new Map<string, Airport[]>();
+  for (const airport of matched) {
+    const city = AIRPORT_TO_CITY[airport.iata];
+    if (city && CITY_TO_AIRPORTS[city] && CITY_TO_AIRPORTS[city].length > 1) {
+      if (!cityMap.has(city)) cityMap.set(city, []);
+      cityMap.get(city)!.push(airport);
+    }
+  }
+
+  const cityGroups: CityGroup[] = [];
+  const seenCities = new Set<string>();
+  for (const airport of matched) {
+    const city = AIRPORT_TO_CITY[airport.iata];
+    if (city && cityMap.has(city) && !seenCities.has(city)) {
+      seenCities.add(city);
+      const groupAirports = cityMap.get(city)!;
+      cityGroups.push({
+        type: "city",
+        cityCode: city,
+        iatas: CITY_TO_AIRPORTS[city],
+        cityName: groupAirports[0].city,
+      });
+    }
+  }
+
+  const results: SearchResult[] = [
+    ...cityGroups,
+    ...matched.map((airport) => ({ type: "airport" as const, airport })),
+  ];
+  return results;
+}
+
 export default function AirportSearch({
   label,
   value,
   onChange,
+  onAirportsChange,
   placeholder = "City or airport name",
   disabled = false,
   showCityCode = false,
@@ -79,7 +124,8 @@ export default function AirportSearch({
   const [activeIndex, setActiveIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const listboxId = useRef(`airport-listbox-${id ?? moduleCounter++}`);
+  const generatedId = useId();
+  const listboxId = useRef(`airport-listbox-${id ?? generatedId}`);
 
   // Sync query when value changes externally
   useEffect(() => {
@@ -110,7 +156,7 @@ export default function AirportSearch({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [value]);
 
-  const results = useMemo(() => (open ? filterAirports(query) : []), [open, query]);
+  const results = useMemo(() => (open ? buildResults(query) : []), [open, query]);
 
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -120,27 +166,38 @@ export default function AirportSearch({
       setActiveIndex(-1);
       if (!text) {
         onChange("");
+        onAirportsChange?.([]);
       }
     },
-    [onChange]
+    [onChange, onAirportsChange]
   );
 
-  const handleFocus = useCallback(() => {
-    setOpen(true);
-    if (value) {
-      setQuery("");
-    }
-  }, [value]);
+  const handleFocus = useCallback(() => { setOpen(true); }, []);
 
-  const handleSelect = useCallback(
+  const handleSelectAirport = useCallback(
     (airport: Airport) => {
       onChange(airport.iata);
+      onAirportsChange?.(getCityAirports(airport.iata));
       setQuery(displayName(airport));
       setOpen(false);
       setActiveIndex(-1);
       inputRef.current?.blur();
     },
-    [onChange]
+    [onChange, onAirportsChange]
+  );
+
+  const handleSelectCityGroup = useCallback(
+    (group: CityGroup) => {
+      const primaryIata = group.iatas[0];
+      const primaryAirport = findAirport(primaryIata);
+      onChange(primaryIata);
+      onAirportsChange?.(group.iatas);
+      setQuery(primaryAirport ? displayName(primaryAirport) : group.cityName);
+      setOpen(false);
+      setActiveIndex(-1);
+      inputRef.current?.blur();
+    },
+    [onChange, onAirportsChange]
   );
 
   const handleKeyDown = useCallback(
@@ -162,10 +219,12 @@ export default function AirportSearch({
       } else if (e.key === "Enter") {
         e.preventDefault();
         const target = activeIndex >= 0 ? results[activeIndex] : results[0];
-        if (target) handleSelect(target);
+        if (!target) return;
+        if (target.type === "city") handleSelectCityGroup(target);
+        else handleSelectAirport(target.airport);
       }
     },
-    [results, value, handleSelect, activeIndex]
+    [results, value, handleSelectAirport, handleSelectCityGroup, activeIndex]
   );
 
   const selectedAirport = value ? findAirport(value) : undefined;
@@ -176,7 +235,7 @@ export default function AirportSearch({
 
   return (
     <div className="relative w-full" ref={containerRef}>
-      <label className="block text-xs font-medium text-charcoal/70 mb-1 font-body">
+      <label className="block text-xs font-medium mb-1 font-body" style={{ color: "var(--text-muted)" }}>
         {label}
       </label>
 
@@ -187,13 +246,13 @@ export default function AirportSearch({
           role="combobox"
           aria-expanded={open && results.length > 0}
           aria-controls={listboxId.current}
+          aria-haspopup="listbox"
           aria-autocomplete="list"
           aria-activedescendant={activeOptionId}
           className={[
-            "w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm font-body",
-            "focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary",
-            "bg-white placeholder:text-subtle text-charcoal",
-            "disabled:bg-gray-50 disabled:text-muted disabled:cursor-not-allowed",
+            "w-full px-3 py-2.5 rounded-lg text-sm font-body",
+            "focus:outline-none",
+            "disabled:opacity-50 disabled:cursor-not-allowed",
             "transition-colors duration-150 pr-16",
           ]
             .filter(Boolean)
@@ -209,7 +268,7 @@ export default function AirportSearch({
 
         {selectedAirport && !open && (
           <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
-            <span className="text-xs font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded font-mono">
+            <span className="text-xs font-bold px-1.5 py-0.5 rounded font-mono" style={{ color: "var(--accent)", background: "rgba(224,122,95,0.1)" }}>
               {selectedAirport.iata}
             </span>
           </div>
@@ -221,52 +280,84 @@ export default function AirportSearch({
           id={listboxId.current}
           role="listbox"
           aria-label={`Airport options for ${label}`}
-          className="absolute z-50 w-full top-full mt-1 bg-white border border-gray-100 rounded-xl shadow-card-hover overflow-hidden max-h-64 overflow-y-auto"
+          className="absolute z-50 w-full top-full mt-1 rounded-xl shadow-card-hover overflow-hidden max-h-64 overflow-y-auto"
+          style={{ background: "var(--dropdown-bg)", border: "1px solid var(--glass-border-2)", backdropFilter: "blur(12px)" }}
         >
-          {results.map((airport, idx) => (
-            <li
-              key={airport.iata}
-              id={`${listboxId.current}-option-${idx}`}
-              role="option"
-              aria-selected={activeIndex === idx}
-              className={[
-                "px-3 py-2.5 cursor-pointer flex items-center justify-between border-b border-gray-50 last:border-0 transition-colors duration-100",
-                activeIndex === idx ? "bg-primary/5" : "hover:bg-primary/5",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                handleSelect(airport);
-              }}
-              onMouseEnter={() => setActiveIndex(idx)}
-            >
-              <div className="flex flex-col min-w-0 mr-3">
-                <span className="text-sm font-medium text-charcoal truncate font-body">
-                  {airport.name}
-                </span>
-                <span className="text-xs text-muted truncate">
-                  {airport.city}, {COUNTRY_NAMES[airport.country] ?? airport.country}
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 shrink-0">
-                {showCityCode && AIRPORT_TO_CITY[airport.iata] && (
-                  <span className="text-xs font-bold text-success-dark bg-success/10 px-1.5 py-0.5 rounded font-mono">
-                    {AIRPORT_TO_CITY[airport.iata]}
+          {results.map((result, idx) => {
+            const isActive = activeIndex === idx;
+            const bg = isActive ? "rgba(224,122,95,0.15)" : "transparent";
+            const border = "1px solid var(--glass-border-1)";
+
+            if (result.type === "city") {
+              return (
+                <li
+                  key={`city-${result.cityCode}`}
+                  id={`${listboxId.current}-option-${idx}`}
+                  role="option"
+                  aria-selected={isActive}
+                  className="px-3 py-2.5 cursor-pointer flex items-center justify-between last:border-0 transition-colors duration-100"
+                  style={{ borderBottom: border, background: bg }}
+                  onMouseDown={(e) => { e.preventDefault(); handleSelectCityGroup(result); }}
+                  onMouseEnter={() => setActiveIndex(idx)}
+                >
+                  <div className="flex flex-col min-w-0 mr-3">
+                    <span className="text-sm font-medium truncate font-body" style={{ color: "var(--text-primary)" }}>
+                      {result.cityName} — all airports
+                    </span>
+                    <span className="text-xs truncate font-body" style={{ color: "var(--text-muted)" }}>
+                      Search across {result.iatas.join(", ")}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0 flex-wrap justify-end max-w-[40%]">
+                    {result.iatas.map((iata) => (
+                      <span key={iata} className="text-xs font-bold px-1.5 py-0.5 rounded font-mono" style={{ color: "var(--success)", background: "rgba(107,144,128,0.12)" }}>
+                        {iata}
+                      </span>
+                    ))}
+                  </div>
+                </li>
+              );
+            }
+
+            const { airport } = result;
+            return (
+              <li
+                key={airport.iata}
+                id={`${listboxId.current}-option-${idx}`}
+                role="option"
+                aria-selected={isActive}
+                className="px-3 py-2.5 cursor-pointer flex items-center justify-between last:border-0 transition-colors duration-100"
+                style={{ borderBottom: border, background: bg }}
+                onMouseDown={(e) => { e.preventDefault(); handleSelectAirport(airport); }}
+                onMouseEnter={() => setActiveIndex(idx)}
+              >
+                <div className="flex flex-col min-w-0 mr-3">
+                  <span className="text-sm font-medium truncate font-body" style={{ color: "var(--text-primary)" }}>
+                    {airport.name}
                   </span>
-                )}
-                <span className="text-xs font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded font-mono">
-                  {airport.iata}
-                </span>
-              </div>
-            </li>
-          ))}
+                  <span className="text-xs truncate" style={{ color: "var(--text-muted)" }}>
+                    {airport.city}, {COUNTRY_NAMES[airport.country] ?? airport.country}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {showCityCode && AIRPORT_TO_CITY[airport.iata] && (
+                    <span className="text-xs font-bold px-1.5 py-0.5 rounded font-mono" style={{ color: "var(--success)", background: "rgba(107,144,128,0.1)" }}>
+                      {AIRPORT_TO_CITY[airport.iata]}
+                    </span>
+                  )}
+                  <span className="text-xs font-bold px-1.5 py-0.5 rounded font-mono" style={{ color: "var(--accent)", background: "rgba(224,122,95,0.1)" }}>
+                    {airport.iata}
+                  </span>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
 
       {open && query.trim().length > 0 && results.length === 0 && (
-        <div className="absolute z-50 w-full top-full mt-1 bg-white border border-gray-100 rounded-xl shadow-card-hover overflow-hidden">
-          <div className="px-3 py-3 text-sm text-muted text-center font-body">
+        <div className="absolute z-50 w-full top-full mt-1 rounded-xl shadow-card-hover overflow-hidden" style={{ background: "var(--dropdown-bg)", border: "1px solid var(--glass-border-2)", backdropFilter: "blur(12px)" }}>
+          <div className="px-3 py-3 text-sm text-center font-body" style={{ color: "var(--text-muted)" }}>
             No airports found for &ldquo;{query}&rdquo;
           </div>
         </div>

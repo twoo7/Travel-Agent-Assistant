@@ -1,6 +1,5 @@
 import json
 import pytest
-from unittest.mock import patch, MagicMock
 from backend.src.services.export_service import ExportService
 from backend.src.models.export import ExportRequest, ItineraryDay
 from backend.src.models.trip import TripContext
@@ -39,24 +38,20 @@ def test_generate_json_includes_generated_at():
 
 
 def test_generate_pdf_returns_bytes():
-    """Test PDF generation with WeasyPrint mocked (Windows-safe)."""
-    mock_pdf_bytes = b"%PDF-1.4 mock pdf content"
-
-    with patch("backend.src.services.export_service.ExportService._render_pdf") as mock_render:
-        mock_render.return_value = mock_pdf_bytes
-        service = ExportService()
-        req = _make_request()
-        pdf_bytes = service.generate_pdf(req)
+    """PDF generation via reportlab must return valid PDF bytes."""
+    service = ExportService()
+    req = _make_request()
+    pdf_bytes = service.generate_pdf(req)
 
     assert isinstance(pdf_bytes, bytes)
-    assert pdf_bytes == mock_pdf_bytes
+    assert pdf_bytes[:4] == b"%PDF"
 
 
-def test_generate_pdf_raises_on_weasyprint_unavailable():
-    """On Windows, WeasyPrint cannot be imported — generate_pdf should raise RuntimeError."""
-    with patch("backend.src.services.export_service.ExportService._render_pdf",
-               side_effect=RuntimeError("WeasyPrint requires GTK on Windows")):
-        service = ExportService()
-        req = _make_request()
-        with pytest.raises(RuntimeError, match="WeasyPrint"):
-            service.generate_pdf(req)
+def test_generate_pdf_contains_trip_info():
+    """Generated PDF bytes should be non-trivial in size (reportlab output)."""
+    service = ExportService()
+    req = _make_request()
+    pdf_bytes = service.generate_pdf(req)
+
+    # A real reportlab document for a simple itinerary is at least 1KB
+    assert len(pdf_bytes) > 1024

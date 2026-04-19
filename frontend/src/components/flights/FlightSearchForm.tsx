@@ -11,6 +11,44 @@ interface Props {
   loading: boolean;
 }
 
+function AirportChips({
+  label,
+  airports,
+  selected,
+  onSelect,
+}: {
+  label: string;
+  airports: string[];
+  selected: string;
+  onSelect: (iata: string) => void;
+}) {
+  return (
+    <div>
+      <label className="block text-xs font-medium mb-1 font-body" style={{ color: "var(--text-muted)" }}>{label}</label>
+      <div className="flex gap-1.5 flex-wrap">
+        {airports.map((iata) => {
+          const isSelected = selected === iata;
+          return (
+            <button
+              key={iata}
+              type="button"
+              onClick={() => onSelect(iata)}
+              className="px-2.5 py-1.5 rounded-lg text-xs font-bold font-mono transition-all"
+              style={
+                isSelected
+                  ? { background: "rgba(224,122,95,0.2)", border: "1.5px solid var(--accent)", color: "var(--accent)" }
+                  : { background: "var(--glass-1)", border: "1px solid var(--glass-border-2)", color: "var(--text-muted)" }
+              }
+            >
+              {iata}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function FlightSearchForm({ leg, onSearch, loading }: Props) {
   const [form, setForm] = useState({
     origin: leg.origin,
@@ -18,42 +56,67 @@ export function FlightSearchForm({ leg, onSearch, loading }: Props) {
     departure_date: leg.departure_date,
   });
 
+  const hasOriginOptions = (leg.origin_airports?.length ?? 0) > 1;
+  const hasDestOptions = (leg.destination_airports?.length ?? 0) > 1;
+
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   }
 
   return (
-    <div className="bg-white border border-gray-100 rounded-xl p-4 flex flex-wrap gap-3 items-end shadow-card">
-      <div>
-        <label className="block text-xs font-medium text-charcoal/60 mb-1 font-body">From</label>
-        <input
-          name="origin"
-          value={form.origin}
-          onChange={handleChange}
-          placeholder="JFK"
-          maxLength={3}
-          className="border border-gray-200 rounded-lg px-3 py-2 text-sm uppercase tracking-widest w-20 font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+    <div className="rounded-xl p-4 flex flex-wrap gap-3 items-end shadow-card" style={{ background: "var(--glass-2)", border: "1px solid var(--glass-border-2)", backdropFilter: "blur(12px)" }}>
+      {hasOriginOptions ? (
+        <AirportChips
+          label="From"
+          airports={leg.origin_airports!}
+          selected={form.origin}
+          onSelect={(iata) => setForm((prev) => ({ ...prev, origin: iata }))}
         />
-      </div>
-      <div>
-        <label className="block text-xs font-medium text-charcoal/60 mb-1 font-body">To</label>
-        <input
-          name="destination"
-          value={form.destination}
-          onChange={handleChange}
-          placeholder="CDG"
-          maxLength={3}
-          className="border border-gray-200 rounded-lg px-3 py-2 text-sm uppercase tracking-widest w-20 font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+      ) : (
+        <div>
+          <label className="block text-xs font-medium mb-1 font-body" style={{ color: "var(--text-muted)" }}>From</label>
+          <input
+            type="text"
+            name="origin"
+            value={form.origin}
+            onChange={handleChange}
+            placeholder="JFK"
+            maxLength={3}
+            className="rounded-lg px-3 py-2 text-sm uppercase tracking-widest w-20 font-mono focus:outline-none transition-colors"
+          />
+        </div>
+      )}
+
+      {hasDestOptions ? (
+        <AirportChips
+          label="To"
+          airports={leg.destination_airports!}
+          selected={form.destination}
+          onSelect={(iata) => setForm((prev) => ({ ...prev, destination: iata }))}
         />
-      </div>
+      ) : (
+        <div>
+          <label className="block text-xs font-medium mb-1 font-body" style={{ color: "var(--text-muted)" }}>To</label>
+          <input
+            type="text"
+            name="destination"
+            value={form.destination}
+            onChange={handleChange}
+            placeholder="CDG"
+            maxLength={3}
+            className="rounded-lg px-3 py-2 text-sm uppercase tracking-widest w-20 font-mono focus:outline-none transition-colors"
+          />
+        </div>
+      )}
+
       <div>
-        <label className="block text-xs font-medium text-charcoal/60 mb-1 font-body">Date</label>
+        <label className="block text-xs font-medium mb-1 font-body" style={{ color: "var(--text-muted)" }}>Date</label>
         <input
           type="date"
           name="departure_date"
           value={form.departure_date}
           onChange={handleChange}
-          className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors font-body"
+          className="rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors font-body"
         />
       </div>
       <Button

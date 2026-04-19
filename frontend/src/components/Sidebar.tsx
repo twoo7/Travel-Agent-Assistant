@@ -3,25 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useTripContext } from "@/context/TripContext";
 import { calcNights } from "@/utils/dateUtils";
 import { formatPrice } from "@/utils/formatPrice";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import type { TransportMode } from "@/types/trip";
 import {
-  Plane,
-  Train,
-  Ship,
-  Car,
-  Hotel,
-  Calendar,
-  Download,
-  Menu,
-  X,
-  Pin,
-  PinOff,
-  Check,
-  AlertTriangle,
-  Lock,
+  Plane, Train, Ship, Car, Hotel, Calendar, Download,
+  Menu, X, Pin, PinOff, Check, AlertTriangle, Lock, FolderOpen,
 } from "lucide-react";
 
 const STEPS = [
@@ -47,7 +37,9 @@ function TripSummary({ staleSteps }: { staleSteps: string[] }) {
 
   if (!tripContext.home_origin && tripContext.legs.length === 0) {
     return (
-      <p className="text-slate-400 italic text-xs">Start planning your trip →</p>
+      <p style={{ color: "var(--text-subtle)" }} className="italic text-xs font-body">
+        Start planning your trip →
+      </p>
     );
   }
 
@@ -62,12 +54,12 @@ function TripSummary({ staleSteps }: { staleSteps: string[] }) {
   return (
     <div className="space-y-2">
       {routeLabel && (
-        <p className="font-display font-medium text-slate-200 truncate text-sm">{routeLabel}</p>
+        <p className="font-display font-medium truncate text-sm" style={{ color: "var(--text-primary)" }}>
+          {routeLabel}
+        </p>
       )}
-
       {tripContext.legs.map((leg) => {
-        const transportIcon =
-          leg.transport_mode ? TRANSPORT_ICONS[leg.transport_mode] : TRANSPORT_ICONS.flight;
+        const transportIcon = leg.transport_mode ? TRANSPORT_ICONS[leg.transport_mode] : TRANSPORT_ICONS.flight;
         const legIsStale =
           staleSteps.some((k) => k.startsWith(`segments-${leg.leg_number}`)) ||
           staleSteps.some((k) => k.startsWith(`hotels-${leg.leg_number}`));
@@ -80,7 +72,8 @@ function TripSummary({ staleSteps }: { staleSteps: string[] }) {
           return (
             <p
               key={`flight-${leg.leg_number}`}
-              className={`truncate flex items-center gap-1 ${legIsStale ? "text-amber-400" : "text-green-400"}`}
+              className="truncate flex items-center gap-1 text-xs font-body"
+              style={{ color: legIsStale ? "var(--warning)" : "var(--success)" }}
             >
               <span className="shrink-0">{transportIcon}</span>
               <span>{flightNum} · {formatPrice(f.price, f.currency)}</span>
@@ -94,7 +87,8 @@ function TripSummary({ staleSteps }: { staleSteps: string[] }) {
           return (
             <p
               key={`hotel-${stay.hotel.id}`}
-              className={`truncate flex items-center gap-1 ${legIsStale ? "text-amber-300" : "text-slate-300"}`}
+              className="truncate flex items-center gap-1 text-xs font-body"
+              style={{ color: legIsStale ? "var(--warning)" : "var(--text-muted)" }}
             >
               <Hotel size={12} className="shrink-0" />
               <span>{stay.hotel.name}</span>
@@ -103,15 +97,15 @@ function TripSummary({ staleSteps }: { staleSteps: string[] }) {
         });
 
         return (
-          <div key={leg.leg_number} className="space-y-0.5 text-xs">
+          <div key={leg.leg_number} className="space-y-0.5">
             {flightLine}
             {hotelLines}
           </div>
         );
       })}
-
       {totalCost > 0 && (
-        <p className="text-accent font-semibold pt-1 border-t border-slate-700 text-xs">
+        <p className="font-semibold pt-1 border-t text-xs font-body"
+           style={{ borderColor: "var(--sidebar-border)", color: "var(--accent)" }}>
           Total ~{formatPrice(totalCost, tripContext.currency ?? tripContext.legs[0]?.selected_flight?.currency ?? "USD")}
         </p>
       )}
@@ -120,26 +114,43 @@ function TripSummary({ staleSteps }: { staleSteps: string[] }) {
 }
 
 function StatusChip({ status }: { status: StepStatus }) {
-  const map: Record<StepStatus, { label: string; icon: React.ReactNode; cls: string }> = {
-    active: { label: "Active",  icon: null,                          cls: "bg-accent/20 text-accent border border-accent/30" },
-    done:   { label: "Done",    icon: <Check size={10} />,           cls: "bg-success/20 text-success border border-success/30" },
-    stale:  { label: "Stale",   icon: <AlertTriangle size={10} />,   cls: "bg-warning/20 text-warning border border-warning/30" },
-    locked: { label: "Locked",  icon: <Lock size={10} />,            cls: "bg-slate-800 text-slate-500 border border-slate-700" },
+  const map: Record<StepStatus, { label: string; icon: React.ReactNode; style: React.CSSProperties }> = {
+    active: {
+      label: "Active",
+      icon: null,
+      style: { background: "rgba(224,122,95,0.2)", color: "var(--accent)", border: "1px solid rgba(224,122,95,0.3)" },
+    },
+    done: {
+      label: "Done",
+      icon: <Check size={10} />,
+      style: { background: "rgba(107,144,128,0.2)", color: "var(--success)", border: "1px solid rgba(107,144,128,0.3)" },
+    },
+    stale: {
+      label: "Stale",
+      icon: <AlertTriangle size={10} />,
+      style: { background: "rgba(212,165,116,0.2)", color: "var(--warning)", border: "1px solid rgba(212,165,116,0.3)" },
+    },
+    locked: {
+      label: "Locked",
+      icon: <Lock size={10} />,
+      style: { background: "var(--glass-1)", color: "var(--text-subtle)", border: "1px solid var(--glass-border-1)" },
+    },
   };
-  const { label, icon, cls } = map[status];
+  const { label, icon, style } = map[status];
   return (
-    <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0 ${cls}`}>
+    <motion.span
+      layout
+      style={style}
+      className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0 font-body"
+    >
       {icon}
       {label}
-    </span>
+    </motion.span>
   );
 }
 
 function StepIcon({
-  step,
-  index,
-  status,
-  expanded,
+  step, index, status, expanded,
 }: {
   step: (typeof STEPS)[0];
   index: number;
@@ -147,75 +158,61 @@ function StepIcon({
   expanded: boolean;
 }) {
   const { Icon } = step;
-  const isDone = status === "done";
+  const isDone   = status === "done";
   const isActive = status === "active";
-  const isStale = status === "stale";
+  const isStale  = status === "stale";
 
-  const iconColor = isActive
-    ? "text-white"
-    : isDone
-    ? "text-success"
-    : isStale
-    ? "text-warning"
-    : "text-slate-500";
+  const iconColor = isActive ? "var(--accent)" : isDone ? "var(--success)" : isStale ? "var(--warning)" : "var(--text-subtle)";
+  const bgColor   = isActive ? "rgba(224,122,95,0.15)" : "transparent";
+  const ringColor = isActive ? "rgba(224,122,95,0.4)" : "transparent";
 
   return (
     <span
       className={[
         "w-9 shrink-0 rounded-lg flex flex-col items-center justify-center gap-0.5 relative transition-colors",
         expanded ? "h-9" : "h-14",
-      ]
-        .filter(Boolean)
-        .join(" ")}
+      ].join(" ")}
+      style={{ background: bgColor, boxShadow: isActive ? `0 0 0 1px ${ringColor}` : "none" }}
     >
       {!expanded && (
-        <span className="text-[10px] font-bold leading-none text-slate-500">
+        <span className="text-[10px] font-bold leading-none" style={{ color: "var(--text-eyebrow)" }}>
           {index + 1}
         </span>
       )}
-      <span className={iconColor}>
+      <span style={{ color: iconColor }} suppressHydrationWarning>
         {isDone ? <Check size={16} /> : <Icon size={16} />}
       </span>
       {isStale && !expanded && (
-        <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-warning" />
+        <span className="absolute top-1 right-1 w-2 h-2 rounded-full" style={{ background: "var(--warning)" }} />
       )}
     </span>
   );
 }
 
-export function Sidebar({
-  pinned,
-  onPinChange,
-}: {
-  pinned: boolean;
-  onPinChange: (v: boolean) => void;
-}) {
+export function Sidebar({ pinned, onPinChange }: { pinned: boolean; onPinChange: (v: boolean) => void }) {
   const [hovered, setHovered] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const collapseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pathname = usePathname();
   const { state } = useTripContext();
-  const { staleSteps, tripContext } = state;
+  const { staleSteps, tripContext, itinerary } = state;
 
   const expanded = pinned || hovered;
   const currentIndex = STEPS.findIndex((s) => s.href === pathname);
 
   useEffect(() => {
-    return () => {
-      if (collapseTimerRef.current) clearTimeout(collapseTimerRef.current);
-    };
+    return () => { if (collapseTimerRef.current) clearTimeout(collapseTimerRef.current); };
   }, []);
 
   function handleMouseEnter() {
     if (collapseTimerRef.current) clearTimeout(collapseTimerRef.current);
     setHovered(true);
   }
-
   function handleMouseLeave() {
     collapseTimerRef.current = setTimeout(() => setHovered(false), 150);
   }
 
-  function isStepStale(staleKey: string): boolean {
+  function isStepStale(staleKey: string) {
     return staleSteps.some((k) => k.startsWith(staleKey + "-"));
   }
 
@@ -229,10 +226,16 @@ export function Sidebar({
       case 2: return tripContext.legs.length > 0 && tripContext.legs
         .filter((l) => !isReturnLeg(l.destination))
         .every((l) => l.hotel_stays.length > 0);
-      case 3: return isStepDone(2);
-      case 4: return isStepDone(3);
+      case 3: return itinerary.length > 0;
+      case 4: return itinerary.length > 0;
       default: return false;
     }
+  }
+
+  function isStepNavigable(index: number): boolean {
+    if (index === 0) return true;
+    if (isStepDone(index)) return true;
+    return isStepDone(index - 1);
   }
 
   function stepStatus(index: number): StepStatus {
@@ -243,92 +246,145 @@ export function Sidebar({
     return "locked";
   }
 
-  const stepLinkClass = (status: StepStatus) => {
-    const base =
-      "flex items-center gap-2 rounded-xl px-1 py-1 transition-all duration-150 select-none";
-    if (status === "active")
-      return `${base} bg-primary text-white border-l-2 border-accent`;
-    if (status === "done")
-      return `${base} text-success hover:bg-slate-800/60`;
-    if (status === "stale")
-      return `${base} text-warning hover:bg-slate-800/60`;
-    return `${base} text-slate-500 cursor-default pointer-events-none`;
-  };
-
   const desktopNav = (
-    <nav
-      className={[
-        "fixed left-0 top-0 h-full z-50 flex flex-col bg-navy-sidebar border-r border-accent/10",
-        "transition-all duration-300 overflow-hidden",
-        expanded ? "w-56" : "w-12",
-      ]
-        .filter(Boolean)
-        .join(" ")}
+    <motion.nav
+      animate={{ width: expanded ? 224 : 48 }}
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      className="fixed left-0 top-0 h-full z-50 flex flex-col overflow-hidden"
+      style={{ background: "var(--sidebar-bg)", borderRight: "1px solid var(--sidebar-border)" }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Brand mark — collapsed */}
-      {!expanded && (
-        <div className="flex items-center justify-center h-12 border-b border-slate-800">
-          <Plane size={18} className="text-accent" />
+      {/* Brand */}
+      <div className="flex items-center h-12 border-b overflow-hidden shrink-0"
+           style={{ borderColor: "var(--sidebar-border)" }}>
+        <div className="w-12 shrink-0 flex items-center justify-center">
+          <Plane size={18} style={{ color: "var(--accent)" }} />
         </div>
-      )}
-
-      {/* Brand name — expanded */}
-      {expanded && (
-        <div className="flex items-center px-4 h-12 border-b border-slate-800">
-          <span className="font-display text-slate-100 text-sm font-medium tracking-wide">
-            Travel Planner
-          </span>
-        </div>
-      )}
+        <AnimatePresence>
+          {expanded && (
+            <motion.span
+              key="brand-label"
+              initial={{ opacity: 0, x: -4 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -4 }}
+              transition={{ duration: 0.15 }}
+              className="font-display text-sm font-medium tracking-wide whitespace-nowrap"
+              style={{ color: "var(--text-primary)" }}
+            >
+              Travel Planner
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </div>
 
       {/* Steps */}
       <ul className="flex flex-col gap-1 p-1.5 flex-1 overflow-y-auto">
         {STEPS.map((step, i) => {
           const status = stepStatus(i);
-
+          const navigable = isStepNavigable(i);
+          const isLocked = !navigable;
           return (
             <li key={step.href}>
               <Link
                 href={step.href}
-                className={stepLinkClass(status)}
-                tabIndex={status === "locked" ? -1 : 0}
+                className="flex items-center gap-2 rounded-xl px-1 py-1 transition-colors duration-150 select-none outline-none"
+                tabIndex={isLocked ? -1 : 0}
                 aria-current={status === "active" ? "page" : undefined}
                 data-testid={`sidebar-step-${step.staleKey}`}
+                style={{
+                  pointerEvents: isLocked ? "none" : "auto",
+                  opacity: isLocked ? 0.5 : 1,
+                }}
               >
                 <StepIcon step={step} index={i} status={status} expanded={expanded} />
-                {expanded && (
-                  <>
-                    <span className="whitespace-nowrap text-sm font-body font-medium flex-1 overflow-hidden">
+                <AnimatePresence>
+                  {expanded && (
+                    <motion.span
+                      key={`label-${step.href}`}
+                      initial={{ opacity: 0, x: -4 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -4 }}
+                      transition={{ duration: 0.15 }}
+                      className="whitespace-nowrap text-sm font-body font-medium flex-1 overflow-hidden"
+                      style={{ color: "var(--text-primary)" }}
+                    >
                       {step.label}
-                    </span>
-                    <StatusChip status={status} />
-                  </>
-                )}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+                <AnimatePresence>
+                  {expanded && (status !== "locked" || isLocked) && <StatusChip key={`chip-${step.href}`} status={status} />}
+                </AnimatePresence>
               </Link>
             </li>
           );
         })}
       </ul>
 
-      {/* Trip summary — expanded only */}
-      {expanded && (
-        <div className="px-3 py-2 border-t border-slate-800 text-xs text-slate-300">
-          <TripSummary staleSteps={staleSteps} />
-        </div>
-      )}
+      {/* Trip summary */}
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            key="trip-summary"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="px-3 py-2 border-t text-xs shrink-0"
+            style={{ borderColor: "var(--sidebar-border)", color: "var(--text-muted)" }}
+          >
+            <TripSummary staleSteps={staleSteps} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* My Trips link */}
+      <div className="border-t shrink-0" style={{ borderColor: "var(--sidebar-border)" }}>
+        <Link
+          href="/trips"
+          className="flex items-center gap-2 px-1.5 py-2.5 transition-colors duration-150 select-none outline-none rounded-xl mx-1.5 my-1"
+          style={{
+            color: pathname === "/trips" ? "var(--accent)" : "var(--text-subtle)",
+            background: pathname === "/trips" ? "rgba(224,122,95,0.1)" : "transparent",
+          }}
+          title="My Trips"
+        >
+          <span className="w-9 h-9 shrink-0 flex items-center justify-center rounded-lg"
+                style={{ background: pathname === "/trips" ? "rgba(224,122,95,0.15)" : "transparent" }}>
+            <FolderOpen size={16} />
+          </span>
+          <AnimatePresence>
+            {expanded && (
+              <motion.span
+                key="trips-label"
+                initial={{ opacity: 0, x: -4 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -4 }}
+                transition={{ duration: 0.15 }}
+                className="whitespace-nowrap text-sm font-body font-medium"
+              >
+                My Trips
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </Link>
+      </div>
+
+      {/* Theme toggle */}
+      <ThemeToggle />
 
       {/* Pin toggle */}
-      <button
+      <motion.button
+        whileTap={{ scale: 0.9 }}
         onClick={() => onPinChange(!pinned)}
-        className="w-full flex items-center justify-center py-3 border-t border-slate-800 text-slate-500 hover:text-slate-200 hover:bg-slate-800/50 transition-colors duration-150"
+        className="w-full flex items-center justify-center py-3 border-t transition-colors duration-150 shrink-0"
+        style={{ borderColor: "var(--sidebar-border)", color: "var(--text-subtle)" }}
         aria-label={pinned ? "Unpin sidebar" : "Pin sidebar open"}
         title={pinned ? "Unpin sidebar" : "Pin sidebar open"}
       >
         {pinned ? <PinOff size={15} /> : <Pin size={15} />}
-      </button>
-    </nav>
+      </motion.button>
+    </motion.nav>
   );
 
   return (
@@ -337,91 +393,122 @@ export function Sidebar({
       <div className="hidden md:block">{desktopNav}</div>
 
       {/* Mobile: hamburger top bar */}
-      <div className="md:hidden fixed top-0 left-0 right-0 h-11 z-40 bg-navy-sidebar border-b border-accent/10 flex items-center px-3">
+      <div
+        className="md:hidden fixed top-0 left-0 right-0 h-11 z-40 flex items-center px-3"
+        style={{ background: "var(--sidebar-bg-mobile)", backdropFilter: "blur(12px)", borderBottom: "1px solid var(--sidebar-border)" }}
+      >
         <button
           onClick={() => setMobileOpen(true)}
-          className="text-slate-400 hover:text-white w-9 h-9 flex items-center justify-center rounded-lg hover:bg-slate-800 transition-colors"
+          className="w-9 h-9 flex items-center justify-center rounded-lg transition-colors"
+          style={{ color: "var(--text-muted)" }}
           aria-label="Open navigation"
         >
           <Menu size={18} />
         </button>
-        <span className="ml-3 text-slate-200 text-sm font-body font-semibold">
+        <span className="ml-3 text-sm font-body font-semibold" style={{ color: "var(--text-primary)" }}>
           {STEPS[currentIndex]?.label ?? "Travel Planner"}
         </span>
       </div>
 
-      {/* Mobile overlay */}
-      {mobileOpen && (
-        <div
-          className="md:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
-          onClick={() => setMobileOpen(false)}
-          aria-hidden="true"
-        />
-      )}
-
-      {/* Mobile slide-in sidebar */}
-      <div
-        className={[
-          "md:hidden fixed left-0 top-0 h-full z-50 flex flex-col bg-navy-sidebar w-64",
-          "transition-transform duration-300",
-          mobileOpen ? "translate-x-0" : "-translate-x-full",
-        ]
-          .filter(Boolean)
-          .join(" ")}
-        role="dialog"
-        aria-label="Navigation"
-      >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800">
-          <span className="font-display text-slate-100 text-sm tracking-wide">Travel Planner</span>
-          <button
+      {/* Mobile backdrop */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            key="backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.6 }}
+            exit={{ opacity: 0 }}
+            className="md:hidden fixed inset-0 z-40 bg-black"
             onClick={() => setMobileOpen(false)}
-            className="text-slate-400 hover:text-white w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-800 transition-colors"
-            aria-label="Close navigation"
-          >
-            <X size={16} />
-          </button>
-        </div>
-        <ul className="flex flex-col gap-1 p-2 flex-1 overflow-y-auto">
-          {STEPS.map((step, i) => {
-            const status = stepStatus(i);
-            const { Icon } = step;
-            const isDone = status === "done";
-            const isActive = status === "active";
-            const isStale = status === "stale";
-            const isLocked = status === "locked";
+          />
+        )}
+      </AnimatePresence>
 
-            return (
-              <li key={step.href}>
-                <Link
-                  href={step.href}
-                  onClick={() => setMobileOpen(false)}
-                  className={[
-                    "flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-150 select-none",
-                    isActive ? "bg-primary text-white border-l-2 border-accent" : "",
-                    isDone ? "text-success hover:bg-slate-800/60" : "",
-                    isStale ? "text-warning hover:bg-slate-800/60" : "",
-                    isLocked ? "text-slate-500 cursor-default pointer-events-none" : "",
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
-                  tabIndex={isLocked ? -1 : 0}
-                >
-                  <span className="w-9 h-9 shrink-0 rounded-lg flex items-center justify-center">
-                    {isDone ? <Check size={16} /> : <Icon size={16} />}
-                  </span>
-                  <span className="whitespace-nowrap text-sm font-body font-medium flex-1">
-                    {i + 1}. {step.label}
-                  </span>
-                  <StatusChip status={status} />
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-        <div className="px-4 py-3 border-t border-slate-800 text-xs text-slate-300">
-          <TripSummary staleSteps={staleSteps} />
-        </div>
-      </div>
+      {/* Mobile slide-in drawer */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            key="drawer"
+            initial={{ x: "-100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "-100%" }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="md:hidden fixed left-0 top-0 h-full z-50 flex flex-col w-64"
+            style={{ background: "var(--sidebar-bg)", borderRight: "1px solid var(--sidebar-border)" }}
+            role="dialog"
+            aria-label="Navigation"
+          >
+            <div className="flex items-center justify-between px-4 py-3 border-b shrink-0"
+                 style={{ borderColor: "var(--sidebar-border)" }}>
+              <span className="font-display text-sm tracking-wide" style={{ color: "var(--text-primary)" }}>
+                Travel Planner
+              </span>
+              <button
+                onClick={() => setMobileOpen(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
+                style={{ color: "var(--text-muted)" }}
+                aria-label="Close navigation"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <ul className="flex flex-col gap-1 p-2 flex-1 overflow-y-auto">
+              {STEPS.map((step, i) => {
+                const status = stepStatus(i);
+                const { Icon } = step;
+                const isDone   = status === "done";
+                const isActive = status === "active";
+                const isStale  = status === "stale";
+                const isLocked = !isStepNavigable(i);
+                return (
+                  <li key={step.href}>
+                    <Link
+                      href={step.href}
+                      onClick={() => setMobileOpen(false)}
+                      className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors select-none"
+                      style={{
+                        background: isActive ? "rgba(224,122,95,0.15)" : "transparent",
+                        color: isActive ? "var(--accent)" : isStale ? "var(--warning)" : isDone ? "var(--success)" : "var(--text-muted)",
+                        pointerEvents: isLocked ? "none" : "auto",
+                        opacity: isLocked ? 0.5 : 1,
+                      }}
+                      tabIndex={isLocked ? -1 : 0}
+                    >
+                      <span className="w-9 h-9 shrink-0 rounded-lg flex items-center justify-center">
+                        {isDone ? <Check size={16} /> : <Icon size={16} />}
+                      </span>
+                      <span className="whitespace-nowrap text-sm font-body font-medium flex-1">
+                        {i + 1}. {step.label}
+                      </span>
+                      {(status !== "locked" || isLocked) && <StatusChip status={status} />}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="px-4 py-3 border-t text-xs shrink-0" style={{ borderColor: "var(--sidebar-border)", color: "var(--text-muted)" }}>
+              <TripSummary staleSteps={staleSteps} />
+            </div>
+            <div className="border-t shrink-0 px-2 py-1.5" style={{ borderColor: "var(--sidebar-border)" }}>
+              <Link
+                href="/trips"
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors select-none"
+                style={{
+                  background: pathname === "/trips" ? "rgba(224,122,95,0.15)" : "transparent",
+                  color: pathname === "/trips" ? "var(--accent)" : "var(--text-muted)",
+                }}
+              >
+                <span className="w-9 h-9 shrink-0 rounded-lg flex items-center justify-center">
+                  <FolderOpen size={16} />
+                </span>
+                <span className="whitespace-nowrap text-sm font-body font-medium flex-1">My Trips</span>
+              </Link>
+            </div>
+            <ThemeToggle />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

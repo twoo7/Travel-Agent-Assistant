@@ -1,11 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTripContext } from "@/context/TripContext";
 import { ItinerarySummary } from "@/components/export/ItinerarySummary";
 import { ExportButtons } from "@/components/export/ExportButtons";
 import { Button } from "@/components/ui/Button";
-import { PageTransition } from "@/components/ui/PageTransition";
 import type { TransportSegment } from "@/types/trip";
 import { ArrowLeft, RefreshCw } from "lucide-react";
 
@@ -17,15 +17,13 @@ export default function ExportPage() {
   if (tripContext.legs.length === 0) {
     return (
       <div className="max-w-3xl mx-auto text-center py-16">
-        <p className="text-muted font-body">
-          Your session was reset — progress is not saved across page refreshes.
+        <p className="font-body" style={{ color: "var(--text-muted)" }}>
+          Your session was reset.{" "}
+          <Link href="/trips" className="underline" style={{ color: "var(--accent)" }}>
+            Visit your trips page
+          </Link>{" "}
+          to restore a saved trip.
         </p>
-        <button
-          onClick={() => router.push("/")}
-          className="mt-4 text-primary hover:text-primary-dark font-body text-sm underline underline-offset-2"
-        >
-          ← Go back to Trip Setup to start planning
-        </button>
       </div>
     );
   }
@@ -57,13 +55,16 @@ export default function ExportPage() {
   };
 
   return (
-    <PageTransition>
-      <div className="max-w-3xl mx-auto space-y-8">
+    <div className="max-w-2xl mx-auto py-10 px-4">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-primary font-display">Your Trip Plan</h1>
-            <p className="text-muted text-sm mt-0.5 font-body">Review your itinerary and download.</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[2.5px] mb-1 font-body" style={{ color: "var(--text-eyebrow)" }}>
+              Step 5 of 5
+            </p>
+            <h1 className="font-display text-4xl" style={{ color: "var(--text-primary)" }}>
+              Your Trip Summary
+            </h1>
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -85,21 +86,38 @@ export default function ExportPage() {
           </div>
         </div>
 
-        {/* Export buttons at top */}
-        <div className="bg-white border border-gray-100 shadow-card rounded-xl p-5">
-          <h2 className="font-semibold text-charcoal mb-3 font-body text-sm">Export Your Plan</h2>
-          <ExportButtons exportRequest={exportRequest} />
+        <div className="space-y-8">
+          {/* Export buttons at top */}
+          <div
+            className="rounded-xl p-5"
+            style={{
+              background: "var(--glass-2)",
+              border: "1px solid var(--glass-border-2)",
+              backdropFilter: "blur(12px)",
+              boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+            }}
+          >
+            <h2 className="font-semibold mb-3 font-body text-sm" style={{ color: "var(--text-primary)" }}>Export Your Plan</h2>
+            <ExportButtons exportRequest={exportRequest} />
+          </div>
+
+          <ItinerarySummary tripContext={tripContext} itinerary={itinerary} />
+
+          {/* Export buttons at bottom */}
+          <div
+            className="rounded-xl p-5"
+            style={{
+              background: "var(--glass-2)",
+              border: "1px solid var(--glass-border-2)",
+              backdropFilter: "blur(12px)",
+              boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+            }}
+          >
+            <ExportButtons exportRequest={exportRequest} />
+          </div>
+
+          <div className="pb-6" />
         </div>
-
-        <ItinerarySummary tripContext={tripContext} itinerary={itinerary} />
-
-        {/* Export buttons at bottom */}
-        <div className="bg-white border border-gray-100 shadow-card rounded-xl p-5">
-          <ExportButtons exportRequest={exportRequest} />
-        </div>
-
-        <div className="pb-6" />
       </div>
-    </PageTransition>
   );
 }
