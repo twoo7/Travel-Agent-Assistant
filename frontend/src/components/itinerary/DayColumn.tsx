@@ -2,18 +2,19 @@
 
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import type { DayPlan } from "@/types/trip";
+import type { DayPlan, HopMode } from "@/types/trip";
 import { DayItemCard } from "./DayItemCard";
 import { DistanceConnector } from "./DistanceConnector";
 
 interface Props {
   day: DayPlan;
   onRemoveItem: (dayNumber: number, itemIndex: number) => void;
+  onModeChange?: (dayNumber: number, itemIndex: number, mode: HopMode) => void;
   isFocused?: boolean;
   onFocus?: (day: number | null) => void;
 }
 
-export function DayColumn({ day, onRemoveItem, isFocused, onFocus }: Props) {
+export function DayColumn({ day, onRemoveItem, onModeChange, isFocused, onFocus }: Props) {
   const { setNodeRef, isOver } = useDroppable({ id: `day-${day.day_number}` });
 
   const itemIds = day.items.map((_, i) => `${day.day_number}-${i}`);
@@ -67,6 +68,8 @@ export function DayColumn({ day, onRemoveItem, isFocused, onFocus }: Props) {
                 <DistanceConnector
                   distanceKm={item.distance_to_next_km}
                   travelTimeMins={item.travel_time_to_next_mins}
+                  mode={item.transport_mode}
+                  onModeChange={onModeChange ? (mode) => onModeChange(day.day_number, i, mode) : undefined}
                 />
               )}
             </div>

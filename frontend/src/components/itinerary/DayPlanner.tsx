@@ -13,7 +13,7 @@ import {
   type DragOverEvent,
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
-import type { DayPlan, DayItem, POI, SavedHotel } from "@/types/trip";
+import type { DayPlan, DayItem, POI, SavedHotel, HopMode } from "@/types/trip";
 import { DayColumn } from "./DayColumn";
 import { DayItemCard } from "./DayItemCard";
 
@@ -167,6 +167,19 @@ export function DayPlanner({
     setWorkingDays(null);
   }
 
+  function handleModeChange(dayNumber: number, itemIndex: number, mode: HopMode) {
+    const newDays = displayDays.map((d) => {
+      if (d.day_number !== dayNumber) return d;
+      return {
+        ...d,
+        items: d.items.map((item, i) =>
+          i === itemIndex ? { ...item, transport_mode: mode } : item
+        ),
+      };
+    });
+    onDaysChange(newDays);
+  }
+
   function handleRemoveItem(dayNumber: number, itemIndex: number) {
     const day = displayDays.find((d) => d.day_number === dayNumber);
     const item = day?.items[itemIndex];
@@ -235,6 +248,7 @@ export function DayPlanner({
                   key={day.day_number}
                   day={day}
                   onRemoveItem={handleRemoveItem}
+                  onModeChange={handleModeChange}
                   isFocused={focusedDay === day.day_number}
                   onFocus={onFocusedDayChange}
                 />
