@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import json
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import fakeredis.aioredis as fake_aioredis
 import pytest
@@ -83,7 +83,7 @@ def _poi_dict(poi_id: str = "P1") -> dict:
     return {
         "id": poi_id,
         "name": "Eiffel Tower",
-        "category": "landmark",
+        "category": "attraction",
         "address": "Champ de Mars, Paris",
         "lat": 48.8584,
         "lng": 2.2945,
@@ -435,10 +435,10 @@ def test_pois_suggest_with_user_prompt(client):
 # ---------------------------------------------------------------------------
 
 def test_pois_distances_returns_routes(client):
-    routes = [{"distance_km": 1.2, "travel_time_mins": 15, "encoded_polyline": "abc123"}]
+    routes = [{"distance_km": 1.2, "travel_time_mins": 15, "encoded_polyline": "abc123", "mode": "walking"}]
 
     with patch("backend.src.routers.pois.GoogleDirectionsService") as MockSvc:
-        MockSvc.return_value.get_routes.return_value = routes
+        MockSvc.return_value.async_get_routes = AsyncMock(return_value=routes)
 
         resp = client.post(
             "/pois/distances",
@@ -458,7 +458,7 @@ def test_pois_distances_returns_routes(client):
 
 def test_pois_distances_empty_for_single_item(client):
     with patch("backend.src.routers.pois.GoogleDirectionsService") as MockSvc:
-        MockSvc.return_value.get_routes.return_value = []
+        MockSvc.return_value.async_get_routes = AsyncMock(return_value=[])
 
         resp = client.post(
             "/pois/distances",
@@ -579,7 +579,7 @@ def test_poi_suggest_no_duplicate_ids(client, mocker):
     # Mock the Claude API to return two identical suggestions
     dup_suggestion = {
         "name": "Eiffel Tower",
-        "category": "landmark",
+        "category": "attraction",
         "claude_note": "Iconic tower",
         "claude_best_time": "sunset",
         "claude_booking_tip": "Book online",

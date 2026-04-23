@@ -2,11 +2,13 @@ from __future__ import annotations
 from typing import Dict, List, Literal, Optional
 from pydantic import BaseModel
 
+POICategory = Literal["activity", "restaurant", "sightseeing", "attraction"]
+
 
 class POI(BaseModel):
     id: str
     name: str
-    category: str
+    category: POICategory = "activity"
     address: str
     lat: float
     lng: float
@@ -23,6 +25,15 @@ class POI(BaseModel):
     claude_note: str = ""
     claude_best_time: Optional[str] = None
     claude_booking_tip: Optional[str] = None
+    theme_tags: List[str] = []
+    neighborhood: Optional[str] = None
+
+
+class RouteSegment(BaseModel):
+    distance_km: Optional[float] = None
+    travel_time_mins: Optional[int] = None
+    encoded_polyline: Optional[str] = None
+    mode: str = "walking"
 
 
 class POISuggestRequest(BaseModel):
@@ -33,6 +44,7 @@ class POISuggestRequest(BaseModel):
 
 class DistancesRequest(BaseModel):
     day_items: List["DayItem"]
+    mode_per_hop: Optional[List[str]] = None
 
 
 # POISuggestRequest.model_rebuild() and DistancesRequest.model_rebuild()

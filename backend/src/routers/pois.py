@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import List
 
 from fastapi import APIRouter, Query
 
 from backend.src.agents.poi_agent import POIAgent
-from backend.src.models.poi import DistancesRequest, POI, POISuggestRequest
+from backend.src.models.poi import DistancesRequest, POI, POISuggestRequest, RouteSegment
 from backend.src.services.google_directions_service import GoogleDirectionsService
 
 router = APIRouter(prefix="/pois", tags=["pois"])
@@ -24,7 +24,8 @@ async def suggest_pois(
     )
 
 
-@router.post("/distances", response_model=List[Dict[str, Any]])
-def get_distances(req: DistancesRequest) -> List[Dict[str, Any]]:
+@router.post("/distances", response_model=List[RouteSegment])
+async def get_distances(req: DistancesRequest) -> List[RouteSegment]:
     service = GoogleDirectionsService()
-    return service.get_routes(req.day_items)
+    raw = await service.async_get_routes(req.day_items, req.mode_per_hop)
+    return [RouteSegment(**r) for r in raw]

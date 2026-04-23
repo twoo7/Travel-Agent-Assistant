@@ -2,28 +2,34 @@
 
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import type { DayPlan } from "@/types/trip";
+import type { DayPlan, HopMode } from "@/types/trip";
 import { DayItemCard } from "./DayItemCard";
 import { DistanceConnector } from "./DistanceConnector";
 
 interface Props {
   day: DayPlan;
   onRemoveItem: (dayNumber: number, itemIndex: number) => void;
+  onModeChange?: (dayNumber: number, itemIndex: number, mode: HopMode) => void;
+  isFocused?: boolean;
+  onFocus?: (day: number | null) => void;
 }
 
-export function DayColumn({ day, onRemoveItem }: Props) {
+export function DayColumn({ day, onRemoveItem, onModeChange, isFocused, onFocus }: Props) {
   const { setNodeRef, isOver } = useDroppable({ id: `day-${day.day_number}` });
 
   const itemIds = day.items.map((_, i) => `${day.day_number}-${i}`);
 
+  const focusedBorder = isFocused ? "rgba(224,122,95,0.6)" : isOver ? "rgba(224,122,95,0.5)" : "var(--glass-border-1)";
+
   return (
     <div
       className="rounded-xl overflow-hidden"
-      style={{ background: "var(--glass-1)", border: "1px solid var(--glass-border-1)", ...(isOver ? { borderColor: "rgba(224,122,95,0.5)" } : {}) }}
+      style={{ background: "var(--glass-1)", border: `1px solid ${focusedBorder}`, boxShadow: isFocused ? "0 0 0 1px rgba(224,122,95,0.2)" : undefined }}
     >
       <div
-        className="px-4 py-2.5 flex items-center justify-between"
+        className="px-4 py-2.5 flex items-center justify-between cursor-pointer select-none"
         style={{ background: "var(--glass-2)", borderBottom: "1px solid var(--glass-border-1)" }}
+        onClick={() => onFocus?.(isFocused ? null : day.day_number)}
       >
         <div>
           <span className="font-semibold text-sm font-body" style={{ color: "var(--text-primary)" }}>Day {day.day_number}</span>
@@ -62,6 +68,8 @@ export function DayColumn({ day, onRemoveItem }: Props) {
                 <DistanceConnector
                   distanceKm={item.distance_to_next_km}
                   travelTimeMins={item.travel_time_to_next_mins}
+                  mode={item.transport_mode}
+                  onModeChange={onModeChange ? (mode) => onModeChange(day.day_number, i, mode) : undefined}
                 />
               )}
             </div>
