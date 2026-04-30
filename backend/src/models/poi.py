@@ -21,6 +21,7 @@ class POI(BaseModel):
     rating: Optional[float] = None
     review_count: Optional[int] = None
     photo_url: Optional[str] = None
+    photo_urls: Optional[List[str]] = None
     nearest_transit: Optional[str] = None
     claude_note: str = ""
     claude_best_time: Optional[str] = None
@@ -40,6 +41,7 @@ class POISuggestRequest(BaseModel):
     trip_context: "TripContext"
     leg_number: int
     user_prompt: Optional[str] = None
+    exclude_names: List[str] = []
 
 
 class DistancesRequest(BaseModel):

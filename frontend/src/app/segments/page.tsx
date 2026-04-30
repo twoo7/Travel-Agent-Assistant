@@ -7,6 +7,7 @@ import { useTripContext } from "@/context/TripContext";
 import { api } from "@/services/api";
 import { FlightSearchForm } from "@/components/flights/FlightSearchForm";
 import { FlightCard } from "@/components/flights/FlightCard";
+import { SelectedFlightSummary } from "@/components/flights/SelectedFlightSummary";
 import { TrainSegmentCard } from "@/components/segments/TrainSegmentCard";
 import { FerrySegmentCard } from "@/components/segments/FerrySegmentCard";
 import { CarSegmentCard } from "@/components/segments/CarSegmentCard";
@@ -20,7 +21,7 @@ import {
   Plane, Train, Ship, Car, Check, AlertTriangle, ArrowRight, ArrowLeft, Plus, X,
   type LucideIcon,
 } from "lucide-react";
-import { iataToCityName } from "@/utils/airportNames";
+import { iataToCityName, getAirportName } from "@/utils/airportNames";
 
 const MODE_META: Record<string, { Icon: LucideIcon; label: string }> = {
   flight: { Icon: Plane,  label: "Flight"  },
@@ -232,7 +233,7 @@ export default function SegmentsPage() {
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-[2.5px] mb-1 font-body"
                      style={{ color: "var(--text-eyebrow)" }}>
-                    Leg {leg.leg_number} · {leg.origin} → {leg.destination} · {leg.departure_date}
+                    Leg {leg.leg_number} · {leg.origin} {iataToCityName(leg.origin)} ({getAirportName(leg.origin)}) → {leg.destination} {iataToCityName(leg.destination)} ({getAirportName(leg.destination)}) · {leg.departure_date}
                   </p>
                   <h2 className="font-display text-2xl" style={{ color: "var(--text-primary)" }}>
                     Select Your {MODE_META[leg.transport_mode ?? "flight"]?.label ?? "Flight"}
@@ -265,7 +266,15 @@ export default function SegmentsPage() {
               </div>
 
               {/* Flight mode content */}
-              {mode === "flight" && (
+              {mode === "flight" && leg.selected_flight && (
+                <SelectedFlightSummary
+                  leg={leg}
+                  onChangeFlight={() => dispatch({ type: "SET_FLIGHT", payload: { leg_number: leg.leg_number, flight: null } })}
+                  onSaveBooking={(booking) => dispatch({ type: "SET_FLIGHT_BOOKING", payload: { leg_number: leg.leg_number, booking } })}
+                />
+              )}
+
+              {mode === "flight" && !leg.selected_flight && (
                 <>
                   <FlightSearchForm
                     leg={leg}

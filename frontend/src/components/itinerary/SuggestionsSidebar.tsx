@@ -26,6 +26,7 @@ interface Props {
   days: DayPlan[];
   savedPois?: POI[];
   onRemoveSaved?: (id: string) => void;
+  onOpenDetail?: (poi: POI) => void;
 }
 
 type SidebarTab = "picks" | "search" | "saved";
@@ -42,13 +43,15 @@ const CATEGORY_CHIPS: Array<{ label: string; value: POICategory | "all" }> = [
 export function SuggestionsSidebar({
   pois, addedIds, onAddToDay, onSave, loading, onRefresh, refreshing,
   defaultCollapsed = false, savedHotels = [], onRestoreHotel, locationBias,
-  days, savedPois = [], onRemoveSaved,
+  days, savedPois = [], onRemoveSaved, onOpenDetail,
 }: Props) {
   const [tab, setTab] = useState<SidebarTab>("picks");
   const [categoryFilter, setCategoryFilter] = useState<POICategory | "all">("all");
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
   const [hotelsExpanded, setHotelsExpanded] = useState(false);
+
+  const savedIds = new Set(savedPois.map((p) => p.id));
 
   const availableTags = Array.from(
     new Set(pois.flatMap((p) => p.theme_tags ?? []))
@@ -92,7 +95,7 @@ export function SuggestionsSidebar({
 
   return (
     <div
-      className="w-72 shrink-0 rounded-xl flex flex-col h-full max-h-[calc(100vh-140px)] overflow-hidden"
+      className="w-full flex flex-col h-full overflow-hidden rounded-xl"
       style={{ background: "var(--sidebar-bg)", backdropFilter: "blur(16px)", border: "1px solid var(--glass-border-1)" }}
     >
       {/* Header */}
@@ -156,7 +159,14 @@ export function SuggestionsSidebar({
           <p className="text-xs font-body mb-3" style={{ color: "var(--text-muted)" }}>
             Search any place and add it to your itinerary.
           </p>
-          <PlacesSearch onAddToDay={onAddToDay} onSave={onSave} locationBias={locationBias} days={days} />
+          <PlacesSearch
+            onAddToDay={onAddToDay}
+            onSave={onSave}
+            locationBias={locationBias}
+            days={days}
+            savedIds={savedIds}
+            onRemoveSaved={onRemoveSaved}
+          />
         </div>
       )}
 
@@ -182,6 +192,7 @@ export function SuggestionsSidebar({
                   photoUrl={poi.photo_url}
                   onAddToDay={(dayNumber) => onAddToDay(poi, dayNumber)}
                   onRemove={() => onRemoveSaved?.(poi.id)}
+                  onOpenDetail={onOpenDetail ? () => onOpenDetail(poi) : undefined}
                   days={days}
                 />
               ))}
@@ -261,28 +272,34 @@ export function SuggestionsSidebar({
                     {neighborhood}
                   </p>
                 )}
-                {group.map((poi) => (
-                  <div key={poi.id} className="mx-2 my-1.5">
-                    <LocationCard
-                      id={poi.id}
-                      name={poi.name}
-                      address={poi.address}
-                      category={poi.category}
-                      rating={poi.rating}
-                      priceLevel={poi.price_level}
-                      photoUrl={poi.photo_url}
-                      isAdded={addedIds.has(poi.id)}
-                      recommended={poi.ai_recommended}
-                      aiNote={poi.claude_note}
-                      bestTime={poi.claude_best_time}
-                      bookingRequired={poi.booking_required}
-                      busyTimes={poi.busy_times}
-                      onAddToDay={(dayNumber) => onAddToDay(poi, dayNumber)}
-                      onSave={() => onSave(poi)}
-                      days={days}
-                    />
-                  </div>
-                ))}
+                {group.map((poi) => {
+                  const poiSaved = savedIds.has(poi.id);
+                  return (
+                    <div key={poi.id} className="mx-2 my-1.5">
+                      <LocationCard
+                        id={poi.id}
+                        name={poi.name}
+                        address={poi.address}
+                        category={poi.category}
+                        rating={poi.rating}
+                        priceLevel={poi.price_level}
+                        photoUrl={poi.photo_url}
+                        isAdded={addedIds.has(poi.id)}
+                        isSaved={poiSaved}
+                        recommended={poi.ai_recommended}
+                        aiNote={poi.claude_note}
+                        bestTime={poi.claude_best_time}
+                        bookingRequired={poi.booking_required}
+                        busyTimes={poi.busy_times}
+                        onAddToDay={(dayNumber) => onAddToDay(poi, dayNumber)}
+                        onSave={poiSaved ? undefined : () => onSave(poi)}
+                        onRemove={poiSaved ? () => onRemoveSaved?.(poi.id) : undefined}
+                        onOpenDetail={onOpenDetail ? () => onOpenDetail(poi) : undefined}
+                        days={days}
+                      />
+                    </div>
+                  );
+                })}
               </div>
             ))}
 

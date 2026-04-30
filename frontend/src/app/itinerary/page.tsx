@@ -10,11 +10,13 @@ import { api } from "@/services/api";
 import { SuggestionsSidebar } from "@/components/itinerary/SuggestionsSidebar";
 import { DayPlanner } from "@/components/itinerary/DayPlanner";
 import { TripMap } from "@/components/itinerary/TripMap";
+import { LocationDetailSheet, type DetailTarget } from "@/components/itinerary/LocationDetailSheet";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
-import type { DayPlan, DayItem, POI, TripContext } from "@/types/trip";
+import type { DayPlan, DayItem, POI, TripContext, HopMode, RouteSegment } from "@/types/trip";
 import { Sparkles, ArrowLeft, ArrowRight, CalendarDays, Lightbulb, Map } from "lucide-react";
 import { iataToCityName } from "@/utils/airportNames";
+import { haversineKm, recommendedMode } from "@/utils/distance";
 
 type MobileTab = "plan" | "suggest" | "map";
 
@@ -40,7 +42,7 @@ function buildInitialDays(tripContext: TripContext): DayPlan[] {
       if (d === 0) {
         items.push({
           type: "airport",
-          name: `${leg.origin} → ${leg.destination} Arrival`,
+          name: `${iataToCityName(leg.origin)} → ${iataToCityName(leg.destination)} Arrival`,
           address: leg.destination,
           lat: 0,
           lng: 0,
@@ -86,7 +88,10 @@ export default function ItineraryPage() {
   const [mobileTab, setMobileTab] = useState<MobileTab>("plan");
   const [focusedDay, setFocusedDay] = useState<number | null>(null);
   const [scheduledPoiIds, setScheduledPoiIds] = useState<Set<string>>(new Set());
+  const [detailTarget, setDetailTarget] = useState<DetailTarget | null>(null);
   const autoFetched = useRef(false);
+  const distanceFetchIdRef = useRef(0);
+  const daysFingerprintRef = useRef("");
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 1023px)");
@@ -113,7 +118,68 @@ export default function ItineraryPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentLeg]);
 
-  async function handleFetchPOIs() {
+  // Debounced distance/polyline fetch — fires 600ms after any relevant days change
+  useEffect(() => {
+    if (days.length === 0) return;
+    const fingerprint = days
+      .flatMap((d) => d.items.map((item) => `${item.lat},${item.lng},${item.transport_mode ?? ""}`))
+      .join("|");
+    if (fingerprint === daysFingerprintRef.current) return;
+    daysFingerprintRef.current = fingerprint;
+
+    const fetchId = ++distanceFetchIdRef.current;
+    const timer = setTimeout(async () => {
+      try {
+        const newDays = await Promise.all(
+          days.map(async (day) => {
+            const validItems = day.items.filter((item) => !(item.lat === 0 && item.lng === 0));
+            if (validItems.length < 2) return day;
+
+            const mode_per_hop = validItems.slice(0, -1).map((item, i) => {
+              if (item.transport_mode) return item.transport_mode;
+              const next = validItems[i + 1];
+              return recommendedMode(haversineKm(item.lat, item.lng, next.lat, next.lng));
+            });
+
+            const segments: RouteSegment[] = await api.getDistances({ day_items: validItems, mode_per_hop });
+            if (distanceFetchIdRef.current !== fetchId) return day;
+
+            let validIdx = 0;
+            const newItems = day.items.map((item) => {
+              if (item.lat === 0 && item.lng === 0) return item;
+              const vi = validIdx++;
+              if (vi < segments.length && segments[vi]) {
+                const seg = segments[vi];
+                return {
+                  ...item,
+                  distance_to_next_km: seg.distance_km ?? undefined,
+                  travel_time_to_next_mins: seg.travel_time_mins ?? undefined,
+                  route_polyline_to_next: seg.encoded_polyline ?? undefined,
+                  transport_mode: seg.mode as HopMode,
+                };
+              }
+              return {
+                ...item,
+                distance_to_next_km: undefined,
+                travel_time_to_next_mins: undefined,
+                route_polyline_to_next: undefined,
+              };
+            });
+            return { ...day, items: newItems };
+          })
+        );
+        if (distanceFetchIdRef.current !== fetchId) return;
+        setDays(newDays);
+      } catch (e) {
+        console.error("Distance fetch failed:", e);
+      }
+    }, 600);
+
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [days]);
+
+  async function handleFetchPOIs(excludeNames?: string[]) {
     const leg = tripContext.legs[currentLeg - 1];
     if (!leg) return;
     if (leg.destination === tripContext.home_origin) return;
@@ -122,6 +188,7 @@ export default function ItineraryPage() {
       const results = await api.suggestPOIs({
         trip_context: tripContext,
         leg_number: currentLeg,
+        ...(excludeNames?.length ? { exclude_names: excludeNames } : {}),
       });
       setPois((prev) => {
         const existingIds = new Set(prev.map((p) => p.id));
@@ -135,11 +202,12 @@ export default function ItineraryPage() {
   }
 
   const handleRefreshPOIs = useCallback(async () => {
+    const excludeNames = pois.map((p) => p.name);
     setPois([]);
     autoFetched.current = false;
-    await handleFetchPOIs();
+    await handleFetchPOIs(excludeNames.length ? excludeNames : undefined);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentLeg, tripContext]);
+  }, [currentLeg, tripContext, pois]);
 
   function handleAddPOIToDay(poi: POI, dayNumber: number) {
     const newItem: DayItem = {
@@ -150,6 +218,21 @@ export default function ItineraryPage() {
       lng: poi.lng,
       duration_mins: poi.typical_visit_duration_mins,
       notes: poi.claude_note,
+      photo_url: poi.photo_url,
+      photo_urls: poi.photo_urls,
+      rating: poi.rating,
+      review_count: poi.review_count,
+      price_level: poi.price_level,
+      opening_hours: poi.opening_hours,
+      indoor_outdoor: poi.indoor_outdoor,
+      nearest_transit: poi.nearest_transit,
+      neighborhood: poi.neighborhood,
+      booking_required: poi.booking_required,
+      theme_tags: poi.theme_tags,
+      claude_best_time: poi.claude_best_time,
+      claude_booking_tip: poi.claude_booking_tip,
+      ai_reason: poi.ai_reason,
+      busy_times: poi.busy_times,
     };
     setDays((prev) =>
       prev.map((d) =>
@@ -205,6 +288,14 @@ export default function ItineraryPage() {
     }
   }
 
+  // Sync local days to TripContext so autosave picks them up
+  useEffect(() => {
+    if (days.length > 0) {
+      dispatch({ type: "SET_DAYS", payload: days });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [days]);
+
   function handleDaysChange(newDays: DayPlan[]) {
     setDays(newDays);
   }
@@ -248,6 +339,17 @@ export default function ItineraryPage() {
       days={currentLegDays}
       savedPois={tripContext.unscheduled_pois}
       onRemoveSaved={handleRemoveSavedPOI}
+      onOpenDetail={(poi) => {
+        const isSaved = tripContext.unscheduled_pois.some((p) => p.id === poi.id);
+        setDetailTarget({
+          source: "sidebar",
+          poi,
+          days: currentLegDays,
+          onAddToDay: (dayNumber) => handleAddPOIToDay(poi, dayNumber),
+          onSave: !isSaved ? () => handleSavePOI(poi) : undefined,
+          onRemove: isSaved ? () => handleRemoveSavedPOI(poi.id) : undefined,
+        });
+      }}
     />
   );
 
@@ -258,8 +360,33 @@ export default function ItineraryPage() {
       unscheduledPois={tripContext.unscheduled_pois}
       focusedDay={focusedDay}
       onFocusedDayChange={setFocusedDay}
+      onSavePOI={(item: DayItem) => {
+        const poi: POI = {
+          id: item.id ?? `saved-${Date.now()}`,
+          name: item.name,
+          category: "attraction",
+          address: item.address ?? "",
+          lat: item.lat,
+          lng: item.lng,
+          booking_required: false,
+          claude_note: item.notes ?? "",
+          theme_tags: [],
+          ai_recommended: false,
+        };
+        dispatch({ type: "ADD_UNSCHEDULED_POI", payload: poi });
+      }}
+      onOpenDetail={(target) => setDetailTarget(target)}
     />
   );
+
+  const selectedMapLocation = (() => {
+    if (!detailTarget) return null;
+    const lat = detailTarget.source === "day" ? detailTarget.item.lat : detailTarget.poi.lat;
+    const lng = detailTarget.source === "day" ? detailTarget.item.lng : detailTarget.poi.lng;
+    const name = detailTarget.source === "day" ? detailTarget.item.name : detailTarget.poi.name;
+    if (!lat && !lng) return null;
+    return { lat, lng, name };
+  })();
 
   const tripMap = (
     <TripMap
@@ -267,6 +394,7 @@ export default function ItineraryPage() {
       currentLeg={currentLeg}
       focusedDay={focusedDay}
       onFocusedDayChange={setFocusedDay}
+      selectedLatLng={selectedMapLocation}
     />
   );
 
@@ -304,7 +432,7 @@ export default function ItineraryPage() {
             <Button
               variant="secondary"
               size="sm"
-              onClick={handleFetchPOIs}
+              onClick={() => handleFetchPOIs(pois.length ? pois.map((p) => p.name) : undefined)}
               loading={loadingPois}
               icon={<Sparkles size={13} />}
             >
@@ -357,44 +485,46 @@ export default function ItineraryPage() {
           </div>
         </div>
       ) : (
-        /* Desktop: resizable panels */
+        /* Desktop: sidebar + middle (day planner ± detail sheet) + map */
         <PanelGroup
           direction="horizontal"
           autoSaveId="itinerary-layout"
           className="flex-1 min-h-0 gap-2"
         >
           <Panel defaultSize={24} minSize={18} maxSize={40} collapsible>
-            <div className="h-full overflow-y-auto">
-              {suggestionsSidebar}
-            </div>
+            <div className="h-full overflow-y-auto">{suggestionsSidebar}</div>
           </Panel>
-
           <PanelResizeHandle
             className="w-1 rounded-full transition-colors cursor-col-resize"
             style={{ background: "var(--glass-border-2)" }}
-            onDragging={(isDragging) => {
-              document.body.style.cursor = isDragging ? "col-resize" : "";
-            }}
+            onDragging={(isDragging) => { document.body.style.cursor = isDragging ? "col-resize" : ""; }}
           />
-
           <Panel minSize={30}>
-            <div className="h-full overflow-y-auto">
-              {dayPlanner}
-            </div>
+            {detailTarget ? (
+              <PanelGroup direction="vertical" autoSaveId="itinerary-vertical" className="h-full">
+                <Panel defaultSize={60} minSize={30}>
+                  <div className="h-full overflow-y-auto">{dayPlanner}</div>
+                </Panel>
+                <PanelResizeHandle
+                  className="h-1.5 rounded-full transition-colors cursor-row-resize my-0.5"
+                  style={{ background: "var(--glass-border-2)" }}
+                  onDragging={(isDragging) => { document.body.style.cursor = isDragging ? "row-resize" : ""; }}
+                />
+                <Panel defaultSize={40} minSize={15} maxSize={70} collapsible onCollapse={() => setDetailTarget(null)}>
+                  <LocationDetailSheet target={detailTarget} onClose={() => setDetailTarget(null)} />
+                </Panel>
+              </PanelGroup>
+            ) : (
+              <div className="h-full overflow-y-auto">{dayPlanner}</div>
+            )}
           </Panel>
-
           <PanelResizeHandle
             className="w-1 rounded-full transition-colors cursor-col-resize"
             style={{ background: "var(--glass-border-2)" }}
-            onDragging={(isDragging) => {
-              document.body.style.cursor = isDragging ? "col-resize" : "";
-            }}
+            onDragging={(isDragging) => { document.body.style.cursor = isDragging ? "col-resize" : ""; }}
           />
-
           <Panel defaultSize={30} minSize={20} maxSize={45}>
-            <div className="h-full">
-              {tripMap}
-            </div>
+            <div className="h-full">{tripMap}</div>
           </Panel>
         </PanelGroup>
       )}

@@ -55,6 +55,37 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+async function postWithTimeout<T>(path: string, body: unknown, timeoutMs = 45_000): Promise<T> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(`${BASE}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify(body),
+      credentials: "include",
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      const raw = await res.text();
+      let message = "Something went wrong. Please try again.";
+      try {
+        const json = JSON.parse(raw) as { detail?: string };
+        if (json.detail) message = json.detail;
+      } catch { /* not JSON */ }
+      throw new Error(message);
+    }
+    return res.json() as Promise<T>;
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new Error("Request timed out. Please try again.");
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     credentials: "include",
@@ -124,11 +155,17 @@ export const api = {
     trip_context: TripContext;
     leg_number: number;
     user_prompt?: string;
-  }): Promise<POI[]> => post("/pois/suggest", params),
+    exclude_names?: string[];
+  }): Promise<POI[]> => {
+    const { ...body } = params;
+    const qs = body.exclude_names?.length ? "?nocache=true" : "";
+    return postWithTimeout(`/pois/suggest${qs}`, body);
+  },
 
   getDistances: (params: {
     day_items: DayItem[];
-  }): Promise<RouteSegment[]> => post("/pois/distances", params),
+    mode_per_hop?: string[];
+  }): Promise<RouteSegment[]> => postWithTimeout("/pois/distances", params),
 
   // Backend /itinerary/generate accepts TripContext directly
   generateItinerary: (tripContext: TripContext): Promise<Record<string, string>> =>

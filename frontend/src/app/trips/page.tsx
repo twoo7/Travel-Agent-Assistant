@@ -3,12 +3,34 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Share2, Trash2, MapPin, Calendar, ArrowRight } from "lucide-react";
+import { Plus, Share2, Trash2, MapPin, Calendar, ArrowRight, CheckCircle2, Circle } from "lucide-react";
 import { api } from "@/services/api";
 import { useTripContext } from "@/context/TripContext";
-import type { TripMeta } from "@/types/trip";
+import type { TripMeta, TripContext as TripContextType } from "@/types/trip";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
+
+interface TripProgress {
+  setup: boolean;
+  segments: boolean;
+  hotels: boolean;
+  itinerary: boolean;
+}
+
+function computeProgress(ctx: TripContextType): TripProgress {
+  const hasLegs = ctx.legs.length > 0;
+  const hasSegments = ctx.legs.some((l) => !!l.selected_flight);
+  const hasHotels = ctx.legs.some((l) => l.hotel_stays.length > 0);
+  const hasItinerary = ctx.legs.some((l) => l.days.some((d) => d.items.some((i) => i.type === "poi")));
+  return { setup: hasLegs, segments: hasSegments, hotels: hasHotels, itinerary: hasItinerary };
+}
+
+const STEPS = [
+  { key: "setup", label: "Setup" },
+  { key: "segments", label: "Flights" },
+  { key: "hotels", label: "Hotels" },
+  { key: "itinerary", label: "Itinerary" },
+] as const;
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, {
@@ -22,10 +44,14 @@ function TripCard({
   trip,
   onDelete,
   onOpen,
+  progress,
+  isActive,
 }: {
   trip: TripMeta;
   onDelete: (id: string) => void;
   onOpen: (id: string) => void;
+  progress?: TripProgress;
+  isActive?: boolean;
 }) {
   const [copying, setCopying] = useState(false);
   const shareUrl = `${window.location.origin}/t/${trip.trip_id}`;
@@ -61,22 +87,28 @@ function TripCard({
       }}
       whileHover={{ y: -2 }}
     >
-      {/* Draft badge */}
-      {trip.is_draft && (
-        <span
-          className="absolute top-4 right-4 text-[10px] font-semibold uppercase tracking-[2px] px-2 py-0.5 rounded-full font-body"
-          style={{
-            background: "rgba(224,122,95,0.15)",
-            color: "var(--accent)",
-            border: "1px solid rgba(224,122,95,0.3)",
-          }}
-        >
-          Draft
-        </span>
-      )}
+      {/* Badges */}
+      <div className="absolute top-4 right-4 flex items-center gap-1.5">
+        {isActive && (
+          <span
+            className="text-[10px] font-semibold uppercase tracking-[2px] px-2 py-0.5 rounded-full font-body"
+            style={{ background: "rgba(107,144,128,0.2)", color: "var(--success)", border: "1px solid rgba(107,144,128,0.4)" }}
+          >
+            Active
+          </span>
+        )}
+        {trip.is_draft && (
+          <span
+            className="text-[10px] font-semibold uppercase tracking-[2px] px-2 py-0.5 rounded-full font-body"
+            style={{ background: "rgba(224,122,95,0.15)", color: "var(--accent)", border: "1px solid rgba(224,122,95,0.3)" }}
+          >
+            Draft
+          </span>
+        )}
+      </div>
 
       <h2
-        className="text-lg font-semibold font-body mb-2 pr-14 truncate"
+        className="text-lg font-semibold font-body mb-2 pr-28 truncate"
         style={{ color: "var(--text-primary)" }}
       >
         {trip.name || "Unnamed Trip"}
@@ -88,6 +120,41 @@ function TripCard({
           Updated {formatDate(trip.updated_at)}
         </span>
       </div>
+
+      {/* Progress steps — only shown for the active trip */}
+      {progress && (
+        <div className="flex items-center gap-0 mt-3">
+          {STEPS.map(({ key, label }, idx) => {
+            const done = progress[key];
+            const isCurrentStep = !done && (idx === 0 || progress[STEPS[idx - 1].key]);
+            return (
+              <div key={key} className="flex items-center">
+                <div className="flex flex-col items-center gap-0.5">
+                  {done ? (
+                    <CheckCircle2 size={14} style={{ color: "var(--success)" }} />
+                  ) : isCurrentStep ? (
+                    <Circle size={14} style={{ color: "var(--accent)" }} strokeWidth={2.5} />
+                  ) : (
+                    <Circle size={14} style={{ color: "var(--text-subtle)" }} strokeWidth={1.5} />
+                  )}
+                  <span
+                    className="text-[9px] font-semibold uppercase tracking-wide font-body"
+                    style={{ color: done ? "var(--success)" : isCurrentStep ? "var(--accent)" : "var(--text-subtle)" }}
+                  >
+                    {label}
+                  </span>
+                </div>
+                {idx < STEPS.length - 1 && (
+                  <div
+                    className="w-6 h-px mb-3 mx-0.5"
+                    style={{ background: done ? "var(--success)" : "var(--glass-border-2)" }}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Actions */}
       <div className="flex items-center gap-2 mt-4 pt-3" style={{ borderTop: "1px solid var(--glass-border-1)" }}>
@@ -135,7 +202,7 @@ function TripCard({
 
 export default function TripsPage() {
   const router = useRouter();
-  const { dispatch } = useTripContext();
+  const { state, dispatch } = useTripContext();
   const [trips, setTrips] = useState<TripMeta[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -242,9 +309,19 @@ export default function TripsPage() {
         {!error && trips !== null && trips.length > 0 && (
           <AnimatePresence mode="popLayout">
             <div className="space-y-3">
-              {trips.map((trip) => (
-                <TripCard key={trip.trip_id} trip={trip} onDelete={handleDelete} onOpen={handleOpen} />
-              ))}
+              {trips.map((trip) => {
+                const isActive = trip.trip_id === state.activeTripId;
+                return (
+                  <TripCard
+                    key={trip.trip_id}
+                    trip={trip}
+                    onDelete={handleDelete}
+                    onOpen={handleOpen}
+                    isActive={isActive}
+                    progress={isActive ? computeProgress(state.tripContext) : undefined}
+                  />
+                );
+              })}
             </div>
           </AnimatePresence>
         )}

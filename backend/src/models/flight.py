@@ -13,6 +13,12 @@ class FlightSegment(BaseModel):
     flight_number: str
 
 
+class FlightBooking(BaseModel):
+    confirmation_ref: Optional[str] = None
+    booking_url: Optional[str] = None
+    manual_override: Optional[dict] = None
+
+
 class FlightOffer(BaseModel):
     id: str
     price: float

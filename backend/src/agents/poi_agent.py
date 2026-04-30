@@ -85,7 +85,7 @@ class POIAgent(BaseAgent):
                 unique.append(p)
         return unique
 
-    def _build_prompt(self, destination: str, adults: int, children: int, user_prompt: str | None) -> str:
+    def _build_prompt(self, destination: str, adults: int, children: int, user_prompt: str | None, exclude_names: list[str] | None = None) -> str:
         prompt = _PROMPT_TEMPLATE.format(
             count=_SUGGEST_COUNT,
             destination=destination,
@@ -94,6 +94,9 @@ class POIAgent(BaseAgent):
         )
         if user_prompt:
             prompt += f"\n\nUser request: {user_prompt}. Prioritize suggestions matching this request."
+        if exclude_names:
+            exclude_str = ", ".join(f'"{n}"' for n in exclude_names[:40])
+            prompt += f"\n\nDo NOT suggest any of these already-shown places: {exclude_str}. Suggest entirely different locations the user hasn't seen yet."
         return prompt
 
     def _build_poi(self, s: dict, place: dict | None, destination: str, name: str) -> POI:
@@ -116,6 +119,7 @@ class POIAgent(BaseAgent):
                 price_level=place.get("price_level"),
                 opening_hours=place.get("opening_hours"),
                 photo_url=place.get("photo_url"),
+                photo_urls=place.get("photo_urls"),
                 claude_note=s.get("claude_note", ""),
                 claude_best_time=s.get("claude_best_time"),
                 claude_booking_tip=s.get("claude_booking_tip"),
@@ -141,12 +145,13 @@ class POIAgent(BaseAgent):
         trip_context: "TripContext",  # noqa: F821
         leg_number: int,
         user_prompt: str | None = None,
+        exclude_names: list[str] | None = None,
     ) -> List[POI]:
         leg = next(
             (l for l in trip_context.legs if l.leg_number == leg_number), None
         )
         destination = leg.destination if leg else "the destination"
-        prompt = self._build_prompt(destination, trip_context.adults, trip_context.children, user_prompt)
+        prompt = self._build_prompt(destination, trip_context.adults, trip_context.children, user_prompt, exclude_names)
 
         suggestions: list[dict] = []
         try:
@@ -183,6 +188,7 @@ class POIAgent(BaseAgent):
         trip_context: "TripContext",  # noqa: F821
         leg_number: int,
         user_prompt: str | None = None,
+        exclude_names: list[str] | None = None,
         bypass_cache: bool = False,
     ) -> List[POI]:
         """Async version of suggest() using Redis-cached Google Places lookups."""
@@ -190,7 +196,7 @@ class POIAgent(BaseAgent):
             (l for l in trip_context.legs if l.leg_number == leg_number), None
         )
         destination = leg.destination if leg else "the destination"
-        prompt = self._build_prompt(destination, trip_context.adults, trip_context.children, user_prompt)
+        prompt = self._build_prompt(destination, trip_context.adults, trip_context.children, user_prompt, exclude_names)
 
         suggestions: list[dict] = []
         try:
@@ -212,15 +218,18 @@ class POIAgent(BaseAgent):
             logger.warning("POIAgent Claude call failed: %s", exc)
             return []
 
-        pois: List[POI] = []
-        for s in suggestions[:_SUGGEST_COUNT]:
-            name = s.get("name", "")
-            if not name:
-                continue
-            places = await self.places.async_search_places_cached(
-                query=f"{name} {destination}", max_results=1, bypass=bypass_cache
-            )
-            place = places[0] if places else None
-            pois.append(self._build_poi(s, place, destination, name))
+        valid = [s for s in suggestions[:_SUGGEST_COUNT] if s.get("name")]
 
+        async def _lookup(s: dict) -> POI:
+            name = s["name"]
+            try:
+                places = await self.places.async_search_places_cached(
+                    query=f"{name} {destination}", max_results=1, bypass=bypass_cache
+                )
+                place = places[0] if places else None
+            except Exception:
+                place = None
+            return self._build_poi(s, place, destination, name)
+
+        pois: List[POI] = list(await asyncio.gather(*[_lookup(s) for s in valid]))
         return self._deduplicate(pois)

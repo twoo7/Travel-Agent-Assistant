@@ -159,16 +159,27 @@ Agents use `claude-sonnet-4-6` directly via the Anthropic SDK. They expect Claud
 
 ### Key frontend components
 
-- `SuggestionsSidebar` — collapsible left panel with Claude POI suggestions, filter chips, and busy-times bars
+- `SuggestionsSidebar` — "Locations" panel with three tabs: AI Picks (Claude suggestions + filter chips), Search (Google Places), Saved (bookmarked POIs). Uses `LocationCard` for all three tabs.
+- `LocationCard` — shared card component for all sidebar tabs. AI-specific fields (`aiNote`, `bestTime`, `bookingRequired`, `busyTimes`) are optional; always shows photo, name (Google Maps link), rating, address, category. Internal `pickerOpen` state manages inline `DayPicker`.
+- `PlacesSearch` — Google Places Autocomplete via `useMapsLibrary('places')`. Fires `getPlacePredictions` on debounced input (300ms), then parallel `getDetails` for top 5 results. Renders `LocationCard` per result with full photo/rating/address.
+- `DayPicker` — shared day-picker dropdown used by LocationCard and PlacesSearch for selecting which day to add a POI to.
 - `DayPlanner` / `DayColumn` — dnd-kit sortable; drag POIs/hotels between days; distance/travel time recalculated via `/pois/distances` on every reorder
-- `TripMap` — Google Maps right panel with color-coded day pins, route polylines, and ghost pins for unplaced suggestions
+- `TripMap` — Google Maps right panel; single `APIProvider` lives in `page.tsx` (not in TripMap or PlacesSearch); color-coded day pins, route polylines, focused-day filter.
 - `api.ts` — all typed `fetch` wrappers; `NEXT_PUBLIC_API_URL` defaults to `http://localhost:8000`
+
+### Google Maps / Places API patterns
+
+- **Single `APIProvider`**: Mount exactly one `<APIProvider apiKey={...}>` at the page level (`itinerary/page.tsx`). Never wrap child components (TripMap, PlacesSearch) with their own `APIProvider` — multiple instances conflict and prevent maps from loading.
+- **`useMapsLibrary` in children**: `TripMap` and `PlacesSearch` call `useMapsLibrary('places')` / `useMapsLibrary('routes')` and receive the library once the parent `APIProvider` has loaded.
+- **PlacesService callback TS workaround**: `google.*` namespace types are not reliably resolved inside `useCallback` closures. Type callbacks as `(result: unknown, status: string)`, use `status !== "OK"` string instead of `google.maps.places.PlacesServiceStatus.OK`, cast result with `as any` before accessing fields.
+- **AutocompletionRequest TS workaround**: Pass the request object `as any` to `getPlacePredictions` — `locationBias` as `{ lat, lng }` literal doesn't satisfy the `LatLng` interface at compile time but works at runtime.
+- **Return-leg guard**: Skip POI suggestions when `leg.destination === tripContext.home_origin` (both are IATA strings). Both the fetch function and the "Suggest places" button visibility must check this.
 
 ### Testing
 
 Router tests (`test_routers.py`) mock both the service and agent layers with `unittest.mock.patch`. Service tests mock the Amadeus/Google SDK clients. The config skips `load_dotenv` when `PYTEST_CURRENT_TEST` is set, so monkeypatching env vars in tests works reliably.
 
-All playwright screenshots should be stored in a single folder called "PlaywrightTests" with folders to separate each test session. PlayWright End to End testing is located under `/frontend/e2e`. They should be updated as new features are added and tested.
+All playwright screenshots should be stored in a single folder at the root of the project called "PlaywrightTests" with folders to separate each test session. PlayWright End to End testing is located under `/frontend/e2e`. They should be updated as new features are added and tested.
 
 ### Applied Learning
 
@@ -178,3 +189,6 @@ When something fails repeatedly, when Tim has to re-explain, or when a workaroun
 - All task commits must go in the main repo root.
 - Run pytest via `backend/venv/Scripts/python -m pytest` from repo root; plain `python -m pytest` lacks dependencies.
 - Sidebar pinned state must live in `LayoutShell` so `<main>` can adjust padding reactively.
+- Multiple `APIProvider` instances break Google Maps; always mount exactly one at the page level.
+- `google.*` types unreliable in `useCallback`; use `as any` casts + `"OK"` string instead of enum.
+- Return legs (destination === home_origin) must be guarded in both fetch fn and button visibility.

@@ -14,9 +14,10 @@ import { SkeletonCard } from "@/components/ui/Skeleton";
 import { toCityCode } from "@/utils/cityCodeMap";
 import type { HotelOffer, AccommodationType } from "@/types/trip";
 import {
-  Check, AlertTriangle, ArrowRight, ArrowLeft, Ship, Train, X, Hotel,
+  Check, AlertTriangle, ArrowRight, ArrowLeft, Ship, Train, Hotel,
 } from "lucide-react";
 import { iataToCityName } from "@/utils/airportNames";
+import { SelectedHotelSummary } from "@/components/hotels/SelectedHotelSummary";
 
 const HOTEL_SORT_OPTIONS: SortOption[] = [
   { key: "ai", label: "AI Pick" },
@@ -247,27 +248,12 @@ export default function HotelsPage() {
 
               {/* Confirmed stays */}
               {leg.hotel_stays.map((stay) => (
-                <div
+                <SelectedHotelSummary
                   key={stay.hotel.id}
-                  className="flex items-center justify-between rounded-xl px-4 py-3"
-                  style={{ background: "rgba(107,144,128,0.08)", border: "1px solid rgba(107,144,128,0.25)" }}
-                >
-                  <div className="flex items-center gap-2">
-                    <Check size={14} style={{ color: "var(--success)" }} />
-                    <span className="font-medium text-sm font-body" style={{ color: "var(--success)" }}>{stay.hotel.name}</span>
-                    <span className="text-xs font-body" style={{ color: "var(--text-muted)" }}>
-                      {stay.check_in} → {stay.check_out}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => handleRemoveStay(leg.leg_number, stay.hotel.id)}
-                    className="w-6 h-6 rounded-lg flex items-center justify-center transition-colors"
-                    style={{ color: "var(--text-muted)" }}
-                    aria-label="Remove hotel stay"
-                  >
-                    <X size={13} />
-                  </button>
-                </div>
+                  stay={stay}
+                  onRemove={() => handleRemoveStay(leg.leg_number, stay.hotel.id)}
+                  onSaveBooking={(booking) => dispatch({ type: "SET_HOTEL_BOOKING", payload: { leg_number: leg.leg_number, hotel_id: stay.hotel.id, booking } })}
+                />
               ))}
 
               {returnLeg ? (

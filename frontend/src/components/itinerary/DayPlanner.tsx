@@ -16,7 +16,9 @@ import { arrayMove } from "@dnd-kit/sortable";
 import type { DayPlan, DayItem, POI, SavedHotel, HopMode } from "@/types/trip";
 import { DayColumn } from "./DayColumn";
 import { DayItemCard } from "./DayItemCard";
+import type { DetailTarget } from "./LocationDetailSheet";
 import { useToast } from "@/components/ui/Toast";
+import { iataToCityName } from "@/utils/airportNames";
 
 interface Props {
   days: DayPlan[];
@@ -25,6 +27,8 @@ interface Props {
   focusedDay?: number | null;
   onFocusedDayChange?: (day: number | null) => void;
   onSaveHotel?: (saved: SavedHotel) => void;
+  onSavePOI?: (item: DayItem) => void;
+  onOpenDetail?: (target: DetailTarget) => void;
 }
 
 /** Parse the itemId format "<dayNumber>-<itemIndex>" */
@@ -39,6 +43,8 @@ export function DayPlanner({
   focusedDay,
   onFocusedDayChange,
   onSaveHotel,
+  onSavePOI,
+  onOpenDetail,
 }: Props) {
   const { toast } = useToast();
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
@@ -235,6 +241,42 @@ export function DayPlanner({
     }
   }
 
+  function handleMoveItem(itemIndex: number, fromDay: number, toDay: number) {
+    const item = displayDays.find((d) => d.day_number === fromDay)?.items[itemIndex];
+    if (!item) return;
+    const newDays = displayDays.map((d) => {
+      if (d.day_number === fromDay) return { ...d, items: d.items.filter((_, i) => i !== itemIndex) };
+      if (d.day_number === toDay) return { ...d, items: [...d.items, item] };
+      return d;
+    });
+    onDaysChange(newDays);
+  }
+
+  function handleMoveToSaved(itemIndex: number, dayNumber: number) {
+    const item = displayDays.find((d) => d.day_number === dayNumber)?.items[itemIndex];
+    if (!item || item.type !== "poi") return;
+    onSavePOI?.(item);
+    const newDays = displayDays.map((d) =>
+      d.day_number === dayNumber ? { ...d, items: d.items.filter((_, i) => i !== itemIndex) } : d
+    );
+    onDaysChange(newDays);
+  }
+
+  function handleOpenDetail(dayNumber: number, itemIndex: number) {
+    if (!onOpenDetail) return;
+    const item = displayDays.find((d) => d.day_number === dayNumber)?.items[itemIndex];
+    if (!item) return;
+    onOpenDetail({
+      source: "day",
+      dayNumber,
+      item,
+      days: displayDays,
+      onRemove: () => handleRemoveItem(dayNumber, itemIndex),
+      onMoveToDay: (toDay) => handleMoveItem(itemIndex, dayNumber, toDay),
+      onMoveToSaved: () => handleMoveToSaved(itemIndex, dayNumber),
+    });
+  }
+
   if (displayDays.length === 0) {
     return (
       <div
@@ -272,7 +314,7 @@ export function DayPlanner({
               className="text-[10px] font-semibold uppercase tracking-[2.5px] mb-2 font-body"
               style={{ color: "var(--text-eyebrow)" }}
             >
-              {legDays[0]?.city} — {legDays.length} day{legDays.length > 1 ? "s" : ""}
+              {iataToCityName(legDays[0]?.city ?? "")} — {legDays.length} day{legDays.length > 1 ? "s" : ""}
             </h3>
             <div className="space-y-3">
               {legDays.map((day) => (
@@ -281,6 +323,7 @@ export function DayPlanner({
                   day={day}
                   onRemoveItem={handleRemoveItem}
                   onModeChange={handleModeChange}
+                  onOpenDetails={handleOpenDetail}
                   isFocused={focusedDay === day.day_number}
                   onFocus={onFocusedDayChange}
                 />

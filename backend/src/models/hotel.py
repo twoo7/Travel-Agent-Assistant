@@ -17,11 +17,18 @@ class HotelOffer(BaseModel):
     ai_reason_bullets: List[str] = []
 
 
+class HotelBooking(BaseModel):
+    confirmation_ref: Optional[str] = None
+    booking_url: Optional[str] = None
+    manual_override: Optional[dict] = None
+
+
 class HotelStay(BaseModel):
     hotel: HotelOffer
     check_in: str
     check_out: str
     accommodation_type: str = "hotel"  # "hotel" | "ferry_cabin" | "sleeper_train"
+    booking: Optional[HotelBooking] = None
 
 
 class HotelSearchRequest(BaseModel):

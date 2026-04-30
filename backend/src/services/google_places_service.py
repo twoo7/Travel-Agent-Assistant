@@ -61,6 +61,7 @@ class GooglePlacesService:
                 "price_level": _parse_price_level(place.get("priceLevel")),
                 "opening_hours": _parse_opening_hours(place.get("currentOpeningHours")),
                 "photo_url": _parse_photo_url(place.get("photos", []), self.api_key),
+                "photo_urls": _parse_photo_urls(place.get("photos", []), self.api_key),
             })
         return results
 
@@ -124,6 +125,7 @@ class GooglePlacesService:
                 "price_level": _parse_price_level(place.get("priceLevel")),
                 "opening_hours": _parse_opening_hours(place.get("currentOpeningHours")),
                 "photo_url": _parse_photo_url(place.get("photos", []), self.api_key),
+                "photo_urls": _parse_photo_urls(place.get("photos", []), self.api_key),
             }
         except httpx.HTTPError as e:
             logger.error("Places API detail error for %s: %s", place_id, e)
@@ -153,3 +155,14 @@ def _parse_photo_url(photos: List[Dict], api_key: str) -> Optional[str]:
         return None
     name = photos[0].get("name", "")
     return f"https://places.googleapis.com/v1/{name}/media?maxHeightPx=400&key={api_key}"
+
+
+def _parse_photo_urls(photos: List[Dict], api_key: str, max_photos: int = 5) -> Optional[List[str]]:
+    if not photos:
+        return None
+    urls = []
+    for photo in photos[:max_photos]:
+        name = photo.get("name", "")
+        if name:
+            urls.append(f"https://places.googleapis.com/v1/{name}/media?maxHeightPx=800&key={api_key}")
+    return urls if urls else None

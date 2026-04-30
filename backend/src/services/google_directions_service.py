@@ -49,7 +49,7 @@ class GoogleDirectionsService:
         return {
             "distance_km": round(leg["distance"]["value"] / 1000, 2),
             "travel_time_mins": math.ceil(leg["duration"]["value"] / 60),
-            "encoded_polyline": data["routes"][0]["overviewPolyline"]["points"],
+            "encoded_polyline": data["routes"][0].get("overview_polyline", {}).get("points"),
             "mode": mode,
         }
 
@@ -94,8 +94,7 @@ class GoogleDirectionsService:
         except Exception:
             redis = None
 
-        routes = []
-        for i in range(len(items) - 1):
+        async def _get_hop(i: int) -> Dict[str, Any]:
             mode: str = "walking"
             if mode_per_hop and i < len(mode_per_hop):
                 mode = mode_per_hop[i]
@@ -110,8 +109,7 @@ class GoogleDirectionsService:
                 try:
                     cached = await redis.get(key)
                     if cached:
-                        routes.append(json.loads(cached))
-                        continue
+                        return json.loads(cached)  # type: ignore[no-any-return]
                 except Exception:
                     pass
 
@@ -123,6 +121,6 @@ class GoogleDirectionsService:
                 except Exception:
                     pass
 
-            routes.append(result)
+            return result  # type: ignore[return-value]
 
-        return routes
+        return list(await asyncio.gather(*[_get_hop(i) for i in range(len(items) - 1)]))

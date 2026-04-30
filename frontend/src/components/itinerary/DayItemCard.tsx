@@ -10,6 +10,7 @@ interface Props {
   item: DayItem;
   itemId: string;
   onRemove?: () => void;
+  onOpenDetails?: () => void;
   /** Snapshot mode: rendered inside DragOverlay — skip sortable wiring */
   isOverlay?: boolean;
 }
@@ -35,7 +36,7 @@ function getItemIcon(item: DayItem) {
   return icons[item.type] ?? <MapPin size={13} />;
 }
 
-export function DayItemCard({ item, itemId, onRemove, isOverlay = false }: Props) {
+export function DayItemCard({ item, itemId, onRemove, onOpenDetails, isOverlay = false }: Props) {
   const isHotel = item.type === "hotel";
 
   const {
@@ -79,11 +80,14 @@ export function DayItemCard({ item, itemId, onRemove, isOverlay = false }: Props
   const iconColor =
     isHotel ? "var(--success)" : item.type === "airport" ? "var(--accent)" : "var(--text-muted)";
 
+  const canOpenDetails = !isOverlay && item.type !== "airport" && !!onOpenDetails;
+
   return (
     <div
       ref={isOverlay ? undefined : setNodeRef}
-      style={{ ...style, ...itemStyle }}
+      style={{ ...style, ...itemStyle, cursor: canOpenDetails ? "pointer" : undefined }}
       className="rounded-lg px-3 py-2 flex items-start gap-2"
+      onClick={canOpenDetails ? onOpenDetails : undefined}
     >
       {/* Drag handle — hidden for hotels and airports */}
       {!isHotel && item.type !== "airport" && !isOverlay && (
@@ -93,6 +97,7 @@ export function DayItemCard({ item, itemId, onRemove, isOverlay = false }: Props
           className="cursor-grab active:cursor-grabbing mt-0.5 shrink-0 select-none"
           style={{ color: "var(--text-subtle)" }}
           aria-label="Drag handle"
+          onClick={(e) => e.stopPropagation()}
         >
           <GripVertical size={14} />
         </div>
@@ -135,7 +140,7 @@ export function DayItemCard({ item, itemId, onRemove, isOverlay = false }: Props
       {onRemove && item.type !== "airport" && !isOverlay && (
         <motion.button
           whileHover={{ color: "rgba(239,68,68,0.85)", backgroundColor: "rgba(239,68,68,0.1)" }}
-          onClick={onRemove}
+          onClick={(e) => { e.stopPropagation(); onRemove(); }}
           className="transition-colors shrink-0 mt-0.5 w-5 h-5 flex items-center justify-center rounded"
           style={{ color: "var(--text-subtle)" }}
           aria-label="Remove"

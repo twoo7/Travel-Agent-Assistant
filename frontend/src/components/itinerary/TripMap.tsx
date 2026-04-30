@@ -15,6 +15,7 @@ interface Props {
   currentLeg?: number;
   focusedDay?: number | null;
   onFocusedDayChange?: (day: number | null) => void;
+  selectedLatLng?: { lat: number; lng: number; name?: string } | null;
 }
 
 const DAY_COLORS = [
@@ -50,14 +51,24 @@ const POLYLINE_STYLE: Record<HopMode, PolylineStyle> = {
   },
   transit: {
     strokeColor: "#D4A574",
-    strokeWeight: 2,
-    strokeOpacity: 0,
-    icons: [{ icon: { path: "M 0,-1 0,1", strokeOpacity: 1, scale: 2 }, offset: "0", repeat: "6px" }],
+    strokeWeight: 3,
+    strokeOpacity: 0.7,
+    icons: [{ icon: { path: "M 0,-1 0,1", strokeOpacity: 1, scale: 3 }, offset: "0", repeat: "12px" }],
   },
 };
 
 interface MarkerInfo { name: string; address: string; type: string; }
 interface LatLng { lat: number; lng: number; }
+
+function MapPanner({ target }: { target: LatLng | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!map || !target) return;
+    map.panTo(target);
+    map.setZoom(16);
+  }, [map, target]);
+  return null;
+}
 
 function BoundsFitter({ points }: { points: LatLng[] }) {
   const map = useMap();
@@ -71,7 +82,7 @@ function BoundsFitter({ points }: { points: LatLng[] }) {
   return null;
 }
 
-export function TripMap({ days, currentLeg, focusedDay, onFocusedDayChange }: Props) {
+export function TripMap({ days, currentLeg, focusedDay, onFocusedDayChange, selectedLatLng }: Props) {
   const [infoMarker, setInfoMarker] = useState<MarkerInfo | null>(null);
   const [infoPos, setInfoPos] = useState<LatLng | null>(null);
 
@@ -83,6 +94,7 @@ export function TripMap({ days, currentLeg, focusedDay, onFocusedDayChange }: Pr
 
   return (
     <div className="h-full flex flex-col gap-2 min-h-[400px]">
+      <style>{`@keyframes ping{75%,100%{transform:scale(2);opacity:0}}`}</style>
       {/* Map header — focused day indicator + All days reset */}
       {focusedDay != null && (
         <div
@@ -112,6 +124,7 @@ export function TripMap({ days, currentLeg, focusedDay, onFocusedDayChange }: Pr
           <BoundsFitter
             points={visibleDays.flatMap((d) => d.items).filter((i) => i.lat !== 0 || i.lng !== 0).map((i) => ({ lat: i.lat, lng: i.lng }))}
           />
+          <MapPanner target={selectedLatLng ?? null} />
 
           {/* Markers */}
           {visibleDays.map((day) =>
@@ -139,17 +152,59 @@ export function TripMap({ days, currentLeg, focusedDay, onFocusedDayChange }: Pr
             })
           )}
 
+          {/* Selected location highlight ring */}
+          {selectedLatLng && (
+            <AdvancedMarker position={selectedLatLng} zIndex={999}>
+              <div style={{ position: "relative", width: 48, height: 48, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div style={{
+                  position: "absolute",
+                  inset: 0,
+                  borderRadius: "50%",
+                  border: "2.5px solid #E07A5F",
+                  animation: "ping 1.4s cubic-bezier(0,0,0.2,1) infinite",
+                  opacity: 0.6,
+                }} />
+                <div style={{
+                  width: 18,
+                  height: 18,
+                  borderRadius: "50%",
+                  background: "#E07A5F",
+                  border: "3px solid white",
+                  boxShadow: "0 0 0 2px #E07A5F, 0 2px 8px rgba(224,122,95,0.6)",
+                }} />
+              </div>
+            </AdvancedMarker>
+          )}
+
           {/* Route polylines */}
           {visibleDays.map((day) =>
             day.items.map((item, i) => {
-              if (!item.route_polyline_to_next) return null;
+              if (i >= day.items.length - 1) return null;
+              const next = day.items[i + 1];
+              if (next.lat === 0 && next.lng === 0) return null;
+              if (item.lat === 0 && item.lng === 0) return null;
               const mode: HopMode = (item.transport_mode as HopMode) ?? "walking";
               const style = POLYLINE_STYLE[mode] ?? POLYLINE_STYLE.walking;
+
+              if (item.route_polyline_to_next) {
+                return (
+                  <Polyline
+                    key={`poly-${day.day_number}-${i}`}
+                    encodedPath={item.route_polyline_to_next}
+                    {...style}
+                  />
+                );
+              }
+
+              // Straight-line fallback when API returned no polyline (common for transit)
               return (
                 <Polyline
                   key={`poly-${day.day_number}-${i}`}
-                  encodedPath={item.route_polyline_to_next}
-                  {...style}
+                  path={[{ lat: item.lat, lng: item.lng }, { lat: next.lat, lng: next.lng }]}
+                  strokeColor={style.strokeColor}
+                  strokeWeight={2}
+                  strokeOpacity={0.45}
+                  icons={[{ icon: { path: "M 0,-1 0,1", strokeOpacity: 0.7, scale: 2 }, offset: "0", repeat: "8px" }]}
                 />
               );
             })

@@ -23,7 +23,23 @@ export interface DayItem {
   travel_time_to_next_mins?: number;
   route_polyline_to_next?: string;
   transport_mode?: HopMode;
+  photo_url?: string;
+  photo_urls?: string[];
   spans_days?: number;
+  // POI detail fields preserved when a POI is added to the itinerary
+  rating?: number;
+  review_count?: number;
+  price_level?: number;
+  opening_hours?: string;
+  indoor_outdoor?: "indoor" | "outdoor" | "both";
+  nearest_transit?: string;
+  neighborhood?: string;
+  booking_required?: boolean;
+  theme_tags?: string[];
+  claude_best_time?: string;
+  claude_booking_tip?: string;
+  ai_reason?: string;
+  busy_times?: Record<string, number[]>;
 }
 
 export interface DayPlan {
@@ -48,11 +64,29 @@ export interface HotelOffer {
   ai_reason_bullets?: string[];
 }
 
+export interface FlightBooking {
+  confirmation_ref?: string;
+  booking_url?: string;
+  manual_override?: {
+    departure_time?: string;
+    arrival_time?: string;
+    carrier?: string;
+    flight_number?: string;
+  };
+}
+
+export interface HotelBooking {
+  confirmation_ref?: string;
+  booking_url?: string;
+  manual_override?: { check_in?: string; check_out?: string };
+}
+
 export interface HotelStay {
   hotel: HotelOffer;
   check_in: string;
   check_out: string;
   accommodation_type?: AccommodationType;
+  booking?: HotelBooking;
 }
 
 export interface FlightSegment {
@@ -86,6 +120,7 @@ export interface TripLeg {
   origin_airports?: string[];
   destination_airports?: string[];
   selected_flight?: FlightOffer;
+  flight_booking?: FlightBooking;
   hotel_stays: HotelStay[];
   days: DayPlan[];
   flight_results?: FlightOffer[];
@@ -108,6 +143,7 @@ export interface POI {
   rating?: number;
   review_count?: number;
   photo_url?: string;
+  photo_urls?: string[];
   nearest_transit?: string;
   claude_note: string;
   claude_best_time?: string;

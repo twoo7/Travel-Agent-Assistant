@@ -6,6 +6,7 @@ import type { FlightOffer } from "@/types/trip";
 import { Sparkles, ChevronRight, Check } from "lucide-react";
 import { formatPrice } from "@/utils/formatPrice";
 import { AIPulseBadge } from "@/components/ui/AIPulseBadge";
+import { iataToCityName, getAirportName } from "@/utils/airportNames";
 
 interface Props {
   offer: FlightOffer;
@@ -77,12 +78,15 @@ export function FlightCard({ offer, selected, onSelect }: Props) {
 
       {/* Main flight row */}
       <div className={`flex items-center gap-4 ${selected ? "pl-20" : ""} pr-20`}>
-        <div className="text-center min-w-[52px]">
+        <div className="text-center min-w-[64px]">
           <div className="text-xl font-bold font-display" style={{ color: "var(--text-primary)" }}>
             {seg.departure_airport}
           </div>
           <div className="text-xs font-body" style={{ color: "var(--text-muted)" }}>
             {formatTime(seg.departure_time)}
+          </div>
+          <div className="text-[10px] font-body leading-tight mt-0.5" style={{ color: "var(--text-subtle)" }}>
+            {iataToCityName(seg.departure_airport)} · {getAirportName(seg.departure_airport)}
           </div>
         </div>
 
@@ -100,12 +104,15 @@ export function FlightCard({ offer, selected, onSelect }: Props) {
           </div>
         </div>
 
-        <div className="text-center min-w-[52px]">
+        <div className="text-center min-w-[64px]">
           <div className="text-xl font-bold font-display" style={{ color: "var(--text-primary)" }}>
             {lastSeg.arrival_airport}
           </div>
           <div className="text-xs font-body" style={{ color: "var(--text-muted)" }}>
             {formatTime(lastSeg.arrival_time)}
+          </div>
+          <div className="text-[10px] font-body leading-tight mt-0.5" style={{ color: "var(--text-subtle)" }}>
+            {iataToCityName(lastSeg.arrival_airport)} · {getAirportName(lastSeg.arrival_airport)}
           </div>
         </div>
 

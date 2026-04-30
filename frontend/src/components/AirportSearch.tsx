@@ -127,8 +127,9 @@ export default function AirportSearch({
   const generatedId = useId();
   const listboxId = useRef(`airport-listbox-${id ?? generatedId}`);
 
-  // Sync query when value changes externally
+  // Sync query when value changes externally — skip when input is focused to avoid clobbering keystrokes
   useEffect(() => {
+    if (inputRef.current && document.activeElement === inputRef.current) return;
     if (value) {
       const airport = findAirport(value);
       setQuery(airport ? displayName(airport) : value);

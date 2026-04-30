@@ -31,7 +31,7 @@ MOCK_DIRECTIONS = {
                     "steps": [],
                 }
             ],
-            "overviewPolyline": {"points": "abc123encodedpolyline"},
+            "overview_polyline": {"points": "abc123encodedpolyline"},
         }
     ],
     "status": "OK",

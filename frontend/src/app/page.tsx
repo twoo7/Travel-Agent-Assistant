@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useTripContext } from "@/context/TripContext";
 import AirportSearch from "@/components/AirportSearch";
 import { getTransportAvailability } from "@/utils/transportAvailability";
+import { getCityAirports } from "@/utils/cityCodeMap";
+import { iataToCityName, getAirportName } from "@/utils/airportNames";
 import type { TransportMode } from "@/types/trip";
 import type { ModeAvailability } from "@/utils/transportAvailability";
 import airportsData from "@/data/airports.json";
@@ -179,6 +181,7 @@ interface LegCardProps {
   leg: LegDraft;
   isFirst: boolean;
   isOnly: boolean;
+  previousDate?: string;
   onChange: (updated: LegDraft) => void;
   onRemove: () => void;
   error?: string;
@@ -189,14 +192,21 @@ function LegCard({
   leg,
   isFirst,
   isOnly,
+  previousDate,
   onChange,
   onRemove,
   error,
 }: LegCardProps) {
+  const today = useMemo(() => new Date().toISOString().split("T")[0], []);
   const handleDestinationChange = useCallback(
     (iata: string) => {
       if (!iata) {
         onChange({ ...leg, destination: "", destAirports: [] });
+        return;
+      }
+      const destAirports = getCityAirports(iata);
+      if (!leg.origin) {
+        onChange({ ...leg, destination: iata, destAirports });
         return;
       }
       const availability = getTransportAvailability(
@@ -208,10 +218,25 @@ function LegCard({
         ferryRoutesData as any
       );
       const mode = defaultMode(availability.modes);
-      onChange({ ...leg, destination: iata, transport_mode: mode });
+      onChange({ ...leg, destination: iata, destAirports, transport_mode: mode });
     },
     [leg, onChange]
   );
+
+  const legAvailability = useMemo(() => {
+    if (!leg.origin || !leg.destination) return null;
+    return getTransportAvailability(
+      leg.origin,
+      leg.destination,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      airportsData as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ferryRoutesData as any
+    );
+  }, [leg.origin, leg.destination]);
+
+  const legDefaultMode = legAvailability ? defaultMode(legAvailability.modes) : leg.transport_mode;
+  const LegModeIcon = MODE_META[legDefaultMode].Icon;
 
   return (
     <div
@@ -250,7 +275,6 @@ function LegCard({
           label="To"
           value={leg.destination}
           onChange={handleDestinationChange}
-          onAirportsChange={(airports) => onChange({ ...leg, destAirports: airports })}
           placeholder="Destination airport"
         />
       </div>
@@ -269,10 +293,33 @@ function LegCard({
         <input
           type="date"
           value={leg.date}
+          min={previousDate || today}
           onChange={(e) => onChange({ ...leg, date: e.target.value })}
           className="w-full px-3 py-2.5 text-sm font-body"
         />
       </div>
+
+      {/* Per-leg route context + transport hint */}
+      {leg.origin && leg.destination && (
+        <div
+          className="rounded-lg px-3 py-2 flex items-center gap-2"
+          style={{ background: "var(--glass-1)", border: "1px solid var(--glass-border-1)" }}
+        >
+          <LegModeIcon size={18} style={{ color: "var(--accent)" }} />
+          <div className="min-w-0">
+            <p className="text-xs font-medium font-body truncate" style={{ color: "var(--text-primary)" }}>
+              {iataToCityName(leg.origin)} ({leg.origin} · {getAirportName(leg.origin)})
+              {" → "}
+              {iataToCityName(leg.destination)} ({leg.destination} · {getAirportName(leg.destination)})
+            </p>
+            {legAvailability?.primaryHint && (
+              <p className="text-xs italic font-body" style={{ color: "var(--text-muted)" }}>
+                {legAvailability.primaryHint}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
       <TransportSelector
         origin={leg.origin}
@@ -412,9 +459,12 @@ export default function TripSetupPage() {
 
   const legErrors: (string | undefined)[] = useMemo(() => {
     if (!multiMode) return [];
-    return legs.map((leg) => {
+    return legs.map((leg, i) => {
       if (leg.origin && leg.destination && leg.origin === leg.destination) {
         return "Origin and destination cannot be the same.";
+      }
+      if (i > 0 && leg.date && legs[i - 1].date && leg.date < legs[i - 1].date) {
+        return `Date must be on or after Leg ${i} (${legs[i - 1].date}).`;
       }
       return undefined;
     });
@@ -428,13 +478,17 @@ export default function TripSetupPage() {
   const isValid = useMemo(() => {
     if (!homeOrigin) return false;
     if (multiMode) {
-      return legs.every(
+      const legsOk = legs.every(
         (l) => l.origin && l.destination && l.date && l.origin !== l.destination
       );
+      if (!legsOk) return false;
+      if (addReturnLeg && (!multiReturnDate || multiReturnDate < (legs[legs.length - 1]?.date ?? ""))) return false;
+      const chronologyOk = legs.every((l, i) => i === 0 || !l.date || !legs[i - 1].date || l.date >= legs[i - 1].date);
+      return chronologyOk;
     }
     const datesOk = !departureDate || !returnDate || returnDate >= departureDate;
     return !!singleDest && !!departureDate && homeOrigin !== singleDest && datesOk;
-  }, [homeOrigin, multiMode, legs, singleDest, departureDate, returnDate]);
+  }, [homeOrigin, multiMode, legs, addReturnLeg, multiReturnDate, singleDest, departureDate, returnDate]);
 
   const handleHomeOriginChange = useCallback(
     (iata: string) => {
@@ -534,6 +588,22 @@ export default function TripSetupPage() {
         },
       });
     });
+
+    // Auto-generate trip name from unique non-home destinations
+    const destCities = Array.from(
+      new Set(
+        legsToDispatch
+          .filter((leg) => leg.destination !== homeOrigin)
+          .map((leg) => iataToCityName(leg.destination))
+      )
+    );
+    if (destCities.length > 0) {
+      const tripName =
+        destCities.length === 1
+          ? `${destCities[0]} Trip`
+          : `${destCities.slice(0, -1).join(", ")} & ${destCities[destCities.length - 1]} Trip`;
+      dispatch({ type: "SET_TRIP_NAME", payload: tripName });
+    }
 
     router.push("/segments");
   }
@@ -859,18 +929,33 @@ export default function TripSetupPage() {
                 />
               </div>
 
-              {legs.map((leg, i) => (
-                <LegCard
-                  key={i}
-                  index={i}
-                  leg={leg}
-                  isFirst={i === 0}
-                  isOnly={legs.length === 1}
-                  onChange={(updated) => updateLeg(i, updated)}
-                  onRemove={() => removeLeg(i)}
-                  error={legErrors[i]}
-                />
-              ))}
+              {legs.map((leg, i) => {
+                const nextDate = i < legs.length - 1 ? legs[i + 1].date : (addReturnLeg ? multiReturnDate : undefined);
+                const nights = leg.date && nextDate
+                  ? Math.round((new Date(nextDate).getTime() - new Date(leg.date).getTime()) / 86400000)
+                  : null;
+                return (
+                  <div key={i} className="space-y-1">
+                    <LegCard
+                      index={i}
+                      leg={leg}
+                      isFirst={i === 0}
+                      isOnly={legs.length === 1}
+                      previousDate={i > 0 ? legs[i - 1].date : undefined}
+                      onChange={(updated) => updateLeg(i, updated)}
+                      onRemove={() => removeLeg(i)}
+                      error={legErrors[i]}
+                    />
+                    {nights !== null && leg.destination && (
+                      <p className="text-center text-xs font-body py-0.5" style={{ color: "var(--text-muted)" }}>
+                        {nights > 0
+                          ? `${nights} night${nights === 1 ? "" : "s"} in ${iataToCityName(leg.destination)}`
+                          : "Same-day connection"}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
 
               <button
                 type="button"
@@ -915,12 +1000,31 @@ export default function TripSetupPage() {
                     <input
                       type="date"
                       value={multiReturnDate}
+                      min={legs[legs.length - 1]?.date || today}
                       onChange={(e) => setMultiReturnDate(e.target.value)}
                       className="px-3 py-2.5 text-sm font-body"
                     />
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* -- Validation feedback -- */}
+          {!isValid && (
+            <div className="space-y-1">
+              {multiMode && legErrors.find(Boolean) && (
+                <p className="text-xs text-red-400 font-body">{legErrors.find(Boolean)}</p>
+              )}
+              {multiMode && addReturnLeg && multiReturnDate && legs[legs.length - 1]?.date && multiReturnDate < legs[legs.length - 1].date && (
+                <p className="text-xs text-red-400 font-body">Return date must be on or after the last leg&apos;s departure.</p>
+              )}
+              {!multiMode && singleDestError && (
+                <p className="text-xs text-red-400 font-body">{singleDestError}</p>
+              )}
+              <p className="text-xs font-body" style={{ color: "var(--text-muted)" }}>
+                Fill all origins, destinations, and dates to continue.
+              </p>
             </div>
           )}
 

@@ -5,16 +5,18 @@ import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import type { DayPlan, HopMode } from "@/types/trip";
 import { DayItemCard } from "./DayItemCard";
 import { DistanceConnector } from "./DistanceConnector";
+import { iataToCityName } from "@/utils/airportNames";
 
 interface Props {
   day: DayPlan;
   onRemoveItem: (dayNumber: number, itemIndex: number) => void;
   onModeChange?: (dayNumber: number, itemIndex: number, mode: HopMode) => void;
+  onOpenDetails?: (dayNumber: number, itemIndex: number) => void;
   isFocused?: boolean;
   onFocus?: (day: number | null) => void;
 }
 
-export function DayColumn({ day, onRemoveItem, onModeChange, isFocused, onFocus }: Props) {
+export function DayColumn({ day, onRemoveItem, onModeChange, onOpenDetails, isFocused, onFocus }: Props) {
   const { setNodeRef, isOver } = useDroppable({ id: `day-${day.day_number}` });
 
   const itemIds = day.items.map((_, i) => `${day.day_number}-${i}`);
@@ -39,7 +41,7 @@ export function DayColumn({ day, onRemoveItem, onModeChange, isFocused, onFocus 
           className="text-xs font-medium px-2 py-0.5 rounded-full font-body"
           style={{ color: "var(--accent)", background: "rgba(224,122,95,0.15)" }}
         >
-          {day.city}
+          {iataToCityName(day.city)}
         </span>
       </div>
 
@@ -63,6 +65,7 @@ export function DayColumn({ day, onRemoveItem, onModeChange, isFocused, onFocus 
                 item={item}
                 itemId={`${day.day_number}-${i}`}
                 onRemove={item.type !== "airport" ? () => onRemoveItem(day.day_number, i) : undefined}
+                onOpenDetails={onOpenDetails ? () => onOpenDetails(day.day_number, i) : undefined}
               />
               {i < day.items.length - 1 && (
                 <DistanceConnector
@@ -70,6 +73,10 @@ export function DayColumn({ day, onRemoveItem, onModeChange, isFocused, onFocus 
                   travelTimeMins={item.travel_time_to_next_mins}
                   mode={item.transport_mode}
                   onModeChange={onModeChange ? (mode) => onModeChange(day.day_number, i, mode) : undefined}
+                  fromLat={item.lat}
+                  fromLng={item.lng}
+                  toLat={day.items[i + 1]?.lat}
+                  toLng={day.items[i + 1]?.lng}
                 />
               )}
             </div>

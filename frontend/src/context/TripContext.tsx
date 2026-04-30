@@ -6,7 +6,9 @@ import type {
   TripContext as TripContextType,
   TripLeg,
   FlightOffer,
+  FlightBooking,
   HotelOffer,
+  HotelBooking,
   HotelStay,
   DayPlan,
   POI,
@@ -29,7 +31,7 @@ type TripAction =
   | { type: "ADD_LEG"; payload: TripLeg }
   | { type: "UPDATE_LEG"; payload: TripLeg }
   | { type: "REMOVE_LEG"; payload: { leg_number: number } }
-  | { type: "SET_FLIGHT"; payload: { leg_number: number; flight: FlightOffer } }
+  | { type: "SET_FLIGHT"; payload: { leg_number: number; flight: FlightOffer | null } }
   | { type: "ADD_HOTEL_STAY"; payload: { leg_number: number; stay: HotelStay } }
   | { type: "REMOVE_HOTEL_STAY"; payload: { leg_number: number; hotel_id: string } }
   | { type: "SET_DAYS"; payload: DayPlan[] }
@@ -43,6 +45,8 @@ type TripAction =
   | { type: "SET_TRANSPORT_MODE"; payload: { leg_number: number; mode: TransportMode } }
   | { type: "SET_FLIGHT_RESULTS"; payload: { leg_number: number; results: FlightOffer[] } }
   | { type: "SET_HOTEL_RESULTS"; payload: { leg_number: number; results: HotelOffer[] } }
+  | { type: "SET_FLIGHT_BOOKING"; payload: { leg_number: number; booking: FlightBooking | null } }
+  | { type: "SET_HOTEL_BOOKING"; payload: { leg_number: number; hotel_id: string; booking: HotelBooking | null } }
   | { type: "MARK_STALE"; payload: { keys: string[] } }
   | { type: "CLEAR_STALE"; payload: { key: string } }
   | { type: "SET_STATE"; payload: TripState }
@@ -144,7 +148,7 @@ function reducer(state: TripState, action: TripAction): TripState {
           ...ctx,
           legs: ctx.legs.map((l) =>
             l.leg_number === action.payload.leg_number
-              ? { ...l, selected_flight: action.payload.flight }
+              ? { ...l, selected_flight: action.payload.flight ?? undefined }
               : l
           ),
         },
@@ -159,12 +163,7 @@ function reducer(state: TripState, action: TripAction): TripState {
             l.leg_number === action.payload.leg_number
               ? {
                   ...l,
-                  hotel_stays: [
-                    ...l.hotel_stays.filter(
-                      (s) => s.hotel.id !== action.payload.stay.hotel.id
-                    ),
-                    action.payload.stay,
-                  ],
+                  hotel_stays: [action.payload.stay],
                 }
               : l
           ),
@@ -311,6 +310,39 @@ function reducer(state: TripState, action: TripAction): TripState {
           legs: ctx.legs.map((l) =>
             l.leg_number === action.payload.leg_number
               ? { ...l, hotel_results: action.payload.results }
+              : l
+          ),
+        },
+      };
+
+    case "SET_FLIGHT_BOOKING":
+      return {
+        ...state,
+        tripContext: {
+          ...ctx,
+          legs: ctx.legs.map((l) =>
+            l.leg_number === action.payload.leg_number
+              ? { ...l, flight_booking: action.payload.booking ?? undefined }
+              : l
+          ),
+        },
+      };
+
+    case "SET_HOTEL_BOOKING":
+      return {
+        ...state,
+        tripContext: {
+          ...ctx,
+          legs: ctx.legs.map((l) =>
+            l.leg_number === action.payload.leg_number
+              ? {
+                  ...l,
+                  hotel_stays: l.hotel_stays.map((s) =>
+                    s.hotel.id === action.payload.hotel_id
+                      ? { ...s, booking: action.payload.booking ?? undefined }
+                      : s
+                  ),
+                }
               : l
           ),
         },
