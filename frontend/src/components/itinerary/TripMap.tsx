@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Map,
   AdvancedMarker,
@@ -86,11 +86,22 @@ export function TripMap({ days, currentLeg, focusedDay, onFocusedDayChange, sele
   const [infoMarker, setInfoMarker] = useState<MarkerInfo | null>(null);
   const [infoPos, setInfoPos] = useState<LatLng | null>(null);
 
-  const legDays = currentLeg != null ? days.filter((d) => d.leg_number === currentLeg) : days;
-  const visibleDays = focusedDay != null ? legDays.filter((d) => d.day_number === focusedDay) : legDays;
-
-  const allItems = legDays.flatMap((d) => d.items).filter((i) => i.lat !== 0 || i.lng !== 0);
-  const center = allItems.length > 0 ? { lat: allItems[0].lat, lng: allItems[0].lng } : { lat: 48.8566, lng: 2.3522 };
+  const legDays = useMemo(
+    () => currentLeg != null ? days.filter((d) => d.leg_number === currentLeg) : days,
+    [days, currentLeg]
+  );
+  const visibleDays = useMemo(
+    () => focusedDay != null ? legDays.filter((d) => d.day_number === focusedDay) : legDays,
+    [legDays, focusedDay]
+  );
+  const allItems = useMemo(
+    () => legDays.flatMap((d) => d.items).filter((i) => i.lat !== 0 || i.lng !== 0),
+    [legDays]
+  );
+  const center = useMemo(
+    () => allItems.length > 0 ? { lat: allItems[0].lat, lng: allItems[0].lng } : { lat: 48.8566, lng: 2.3522 },
+    [allItems]
+  );
 
   return (
     <div className="h-full flex flex-col gap-2 min-h-[400px]">

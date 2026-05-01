@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -62,6 +62,15 @@ export function DayPlanner({
   const dragCurrentDayRef = useRef<number | null>(null);
 
   const displayDays = workingDays ?? days;
+
+  const legGroups = useMemo(() => {
+    const groups: Record<number, DayPlan[]> = {};
+    for (const day of displayDays) {
+      if (!groups[day.leg_number]) groups[day.leg_number] = [];
+      groups[day.leg_number].push(day);
+    }
+    return groups;
+  }, [displayDays]);
 
   function handleDragStart(e: DragStartEvent) {
     const id = String(e.active.id);
@@ -289,13 +298,6 @@ export function DayPlanner({
         </p>
       </div>
     );
-  }
-
-  // Group days by leg
-  const legGroups: Record<number, DayPlan[]> = {};
-  for (const day of displayDays) {
-    if (!legGroups[day.leg_number]) legGroups[day.leg_number] = [];
-    legGroups[day.leg_number].push(day);
   }
 
   return (

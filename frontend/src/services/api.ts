@@ -157,9 +157,8 @@ export const api = {
     user_prompt?: string;
     exclude_names?: string[];
   }): Promise<POI[]> => {
-    const { ...body } = params;
-    const qs = body.exclude_names?.length ? "?nocache=true" : "";
-    return postWithTimeout(`/pois/suggest${qs}`, body);
+    const qs = params.exclude_names?.length ? "?nocache=true" : "";
+    return postWithTimeout(`/pois/suggest${qs}`, params);
   },
 
   getDistances: (params: {
@@ -190,16 +189,8 @@ export const api = {
     return res.blob();
   },
 
-  exportJSON: async (request: ExportRequest): Promise<unknown> => {
-    const res = await fetch(`${BASE}/export/plan?format=json`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...authHeaders() },
-      body: JSON.stringify(request),
-      credentials: "include",
-    });
-    if (!res.ok) throw new Error(`JSON export failed: ${res.status}`);
-    return res.json();
-  },
+  exportJSON: (request: ExportRequest): Promise<unknown> =>
+    post("/export/plan?format=json", request),
 
   getDriveTime: (params: {
     origin: string;

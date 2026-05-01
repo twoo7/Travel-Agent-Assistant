@@ -64,12 +64,7 @@ class FlightAgent(BaseAgent):
                 max_tokens=512,
                 messages=[{"role": "user", "content": prompt}],
             )
-            raw = message.content[0].text.strip()
-            # Strip markdown code fences if present
-            if raw.startswith("```"):
-                raw = raw.split("```")[1]
-                if raw.startswith("json"):
-                    raw = raw[4:]
+            raw = self._extract_json(message.content[0].text.strip())
             result = json.loads(raw)
             recommended_id = result["recommended_id"]
             reason_bullets = result.get("reason_bullets", [])

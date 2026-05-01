@@ -160,11 +160,7 @@ class POIAgent(BaseAgent):
                 max_tokens=4096,
                 messages=[{"role": "user", "content": prompt}],
             )
-            raw = message.content[0].text.strip()
-            if raw.startswith("```"):
-                raw = raw.split("```")[1]
-                if raw.startswith("json"):
-                    raw = raw[4:]
+            raw = self._extract_json(message.content[0].text.strip())
             suggestions = json.loads(raw)
             if not isinstance(suggestions, list):
                 raise ValueError("Expected a JSON array")
@@ -206,11 +202,7 @@ class POIAgent(BaseAgent):
                 max_tokens=4096,
                 messages=[{"role": "user", "content": prompt}],
             )
-            raw = message.content[0].text.strip()
-            if raw.startswith("```"):
-                raw = raw.split("```")[1]
-                if raw.startswith("json"):
-                    raw = raw[4:]
+            raw = self._extract_json(message.content[0].text.strip())
             suggestions = json.loads(raw)
             if not isinstance(suggestions, list):
                 raise ValueError("Expected a JSON array")

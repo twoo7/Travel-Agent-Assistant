@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
@@ -179,7 +179,7 @@ export default function ItineraryPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [days]);
 
-  async function handleFetchPOIs(excludeNames?: string[]) {
+  const handleFetchPOIs = useCallback(async (excludeNames?: string[]) => {
     const leg = tripContext.legs[currentLeg - 1];
     if (!leg) return;
     if (leg.destination === tripContext.home_origin) return;
@@ -199,15 +199,14 @@ export default function ItineraryPage() {
     } finally {
       setLoadingPois(false);
     }
-  }
+  }, [tripContext, currentLeg]);
 
   const handleRefreshPOIs = useCallback(async () => {
     const excludeNames = pois.map((p) => p.name);
     setPois([]);
     autoFetched.current = false;
     await handleFetchPOIs(excludeNames.length ? excludeNames : undefined);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentLeg, tripContext, pois]);
+  }, [currentLeg, tripContext, pois, handleFetchPOIs]);
 
   function handleAddPOIToDay(poi: POI, dayNumber: number) {
     const newItem: DayItem = {
@@ -255,11 +254,11 @@ export default function ItineraryPage() {
     dispatch({ type: "REMOVE_UNSCHEDULED_POI", payload: { poi_id: id } });
   }
 
-  const addedIds = new Set([
+  const addedIds = useMemo(() => new Set([
     ...tripContext.unscheduled_pois.map((p) => p.id),
     ...tripContext.saved_pois.map((p) => p.id),
     ...Array.from(scheduledPoiIds),
-  ]);
+  ]), [tripContext.unscheduled_pois, tripContext.saved_pois, scheduledPoiIds]);
 
   async function handleGenerateItinerary() {
     setGeneratingItinerary(true);

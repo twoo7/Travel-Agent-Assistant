@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import type { POI, POICategory, SavedHotel, DayPlan } from "@/types/trip";
 import { PlacesSearch } from "./PlacesSearch";
 import { LocationCard } from "./LocationCard";
@@ -51,28 +51,32 @@ export function SuggestionsSidebar({
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
   const [hotelsExpanded, setHotelsExpanded] = useState(false);
 
-  const savedIds = new Set(savedPois.map((p) => p.id));
+  const savedIds = useMemo(() => new Set(savedPois.map((p) => p.id)), [savedPois]);
 
-  const availableTags = Array.from(
-    new Set(pois.flatMap((p) => p.theme_tags ?? []))
-  ).sort();
+  const availableTags = useMemo(() =>
+    Array.from(new Set(pois.flatMap((p) => p.theme_tags ?? []))).sort(),
+    [pois]
+  );
 
-  const filtered = pois.filter((p) => {
+  const filtered = useMemo(() => pois.filter((p) => {
     if (categoryFilter !== "all" && p.category !== categoryFilter) return false;
     if (tagFilter && !(p.theme_tags ?? []).includes(tagFilter)) return false;
     return true;
-  });
+  }), [pois, categoryFilter, tagFilter]);
 
-  const grouped: Array<{ neighborhood: string | null; pois: POI[] }> = [];
-  const neighborhoodMap = new Map<string, POI[]>();
-  for (const poi of filtered) {
-    const key = poi.neighborhood ?? "__none__";
-    if (!neighborhoodMap.has(key)) neighborhoodMap.set(key, []);
-    neighborhoodMap.get(key)!.push(poi);
-  }
-  neighborhoodMap.forEach((group, key) => {
-    grouped.push({ neighborhood: key === "__none__" ? null : key, pois: group });
-  });
+  const grouped = useMemo(() => {
+    const result: Array<{ neighborhood: string | null; pois: POI[] }> = [];
+    const neighborhoodMap = new Map<string, POI[]>();
+    for (const poi of filtered) {
+      const key = poi.neighborhood ?? "__none__";
+      if (!neighborhoodMap.has(key)) neighborhoodMap.set(key, []);
+      neighborhoodMap.get(key)!.push(poi);
+    }
+    neighborhoodMap.forEach((group, key) => {
+      result.push({ neighborhood: key === "__none__" ? null : key, pois: group });
+    });
+    return result;
+  }, [filtered]);
 
   if (collapsed) {
     return (

@@ -426,7 +426,7 @@ def test_pois_suggest_with_user_prompt(client):
         )
     assert resp.status_code == 200
     MockAgent.return_value.async_suggest.assert_called_once_with(
-        unittest.mock.ANY, 1, user_prompt="more museums", bypass_cache=False
+        unittest.mock.ANY, 1, user_prompt="more museums", exclude_names=None, bypass_cache=False
     )
 
 

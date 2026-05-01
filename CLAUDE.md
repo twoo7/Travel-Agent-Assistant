@@ -181,6 +181,10 @@ Router tests (`test_routers.py`) mock both the service and agent layers with `un
 
 All playwright screenshots should be stored in a single folder at the root of the project called "PlaywrightTests" with folders to separate each test session. PlayWright End to End testing is located under `/frontend/e2e`. They should be updated as new features are added and tested.
 
+## Feature Functionality Reference
+
+Per-page, per-element behaviour is documented in [docs/superpowers/specs/2026-04-29-feature-functionality-reference.md](docs/superpowers/specs/2026-04-29-feature-functionality-reference.md). Consult it when you need to understand how a specific page or interactive element works. **Keep it updated whenever features are added or changed.**
+
 ### Applied Learning
 
 When something fails repeatedly, when Tim has to re-explain, or when a workaround is found for a platform/tool limitation, add a one-line bullet here. Keep each bullet under 15 words. No explanations. Only add things that will save time in future sessions.
@@ -192,3 +196,6 @@ When something fails repeatedly, when Tim has to re-explain, or when a workaroun
 - Multiple `APIProvider` instances break Google Maps; always mount exactly one at the page level.
 - `google.*` types unreliable in `useCallback`; use `as any` casts + `"OK"` string instead of enum.
 - Return legs (destination === home_origin) must be guarded in both fetch fn and button visibility.
+- `backend/.env` newline required between `AMADEUS_MOCK=true` and `REDIS_URL`; missing newline silently breaks both.
+- Playwright `fill()` doesn't trigger React's onChange in Places autocomplete; real keyboard events required.
+- DayPicker dropdown and sidebar POI cards are outside the a11y tree; use JS evaluate to interact.

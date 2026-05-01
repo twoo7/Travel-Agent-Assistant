@@ -18,6 +18,10 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from backend.src.middleware.identity import get_user_id
+
+
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
 from backend.src.services import redis_service
 
 router = APIRouter(prefix="/trips", tags=["trips"])
@@ -109,7 +113,7 @@ async def create_trip(body: CreateTripRequest, request: Request) -> TripDetail:
     """Create a new trip (draft by default).  Returns the trip_id."""
     user_id = get_user_id(request)
     trip_id = _make_id()
-    now = datetime.now(timezone.utc).isoformat()
+    now = _now_iso()
     is_draft = body.name is None
 
     meta = {
@@ -157,8 +161,8 @@ async def list_trips(request: Request) -> List[TripMeta]:
             trip_id=trip_id,
             name=meta.get("name", ""),
             is_draft=meta.get("is_draft", "true") == "true",
-            created_at=meta.get("created_at", datetime.now(timezone.utc).isoformat()),
-            updated_at=meta.get("updated_at", datetime.now(timezone.utc).isoformat()),
+            created_at=meta.get("created_at", _now_iso()),
+            updated_at=meta.get("updated_at", _now_iso()),
         ))
 
     trips.sort(key=lambda t: t.updated_at, reverse=True)
@@ -179,8 +183,8 @@ async def get_trip(trip_id: str, request: Request) -> TripDetail:
         trip_id=trip_id,
         name=meta.get("name", ""),
         is_draft=is_draft,
-        created_at=meta.get("created_at", datetime.now(timezone.utc).isoformat()),
-        updated_at=meta.get("updated_at", datetime.now(timezone.utc).isoformat()),
+        created_at=meta.get("created_at", _now_iso()),
+        updated_at=meta.get("updated_at", _now_iso()),
         state=state,
     )
 
@@ -191,7 +195,7 @@ async def save_trip(trip_id: str, body: SaveTripRequest, request: Request) -> Tr
     user_id = get_user_id(request)
     meta = await _assert_owner(trip_id, user_id)
     is_draft = meta.get("is_draft", "true") == "true"
-    now = datetime.now(timezone.utc).isoformat()
+    now = _now_iso()
     ttl = _ttl_for(is_draft)
 
     await redis_service.set_json(_trip_state_key(trip_id), body.state, ttl=ttl)
@@ -202,7 +206,7 @@ async def save_trip(trip_id: str, body: SaveTripRequest, request: Request) -> Tr
         trip_id=trip_id,
         name=meta.get("name", ""),
         is_draft=is_draft,
-        created_at=meta.get("created_at", datetime.now(timezone.utc).isoformat()),
+        created_at=meta.get("created_at", _now_iso()),
         updated_at=now,
     )
 
@@ -212,7 +216,7 @@ async def patch_trip(trip_id: str, body: PatchTripRequest, request: Request) -> 
     """Rename a trip and/or promote it from draft → named."""
     user_id = get_user_id(request)
     meta = await _assert_owner(trip_id, user_id)
-    now = datetime.now(timezone.utc).isoformat()
+    now = _now_iso()
 
     updates: Dict[str, str] = {"updated_at": now}
     if body.name is not None:
@@ -228,7 +232,7 @@ async def patch_trip(trip_id: str, body: PatchTripRequest, request: Request) -> 
         trip_id=trip_id,
         name=updates.get("name", meta.get("name", "")),
         is_draft=is_draft_new,
-        created_at=meta.get("created_at", datetime.now(timezone.utc).isoformat()),
+        created_at=meta.get("created_at", _now_iso()),
         updated_at=now,
     )
 
@@ -277,6 +281,6 @@ async def claim_trip(trip_id: str, request: Request) -> TripMeta:
         trip_id=trip_id,
         name=meta.get("name", ""),
         is_draft=is_draft,
-        created_at=meta.get("created_at", datetime.now(timezone.utc).isoformat()),
-        updated_at=meta.get("updated_at", datetime.now(timezone.utc).isoformat()),
+        created_at=meta.get("created_at", _now_iso()),
+        updated_at=meta.get("updated_at", _now_iso()),
     )
