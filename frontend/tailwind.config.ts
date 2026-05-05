@@ -9,77 +9,78 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
-        surface: "#FFFFFF",
-        primary: {
-          DEFAULT: "#1B3A4B",
-          light: "#2A5068",
-          dark: "#0F2937",
-        },
-        accent: {
-          DEFAULT: "#E07A5F",
-          light: "#E8967F",
-          dark: "#C96A4F",
-        },
-        success: {
-          DEFAULT: "#6B9080",
-          light: "#8AB09F",
-          dark: "#557363",
-        },
-        warning: {
-          DEFAULT: "#D4A574",
-          light: "#E0BC94",
-          dark: "#B88E5F",
-        },
-        muted: "#6B7280",
-        subtle: "#9CA3AF",
-        charcoal: "#2D2D2D",
-        navy: {
-          DEFAULT: "#1B3A4B",
-          sidebar: "#071420",
-        },
-        canvas: {
-          from: "var(--canvas-from)",
-          to: "var(--canvas-to)",
-          mid: "var(--canvas-mid)",
-        },
+        bg:          "var(--bg)",
+        surface:     "var(--surface)",
+        surface2:    "var(--surface2)",
+        border:      "var(--border)",
+        border2:     "var(--border2)",
+        ink:         "var(--ink)",
+        "ink-muted": "var(--ink-muted)",
+        "ink-subtle":"var(--ink-subtle)",
+        teal:        "var(--teal)",
+        "teal-hover":"var(--teal-hover)",
+        "teal-mid":  "var(--teal-mid)",
+        "teal-light":"var(--teal-light)",
+        amber:       "var(--amber)",
+        green:       "var(--green)",
+        red:         "var(--red)",
+        // Legacy aliases kept for backward compat during migration
+        background:  "var(--bg)",
+        foreground:  "var(--ink)",
       },
       fontFamily: {
-        display: ["var(--font-dm-serif)", "Georgia", "serif"],
-        body: ["var(--font-dm-sans)", "system-ui", "sans-serif"],
+        display: ["var(--font-playfair)", "Georgia", "serif"],
+        body:    ["var(--font-dm-sans)", "system-ui", "sans-serif"],
       },
       boxShadow: {
-        card: "0 4px 24px rgba(0,0,0,0.3)",
-        "card-hover": "0 8px 32px rgba(0,0,0,0.4)",
-        warm: "0 4px 14px rgba(139,90,43,0.08)",
+        sm:  "var(--shadow-sm)",
+        md:  "var(--shadow-md)",
+        lg:  "var(--shadow-lg)",
+        // Legacy alias
+        card: "var(--shadow-md)",
+        "card-hover": "var(--shadow-lg)",
       },
       borderRadius: {
+        sm:  "8px",
+        DEFAULT: "12px",
+        lg:  "16px",
+        xl:  "20px",
+        // Legacy alias
         card: "16px",
       },
       keyframes: {
-        "fade-in-up": {
-          "0%":   { opacity: "0", transform: "translateY(8px)" },
+        "fade-up": {
+          "0%":   { opacity: "0", transform: "translateY(12px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        "slide-in": {
+          "0%":   { opacity: "0", transform: "translateX(-8px)" },
+          "100%": { opacity: "1", transform: "translateX(0)" },
+        },
+        "pop-in": {
+          "0%":   { opacity: "0", transform: "scale(0.95)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
+        },
+        "slide-up": {
+          "0%":   { opacity: "0", transform: "translateY(16px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
         shimmer: {
           "0%":   { backgroundPosition: "-200% 0" },
           "100%": { backgroundPosition: "200% 0" },
         },
-        "ai-pulse": {
-          "0%, 100%": { filter: "drop-shadow(0 0 4px rgba(224,122,95,0.4))" },
-          "50%":       { filter: "drop-shadow(0 0 12px rgba(224,122,95,0.8))" },
-        },
-        "glow-pulse": {
-          "0%, 100%": { opacity: "0.6" },
-          "50%":       { opacity: "1" },
+        pulse: {
+          "0%, 100%": { opacity: "1" },
+          "50%":       { opacity: "0.5" },
         },
       },
       animation: {
-        "fade-in-up": "fade-in-up 0.3s ease-out",
-        shimmer: "shimmer 1.8s infinite",
-        "ai-pulse": "ai-pulse 2s ease-in-out infinite",
-        "glow-pulse": "glow-pulse 2s ease-in-out infinite",
+        "fade-up":  "fade-up 0.24s ease-out",
+        "slide-in": "slide-in 0.24s ease-out",
+        "pop-in":   "pop-in 0.18s ease-out",
+        "slide-up": "slide-up 0.24s ease-out",
+        shimmer:    "shimmer 1.8s infinite",
+        pulse:      "pulse 2s ease-in-out infinite",
       },
     },
   },

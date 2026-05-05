@@ -4,14 +4,17 @@ import { useEffect, useState } from "react";
 import { Sun, Moon } from "lucide-react";
 import { motion } from "framer-motion";
 
-export function ThemeToggle() {
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+export function ThemeToggle({ className = "" }: { className?: string }) {
+  const [theme, setTheme] = useState<"light" | "dark">("light");
 
   useEffect(() => {
     const stored = localStorage.getItem("theme") as "dark" | "light" | null;
-    if (stored) {
-      setTheme(stored);
-      document.documentElement.setAttribute("data-theme", stored === "light" ? "light" : "");
+    const current = stored ?? "light";
+    setTheme(current);
+    if (current === "dark") {
+      document.documentElement.setAttribute("data-theme", "dark");
+    } else {
+      document.documentElement.removeAttribute("data-theme");
     }
   }, []);
 
@@ -19,8 +22,8 @@ export function ThemeToggle() {
     const next = theme === "dark" ? "light" : "dark";
     setTheme(next);
     localStorage.setItem("theme", next);
-    if (next === "light") {
-      document.documentElement.setAttribute("data-theme", "light");
+    if (next === "dark") {
+      document.documentElement.setAttribute("data-theme", "dark");
     } else {
       document.documentElement.removeAttribute("data-theme");
     }
@@ -29,14 +32,18 @@ export function ThemeToggle() {
   return (
     <motion.button
       whileTap={{ scale: 0.9 }}
-      whileHover={{ scale: 1.1 }}
       onClick={toggle}
-      style={{ borderTop: "1px solid var(--sidebar-border)", color: "var(--text-subtle)" }}
-      className="w-full flex items-center justify-center py-3 transition-colors duration-150"
+      className={[
+        "flex items-center gap-2 px-3 py-2 rounded text-sm text-ink-muted",
+        "hover:bg-surface2 hover:text-ink transition-colors duration-150 w-full",
+        className,
+      ].filter(Boolean).join(" ")}
       aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-      title={theme === "dark" ? "Light mode" : "Dark mode"}
     >
-      {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
+      {theme === "dark"
+        ? <><Sun size={14} /><span>Light mode</span></>
+        : <><Moon size={14} /><span>Dark mode</span></>
+      }
     </motion.button>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { BottomSheet } from "@/components/ui/BottomSheet";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
@@ -86,7 +87,7 @@ export default function ItineraryPage() {
   const [currentLeg, setCurrentLeg] = useState(1);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileTab, setMobileTab] = useState<MobileTab>("plan");
-  const [focusedDay, setFocusedDay] = useState<number | null>(null);
+  const [focusedDays, setFocusedDays] = useState<number[]>([]);
   const [scheduledPoiIds, setScheduledPoiIds] = useState<Set<string>>(new Set());
   const [detailTarget, setDetailTarget] = useState<DetailTarget | null>(null);
   const autoFetched = useRef(false);
@@ -254,11 +255,7 @@ export default function ItineraryPage() {
     dispatch({ type: "REMOVE_UNSCHEDULED_POI", payload: { poi_id: id } });
   }
 
-  const addedIds = useMemo(() => new Set([
-    ...tripContext.unscheduled_pois.map((p) => p.id),
-    ...tripContext.saved_pois.map((p) => p.id),
-    ...Array.from(scheduledPoiIds),
-  ]), [tripContext.unscheduled_pois, tripContext.saved_pois, scheduledPoiIds]);
+  const addedIds = useMemo(() => new Set(Array.from(scheduledPoiIds)), [scheduledPoiIds]);
 
   async function handleGenerateItinerary() {
     setGeneratingItinerary(true);
@@ -302,9 +299,9 @@ export default function ItineraryPage() {
   if (tripContext.legs.length === 0) {
     return (
       <div className="max-w-3xl mx-auto text-center py-16">
-        <p className="font-body" style={{ color: "var(--text-muted)" }}>
+        <p className="font-body text-ink-muted">
           Your session was reset.{" "}
-          <Link href="/trips" className="underline" style={{ color: "var(--accent)" }}>
+          <Link href="/trips" className="underline text-teal hover:text-teal-hover">
             Visit your trips page
           </Link>{" "}
           to restore a saved trip.
@@ -357,8 +354,11 @@ export default function ItineraryPage() {
       days={days}
       onDaysChange={handleDaysChange}
       unscheduledPois={tripContext.unscheduled_pois}
-      focusedDay={focusedDay}
-      onFocusedDayChange={setFocusedDay}
+      legs={tripContext.legs}
+      currentLeg={currentLeg}
+      onCurrentLegChange={(leg) => { setCurrentLeg(leg); setFocusedDays([]); }}
+      focusedDays={focusedDays}
+      onFocusedDaysChange={setFocusedDays}
       onSavePOI={(item: DayItem) => {
         const poi: POI = {
           id: item.id ?? `saved-${Date.now()}`,
@@ -367,10 +367,24 @@ export default function ItineraryPage() {
           address: item.address ?? "",
           lat: item.lat,
           lng: item.lng,
-          booking_required: false,
+          booking_required: item.booking_required ?? false,
           claude_note: item.notes ?? "",
-          theme_tags: [],
+          theme_tags: item.theme_tags ?? [],
           ai_recommended: false,
+          photo_url: item.photo_url,
+          photo_urls: item.photo_urls,
+          rating: item.rating,
+          review_count: item.review_count,
+          price_level: item.price_level,
+          opening_hours: item.opening_hours,
+          indoor_outdoor: item.indoor_outdoor,
+          nearest_transit: item.nearest_transit,
+          neighborhood: item.neighborhood,
+          claude_best_time: item.claude_best_time,
+          claude_booking_tip: item.claude_booking_tip,
+          ai_reason: item.ai_reason,
+          busy_times: item.busy_times,
+          typical_visit_duration_mins: item.duration_mins,
         };
         dispatch({ type: "ADD_UNSCHEDULED_POI", payload: poi });
       }}
@@ -391,8 +405,8 @@ export default function ItineraryPage() {
     <TripMap
       days={days}
       currentLeg={currentLeg}
-      focusedDay={focusedDay}
-      onFocusedDayChange={setFocusedDay}
+      focusedDays={focusedDays}
+      onFocusedDaysChange={setFocusedDays}
       selectedLatLng={selectedMapLocation}
     />
   );
@@ -401,57 +415,13 @@ export default function ItineraryPage() {
 
   return (
     <APIProvider apiKey={mapsApiKey}>
-    <div className="flex flex-col gap-4 h-[calc(100dvh-2.75rem)] md:h-screen">
-      {/* Top bar */}
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold font-display" style={{ color: "var(--text-primary)" }}>Itinerary Builder</h1>
-        <div className="flex items-center gap-3">
-          {tripContext.legs.length > 1 && (
-            <div
-              className="flex gap-1 p-1 rounded-lg"
-              style={{ background: "var(--glass-2)", border: "1px solid var(--glass-border-2)" }}
-            >
-              {tripContext.legs.map((leg) => (
-                <button
-                  key={leg.leg_number}
-                  onClick={() => setCurrentLeg(leg.leg_number)}
-                  className="text-xs px-3 py-1.5 rounded-md transition-colors font-body font-medium"
-                  style={currentLeg === leg.leg_number
-                    ? { background: "var(--accent)", color: "white" }
-                    : { color: "var(--text-muted)" }
-                  }
-                >
-                  {iataToCityName(leg.destination)}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {currentLegData?.destination !== tripContext.home_origin && (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => handleFetchPOIs(pois.length ? pois.map((p) => p.name) : undefined)}
-              loading={loadingPois}
-              icon={<Sparkles size={13} />}
-            >
-              {loadingPois
-                ? "Loading…"
-                : `Suggest places in ${iataToCityName(currentLegData?.destination ?? "")}`}
-            </Button>
-          )}
-        </div>
-      </div>
-
+    <div className="flex flex-col gap-4 h-[calc(100dvh-2.75rem)] md:h-screen overflow-hidden p-4">
       {/* Three-panel layout */}
       {isMobile ? (
         /* Mobile: tabbed layout — all three panels stay mounted, hidden via visibility */
         <div className="flex flex-col flex-1 min-h-0">
           {/* Tab bar */}
-          <div
-            className="flex gap-1 p-1 rounded-xl mb-3 shrink-0"
-            style={{ background: "var(--glass-2)", border: "1px solid var(--glass-border-2)" }}
-          >
+          <div className="flex gap-1 p-1 rounded-xl mb-3 shrink-0 bg-surface2 border border-border">
             {([
               { id: "suggest" as MobileTab, label: "Suggest", icon: <Lightbulb size={14} /> },
               { id: "plan" as MobileTab, label: "Plan", icon: <CalendarDays size={14} /> },
@@ -460,11 +430,10 @@ export default function ItineraryPage() {
               <button
                 key={id}
                 onClick={() => setMobileTab(id)}
-                className="flex-1 flex items-center justify-center gap-1.5 text-xs py-2 rounded-lg transition-colors font-body font-medium"
-                style={mobileTab === id
-                  ? { background: "var(--accent)", color: "white" }
-                  : { color: "var(--text-muted)" }
-                }
+                className={[
+                  "flex-1 flex items-center justify-center gap-1.5 text-xs py-2 rounded-lg transition-colors font-body font-medium",
+                  mobileTab === id ? "bg-teal text-surface" : "text-ink-muted hover:text-ink",
+                ].join(" ")}
               >
                 {icon}{label}
               </button>
@@ -494,32 +463,19 @@ export default function ItineraryPage() {
             <div className="h-full overflow-y-auto">{suggestionsSidebar}</div>
           </Panel>
           <PanelResizeHandle
-            className="w-1 rounded-full transition-colors cursor-col-resize"
-            style={{ background: "var(--glass-border-2)" }}
+            className="w-1 rounded-full transition-colors cursor-col-resize bg-border2"
             onDragging={(isDragging) => { document.body.style.cursor = isDragging ? "col-resize" : ""; }}
           />
           <Panel minSize={30}>
-            {detailTarget ? (
-              <PanelGroup direction="vertical" autoSaveId="itinerary-vertical" className="h-full">
-                <Panel defaultSize={60} minSize={30}>
-                  <div className="h-full overflow-y-auto">{dayPlanner}</div>
-                </Panel>
-                <PanelResizeHandle
-                  className="h-1.5 rounded-full transition-colors cursor-row-resize my-0.5"
-                  style={{ background: "var(--glass-border-2)" }}
-                  onDragging={(isDragging) => { document.body.style.cursor = isDragging ? "row-resize" : ""; }}
-                />
-                <Panel defaultSize={40} minSize={15} maxSize={70} collapsible onCollapse={() => setDetailTarget(null)}>
-                  <LocationDetailSheet target={detailTarget} onClose={() => setDetailTarget(null)} />
-                </Panel>
-              </PanelGroup>
-            ) : (
-              <div className="h-full overflow-y-auto">{dayPlanner}</div>
-            )}
+            <div className="h-full relative overflow-hidden">
+              <div className="h-full">{dayPlanner}</div>
+              <BottomSheet open={!!detailTarget} onClose={() => setDetailTarget(null)}>
+                {detailTarget && <LocationDetailSheet target={detailTarget} onClose={() => setDetailTarget(null)} />}
+              </BottomSheet>
+            </div>
           </Panel>
           <PanelResizeHandle
-            className="w-1 rounded-full transition-colors cursor-col-resize"
-            style={{ background: "var(--glass-border-2)" }}
+            className="w-1 rounded-full transition-colors cursor-col-resize bg-border2"
             onDragging={(isDragging) => { document.body.style.cursor = isDragging ? "col-resize" : ""; }}
           />
           <Panel defaultSize={30} minSize={20} maxSize={45}>
@@ -529,7 +485,7 @@ export default function ItineraryPage() {
       )}
 
       {/* Bottom actions */}
-      <div className="flex justify-between pt-2 border-t shrink-0" style={{ borderColor: "var(--glass-border-1)" }}>
+      <div className="flex justify-between pt-2 border-t border-border shrink-0">
         <Button variant="ghost" size="md" onClick={() => router.push("/hotels")} icon={<ArrowLeft size={14} />}>
           Back to Hotels
         </Button>

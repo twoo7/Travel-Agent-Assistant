@@ -38,7 +38,7 @@ export function HotelSearchForm({
   }
 
   return (
-    <div className="rounded-xl p-4 flex flex-wrap gap-3 items-end shadow-card" style={{ background: "var(--glass-2)", border: "1px solid var(--glass-border-2)", backdropFilter: "blur(12px)" }}>
+    <div className="rounded-xl p-4 flex flex-wrap gap-3 items-end bg-surface border border-border shadow-sm">
       <div className="flex-1 min-w-[200px]">
         <AirportSearch
           label="City or Airport"
@@ -50,10 +50,10 @@ export function HotelSearchForm({
       </div>
 
       <div>
-        <label className="block text-xs font-medium mb-1 font-body flex items-center gap-1" style={{ color: "var(--text-muted)" }}>
+        <label className="block text-xs font-medium mb-1 font-body flex items-center gap-1 text-ink-muted">
           Check-in
           {checkInAuto && (
-            <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full font-body" style={{ color: "var(--success)", background: "rgba(107,144,128,0.1)", border: "1px solid rgba(107,144,128,0.2)" }}>
+            <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full font-body text-teal bg-teal-light border border-teal/20">
               <Check size={9} />
               Auto
             </span>
@@ -68,10 +68,10 @@ export function HotelSearchForm({
       </div>
 
       <div>
-        <label className="block text-xs font-medium mb-1 font-body flex items-center gap-1" style={{ color: "var(--text-muted)" }}>
+        <label className="block text-xs font-medium mb-1 font-body flex items-center gap-1 text-ink-muted">
           Check-out
           {checkOutAuto && (
-            <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full font-body" style={{ color: "var(--success)", background: "rgba(107,144,128,0.1)", border: "1px solid rgba(107,144,128,0.2)" }}>
+            <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full font-body text-teal bg-teal-light border border-teal/20">
               <Check size={9} />
               Auto
             </span>

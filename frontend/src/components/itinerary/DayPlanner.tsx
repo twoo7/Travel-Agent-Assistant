@@ -13,7 +13,7 @@ import {
   type DragOverEvent,
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
-import type { DayPlan, DayItem, POI, SavedHotel, HopMode } from "@/types/trip";
+import type { DayPlan, DayItem, POI, SavedHotel, HopMode, TripLeg } from "@/types/trip";
 import { DayColumn } from "./DayColumn";
 import { DayItemCard } from "./DayItemCard";
 import type { DetailTarget } from "./LocationDetailSheet";
@@ -24,8 +24,11 @@ interface Props {
   days: DayPlan[];
   onDaysChange: (days: DayPlan[]) => void;
   unscheduledPois?: POI[];
-  focusedDay?: number | null;
-  onFocusedDayChange?: (day: number | null) => void;
+  legs?: TripLeg[];
+  currentLeg?: number;
+  onCurrentLegChange?: (leg: number) => void;
+  focusedDays?: number[];
+  onFocusedDaysChange?: (days: number[]) => void;
   onSaveHotel?: (saved: SavedHotel) => void;
   onSavePOI?: (item: DayItem) => void;
   onOpenDetail?: (target: DetailTarget) => void;
@@ -40,8 +43,11 @@ function parseId(id: string): { dayNumber: number; idx: number } {
 export function DayPlanner({
   days,
   onDaysChange,
-  focusedDay,
-  onFocusedDayChange,
+  legs,
+  currentLeg,
+  onCurrentLegChange,
+  focusedDays = [],
+  onFocusedDaysChange,
   onSaveHotel,
   onSavePOI,
   onOpenDetail,
@@ -65,12 +71,30 @@ export function DayPlanner({
 
   const legGroups = useMemo(() => {
     const groups: Record<number, DayPlan[]> = {};
-    for (const day of displayDays) {
+    const legFiltered = currentLeg != null
+      ? displayDays.filter((d) => d.leg_number === currentLeg)
+      : displayDays;
+    const shown = focusedDays.length > 0
+      ? legFiltered.filter((d) => focusedDays.includes(d.day_number))
+      : legFiltered;
+    for (const day of shown) {
       if (!groups[day.leg_number]) groups[day.leg_number] = [];
       groups[day.leg_number].push(day);
     }
     return groups;
-  }, [displayDays]);
+  }, [displayDays, currentLeg, focusedDays]);
+
+  const currentLegDays = useMemo(
+    () => currentLeg != null ? days.filter((d) => d.leg_number === currentLeg) : days,
+    [days, currentLeg]
+  );
+
+  function toggleDay(n: number) {
+    const next = focusedDays.includes(n)
+      ? focusedDays.filter((d) => d !== n)
+      : [...focusedDays, n];
+    onFocusedDaysChange?.(next);
+  }
 
   function handleDragStart(e: DragStartEvent) {
     const id = String(e.active.id);
@@ -286,64 +310,114 @@ export function DayPlanner({
     });
   }
 
-  if (displayDays.length === 0) {
-    return (
-      <div
-        className="text-center py-12 rounded-xl"
-        style={{ color: "var(--text-muted)", border: "2px dashed rgba(255,255,255,0.12)" }}
-      >
-        <p className="text-sm font-body" style={{ color: "var(--text-muted)" }}>No days planned yet.</p>
-        <p className="text-xs mt-1 font-body" style={{ color: "var(--text-muted)" }}>
-          Days will appear here once hotels are confirmed.
-        </p>
-      </div>
-    );
-  }
+  const showPills = (legs && legs.length > 1) || currentLegDays.length > 0;
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDragEnd={handleDragEnd}
-      onDragCancel={handleDragCancel}
-    >
-      <div className="space-y-6">
-        {Object.entries(legGroups).map(([legNum, legDays]) => (
-          <div key={legNum}>
-            <h3
-              className="text-[10px] font-semibold uppercase tracking-[2.5px] mb-2 font-body"
-              style={{ color: "var(--text-eyebrow)" }}
-            >
-              {iataToCityName(legDays[0]?.city ?? "")} — {legDays.length} day{legDays.length > 1 ? "s" : ""}
-            </h3>
-            <div className="space-y-3">
-              {legDays.map((day) => (
-                <DayColumn
-                  key={day.day_number}
-                  day={day}
-                  onRemoveItem={handleRemoveItem}
-                  onModeChange={handleModeChange}
-                  onOpenDetails={handleOpenDetail}
-                  isFocused={focusedDay === day.day_number}
-                  onFocus={onFocusedDayChange}
-                />
+    <div className="h-full flex flex-col">
+      {/* Leg + day pill filter header */}
+      {showPills && (
+        <div className="shrink-0 flex flex-col gap-1.5 px-1 pt-1 pb-2 border-b border-border">
+          {legs && legs.length > 1 && (
+            <div className="flex flex-wrap gap-1.5">
+              {legs.map((leg) => (
+                <button
+                  key={leg.leg_number}
+                  onClick={() => onCurrentLegChange?.(leg.leg_number)}
+                  className={`text-xs px-3 py-1 rounded-full font-body transition-colors ${
+                    currentLeg === leg.leg_number
+                      ? "bg-teal text-surface"
+                      : "bg-surface2 border border-border text-ink-muted hover:text-ink"
+                  }`}
+                >
+                  {iataToCityName(leg.destination)}
+                </button>
               ))}
             </div>
-          </div>
-        ))}
-      </div>
+          )}
+          {currentLegDays.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                onClick={() => onFocusedDaysChange?.([])}
+                className={`text-xs px-3 py-1 rounded-full font-body transition-colors ${
+                  focusedDays.length === 0
+                    ? "bg-teal text-surface"
+                    : "bg-surface2 border border-border text-ink-muted hover:text-ink"
+                }`}
+              >
+                All Days
+              </button>
+              {currentLegDays.map((day) => (
+                <button
+                  key={day.day_number}
+                  onClick={() => toggleDay(day.day_number)}
+                  className={`text-xs px-3 py-1 rounded-full font-body transition-colors ${
+                    focusedDays.includes(day.day_number)
+                      ? "bg-teal text-surface"
+                      : "bg-surface2 border border-border text-ink-muted hover:text-ink"
+                  }`}
+                >
+                  Day {day.day_number}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
-      <DragOverlay dropAnimation={null}>
-        {activeId && activeItem ? (
-          <DayItemCard
-            item={activeItem}
-            itemId={activeId}
-            isOverlay
-          />
-        ) : null}
-      </DragOverlay>
-    </DndContext>
+      {displayDays.length === 0 ? (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center py-12 rounded-xl text-ink-muted border-2 border-dashed border-border mx-2">
+            <p className="text-sm font-body">No days planned yet.</p>
+            <p className="text-xs mt-1 font-body">
+              Days will appear here once hotels are confirmed.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="flex-1 overflow-y-auto min-h-0">
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDragEnd={handleDragEnd}
+            onDragCancel={handleDragCancel}
+          >
+            <div className="space-y-6 p-1">
+              {Object.entries(legGroups).map(([legNum, legDays]) => (
+                <div key={legNum}>
+                  <h3 className="text-[10px] font-semibold uppercase tracking-[2.5px] mb-2 font-body text-ink-subtle">
+                    {iataToCityName(legDays[0]?.city ?? "")} — {legDays.length} day{legDays.length > 1 ? "s" : ""}
+                  </h3>
+                  <div className="space-y-3">
+                    {legDays.map((day) => (
+                      <DayColumn
+                        key={day.day_number}
+                        day={day}
+                        onRemoveItem={handleRemoveItem}
+                        onModeChange={handleModeChange}
+                        onOpenDetails={handleOpenDetail}
+                        isFocused={focusedDays.includes(day.day_number)}
+                        onToggleDay={toggleDay}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <DragOverlay dropAnimation={null}>
+              {activeId && activeItem ? (
+                <DayItemCard
+                  item={activeItem}
+                  itemId={activeId}
+                  isOverlay
+                />
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+        </div>
+      )}
+    </div>
   );
 }

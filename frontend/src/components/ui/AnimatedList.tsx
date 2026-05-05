@@ -5,14 +5,14 @@ import { motion } from "framer-motion";
 
 const container = {
   hidden: {},
-  show: { transition: { staggerChildren: 0.06 } },
+  show: { transition: { staggerChildren: 0.05 } },
 };
 
 export const listItemVariants = {
-  hidden: { opacity: 0, y: 10, scale: 0.96 },
+  hidden: { opacity: 0, y: 16, scale: 0.98 },
   show: {
     opacity: 1, y: 0, scale: 1,
-    transition: { type: "spring" as const, stiffness: 300, damping: 28 },
+    transition: { type: "spring" as const, stiffness: 240, damping: 26 },
   },
 };
 

@@ -8,9 +8,10 @@ import { Download, FileJson, AlertTriangle } from "lucide-react";
 
 interface Props {
   exportRequest: ExportRequest;
+  disabled?: boolean;
 }
 
-export function ExportButtons({ exportRequest }: Props) {
+export function ExportButtons({ exportRequest, disabled }: Props) {
   const [loadingPdf, setLoadingPdf] = useState(false);
   const [loadingJson, setLoadingJson] = useState(false);
   const [error, setError] = useState("");
@@ -76,6 +77,7 @@ export function ExportButtons({ exportRequest }: Props) {
           fullWidth
           onClick={handlePDF}
           loading={loadingPdf}
+          disabled={disabled || loadingPdf}
           icon={<Download size={15} />}
         >
           {loadingPdf ? "Generating PDF…" : "Download PDF"}
@@ -86,6 +88,7 @@ export function ExportButtons({ exportRequest }: Props) {
           fullWidth
           onClick={handleJSON}
           loading={loadingJson}
+          disabled={disabled || loadingJson}
           icon={<FileJson size={15} />}
         >
           {loadingJson ? "Exporting…" : "Download JSON"}

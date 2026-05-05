@@ -134,10 +134,7 @@ function TransportSelector({
 
   return (
     <div>
-      <label
-        className="block text-[10px] font-semibold uppercase tracking-[2.5px] mb-1.5 font-body"
-        style={{ color: "var(--text-eyebrow)" }}
-      >
+      <label className="block text-[10px] font-semibold uppercase tracking-[2px] mb-1.5 font-body text-teal">
         How are you getting there?
       </label>
       <div className="flex gap-2 flex-wrap">
@@ -151,24 +148,24 @@ function TransportSelector({
               type="button"
               onClick={() => onSelect(m.mode)}
               aria-pressed={isSelected}
-              className="flex-1 min-w-0 py-2 px-3 rounded-lg text-sm font-medium font-body transition-all flex items-center justify-center gap-1.5"
-              style={
+              className={[
+                "flex-1 min-w-0 py-2 px-3 rounded-lg text-sm font-medium font-body transition-all flex items-center justify-center gap-1.5",
                 isSelected
-                  ? { border: "2px solid var(--accent)", background: "rgba(224,122,95,0.1)", color: "var(--accent)" }
-                  : { border: "1px solid rgba(255,255,255,0.12)", color: "var(--text-muted)", background: "var(--glass-1)" }
-              }
+                  ? "border-2 border-teal bg-teal-light text-teal"
+                  : "border border-border bg-surface text-ink-muted hover:bg-surface2",
+              ].join(" ")}
             >
               <Icon size={14} />
               {m.label}
               {!isSelected && m.recommended && (
-                <span className="text-lg leading-none" style={{ color: "var(--accent)" }}>•</span>
+                <span className="text-lg leading-none text-teal">•</span>
               )}
             </button>
           );
         })}
       </div>
       {availability.primaryHint && (
-        <p className="text-xs mt-1 italic font-body" style={{ color: "var(--text-muted)" }}>
+        <p className="text-xs mt-1 italic font-body text-ink-muted">
           {availability.primaryHint}
         </p>
       )}
@@ -239,26 +236,19 @@ function LegCard({
   const LegModeIcon = MODE_META[legDefaultMode].Icon;
 
   return (
-    <div
-      className="rounded-xl p-4 space-y-3 relative"
-      style={{ background: "var(--glass-2)", border: "1px solid var(--glass-border-2)" }}
-    >
+    <div className="bg-surface2 border border-border rounded-xl p-4 space-y-3 relative">
       {!isFirst && !isOnly && (
         <button
           type="button"
           onClick={onRemove}
-          className="absolute top-3 right-3 hover:text-red-500 transition-colors rounded-lg p-1 hover:bg-red-50"
-          style={{ color: "var(--text-muted)" }}
+          className="absolute top-3 right-3 text-ink-muted hover:text-red transition-colors rounded-lg p-1 hover:bg-red/8"
           aria-label="Remove leg"
         >
           <X size={16} />
         </button>
       )}
 
-      <div
-        className="text-xs font-semibold uppercase tracking-wide font-body"
-        style={{ color: "var(--text-muted)" }}
-      >
+      <div className="text-xs font-semibold uppercase tracking-wide font-body text-ink-muted">
         Leg {index + 1}
       </div>
 
@@ -284,10 +274,7 @@ function LegCard({
       )}
 
       <div>
-        <label
-          className="block text-[10px] font-semibold uppercase tracking-[2.5px] mb-1.5 font-body"
-          style={{ color: "var(--text-eyebrow)" }}
-        >
+        <label className="block text-[10px] font-semibold uppercase tracking-[2px] mb-1.5 font-body text-teal">
           Departure date
         </label>
         <input
@@ -301,19 +288,16 @@ function LegCard({
 
       {/* Per-leg route context + transport hint */}
       {leg.origin && leg.destination && (
-        <div
-          className="rounded-lg px-3 py-2 flex items-center gap-2"
-          style={{ background: "var(--glass-1)", border: "1px solid var(--glass-border-1)" }}
-        >
-          <LegModeIcon size={18} style={{ color: "var(--accent)" }} />
+        <div className="bg-surface border border-border rounded-lg px-3 py-2 flex items-center gap-2">
+          <LegModeIcon size={18} className="text-teal shrink-0" />
           <div className="min-w-0">
-            <p className="text-xs font-medium font-body truncate" style={{ color: "var(--text-primary)" }}>
+            <p className="text-xs font-medium font-body truncate text-ink">
               {iataToCityName(leg.origin)} ({leg.origin} · {getAirportName(leg.origin)})
               {" → "}
               {iataToCityName(leg.destination)} ({leg.destination} · {getAirportName(leg.destination)})
             </p>
             {legAvailability?.primaryHint && (
-              <p className="text-xs italic font-body" style={{ color: "var(--text-muted)" }}>
+              <p className="text-xs italic font-body text-ink-muted">
                 {legAvailability.primaryHint}
               </p>
             )}
@@ -644,17 +628,10 @@ export default function TripSetupPage() {
               initial={{ opacity: 0, y: -12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="mb-6 rounded-xl p-4 space-y-3"
-              style={{
-                background: "rgba(212,165,116,0.1)",
-                border: "1px solid rgba(212,165,116,0.3)",
-              }}
+              transition={{ type: "spring", stiffness: 240, damping: 26 }}
+              className="mb-6 rounded-xl p-4 space-y-3 bg-amber/10 border border-amber/30"
             >
-              <p
-                className="text-sm font-semibold flex items-center gap-2 font-body"
-                style={{ color: "var(--warning)" }}
-              >
+              <p className="text-sm font-semibold flex items-center gap-2 font-body text-amber">
                 <AlertTriangle size={16} />
                 Changes detected — {state.staleSteps.length} step
                 {state.staleSteps.length > 1 ? "s" : ""} need attention
@@ -667,7 +644,7 @@ export default function TripSetupPage() {
                   const href = stepName === "segments" ? "/segments" : "/hotels";
                   return (
                     <div key={key} className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-body" style={{ color: "var(--warning)" }}>
+                      <p className="text-sm font-body text-amber">
                         •{" "}
                         <span className="font-medium">
                           {label} (Leg {legNum})
@@ -677,8 +654,7 @@ export default function TripSetupPage() {
                       <button
                         type="button"
                         onClick={() => router.push(href)}
-                        className="shrink-0 text-xs font-medium bg-warning/20 hover:bg-warning/30 px-3 py-1 rounded-lg transition-colors font-body"
-                        style={{ color: "var(--warning)" }}
+                        className="shrink-0 text-xs font-medium bg-amber/15 hover:bg-amber/25 text-amber px-3 py-1 rounded-lg transition-colors font-body"
                       >
                         Go to {label} →
                       </button>
@@ -692,29 +668,20 @@ export default function TripSetupPage() {
 
         {/* Hero section */}
         <div className="text-center mb-10">
-          <p className="text-[10px] font-semibold uppercase tracking-[2.5px] mb-4 font-body"
-             style={{ color: "var(--text-eyebrow)" }}>
+          <p className="text-[10px] font-semibold uppercase tracking-[2px] mb-4 font-body text-teal">
             Step 1 of 5 · Trip Setup
           </p>
-          <h1 className="font-display text-4xl mb-3 leading-tight">
-            <span style={{ color: "var(--text-primary)" }}>Where are you</span>
-            <br />
-            <span style={{ color: "var(--accent)" }}>headed?</span>
+          <h1 className="font-display text-[34px] font-medium mb-3 leading-tight text-ink">
+            Where are you <span className="text-teal italic">headed?</span>
           </h1>
-          <p className="font-body text-sm" style={{ color: "var(--text-muted)" }}>
+          <p className="font-body text-sm text-ink-muted">
             Build your journey, one destination at a time.
           </p>
         </div>
 
         <form
           onSubmit={handleSubmit}
-          className="p-8 space-y-[22px] rounded-2xl"
-          style={{
-            background: "var(--glass-2)",
-            border: "1px solid var(--glass-border-2)",
-            backdropFilter: "blur(12px)",
-            boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
-          }}
+          className="bg-surface border border-border rounded-xl p-8 space-y-5 shadow-sm"
         >
           {/* ── Single-destination fields ── */}
           {!multiMode && (
@@ -748,17 +715,14 @@ export default function TripSetupPage() {
 
               {/* Transport hint */}
               {singleAvailability && singleAvailability.modes.length > 0 && (
-                <div
-                  className="rounded-lg px-3 py-2 flex items-center gap-2"
-                  style={{ background: "var(--glass-1)", border: "1px solid var(--glass-border-1)" }}
-                >
-                  <DefaultModeIcon size={18} style={{ color: "var(--accent)" }} />
+                <div className="bg-surface2 border border-border rounded-lg px-3 py-2 flex items-center gap-2">
+                  <DefaultModeIcon size={18} className="text-teal shrink-0" />
                   <div>
-                    <span className="text-sm font-medium font-body" style={{ color: "var(--text-primary)" }}>
+                    <span className="text-sm font-medium font-body text-ink">
                       {MODE_META[singleDefaultMode].label}
                     </span>
                     {singleAvailability.primaryHint && (
-                      <p className="text-xs italic font-body" style={{ color: "var(--text-muted)" }}>
+                      <p className="text-xs italic font-body text-ink-muted">
                         {singleAvailability.primaryHint}
                       </p>
                     )}
@@ -768,10 +732,7 @@ export default function TripSetupPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label
-                    className="block text-[10px] font-semibold uppercase tracking-[2.5px] mb-1.5 font-body"
-                    style={{ color: "var(--text-eyebrow)" }}
-                  >
+                  <label className="block text-[10px] font-semibold uppercase tracking-[2px] mb-1.5 font-body text-teal">
                     Departure Date
                   </label>
                   <input
@@ -785,12 +746,9 @@ export default function TripSetupPage() {
                   />
                 </div>
                 <div>
-                  <label
-                    className="block text-[10px] font-semibold uppercase tracking-[2.5px] mb-1.5 font-body"
-                    style={{ color: "var(--text-eyebrow)" }}
-                  >
+                  <label className="block text-[10px] font-semibold uppercase tracking-[2px] mb-1.5 font-body text-teal">
                     Return Date{" "}
-                    <span className="font-normal normal-case" style={{ color: "var(--text-subtle)" }}>(optional)</span>
+                    <span className="font-normal normal-case text-ink-subtle">(optional)</span>
                   </label>
                   <input
                     type="date"
@@ -800,12 +758,12 @@ export default function TripSetupPage() {
                     className="w-full px-3 py-2.5 text-sm font-body"
                   />
                   {returnDate && departureDate && returnDate < departureDate && (
-                    <p className="col-span-1 sm:col-span-2 text-xs mt-1 font-body" style={{ color: "var(--danger)" }}>
+                    <p className="col-span-1 sm:col-span-2 text-xs mt-1 font-body text-red">
                       Return date must be on or after the departure date.
                     </p>
                   )}
                   {returnDate && (
-                    <p className="text-xs mt-1 font-body" style={{ color: "var(--text-muted)" }}>
+                    <p className="text-xs mt-1 font-body text-ink-muted">
                       Adds a return leg: {singleDest || "destination"} → {homeOrigin || "home"}
                     </p>
                   )}
@@ -835,10 +793,7 @@ export default function TripSetupPage() {
               ] as const
             ).map(({ label, value, set, min, ariaBase }) => (
               <div key={label}>
-                <label
-                  className="block text-[10px] font-semibold uppercase tracking-[2.5px] mb-1.5 font-body"
-                  style={{ color: "var(--text-eyebrow)" }}
-                >
+                <label className="block text-[10px] font-semibold uppercase tracking-[2px] mb-1.5 font-body text-teal">
                   {label}
                 </label>
                 <div className="flex items-center gap-2">
@@ -851,15 +806,11 @@ export default function TripSetupPage() {
                       if (keys.length) dispatch({ type: "MARK_STALE", payload: { keys } });
                     }}
                     aria-label={`Decrease ${ariaBase}`}
-                    className="w-8 h-8 flex items-center justify-center rounded-full transition-colors"
-                    style={{ border: "1px solid var(--glass-border-2)", color: "var(--text-muted)" }}
+                    className="w-8 h-8 flex items-center justify-center rounded-full border border-border text-ink-muted hover:bg-surface2 transition-colors"
                   >
                     <Minus size={12} />
                   </button>
-                  <span
-                    className="text-base font-bold min-w-[2rem] text-center font-body"
-                    style={{ color: "var(--text-primary)" }}
-                  >
+                  <span className="text-base font-bold min-w-[2rem] text-center font-body text-ink">
                     {value}
                   </span>
                   <button
@@ -871,8 +822,7 @@ export default function TripSetupPage() {
                       if (keys.length) dispatch({ type: "MARK_STALE", payload: { keys } });
                     }}
                     aria-label={`Increase ${ariaBase}`}
-                    className="w-8 h-8 flex items-center justify-center rounded-full transition-colors"
-                    style={{ border: "1px solid var(--glass-border-2)", color: "var(--text-muted)" }}
+                    className="w-8 h-8 flex items-center justify-center rounded-full border border-border text-ink-muted hover:bg-surface2 transition-colors"
                   >
                     <Plus size={12} />
                   </button>
@@ -883,10 +833,7 @@ export default function TripSetupPage() {
 
           {/* -- Currency -- */}
           <div>
-            <label
-              className="block text-[10px] font-semibold uppercase tracking-[2.5px] mb-1.5 font-body"
-              style={{ color: "var(--text-eyebrow)" }}
-            >
+            <label className="block text-[10px] font-semibold uppercase tracking-[2px] mb-1.5 font-body text-teal">
               Currency
             </label>
             <select
@@ -906,12 +853,9 @@ export default function TripSetupPage() {
               type="checkbox"
               checked={multiMode}
               onChange={(e) => handleMultiToggle(e.target.checked)}
-              className="w-4 h-4 rounded accent-accent"
+              className="w-4 h-4 rounded accent-teal"
             />
-            <span
-              className="text-sm font-medium font-body"
-              style={{ color: "var(--text-primary)" }}
-            >
+            <span className="text-sm font-medium font-body text-ink">
               Multi-destination trip
             </span>
           </label>
@@ -947,7 +891,7 @@ export default function TripSetupPage() {
                       error={legErrors[i]}
                     />
                     {nights !== null && leg.destination && (
-                      <p className="text-center text-xs font-body py-0.5" style={{ color: "var(--text-muted)" }}>
+                      <p className="text-center text-xs font-body py-0.5 text-ink-muted">
                         {nights > 0
                           ? `${nights} night${nights === 1 ? "" : "s"} in ${iataToCityName(leg.destination)}`
                           : "Same-day connection"}
@@ -960,41 +904,31 @@ export default function TripSetupPage() {
               <button
                 type="button"
                 onClick={addLeg}
-                className="w-full py-2.5 px-4 rounded-xl text-sm font-medium font-body flex items-center justify-center gap-2 transition-colors"
-                style={{ border: "2px dashed rgba(255,255,255,0.12)", color: "var(--text-muted)" }}
+                className="w-full py-2.5 px-4 rounded-xl text-sm font-medium font-body flex items-center justify-center gap-2 transition-colors border-2 border-dashed border-border text-ink-muted hover:border-teal hover:text-teal"
               >
                 <Plus size={14} />
                 Add destination
               </button>
 
               <div className="flex items-center gap-3 mt-1">
-                <label
-                  className="flex items-center gap-2 text-sm font-body cursor-pointer"
-                  style={{ color: "var(--text-primary)" }}
-                >
+                <label className="flex items-center gap-2 text-sm font-body cursor-pointer text-ink">
                   <input
                     type="checkbox"
                     checked={addReturnLeg}
                     onChange={(e) => setAddReturnLeg(e.target.checked)}
-                    className="rounded accent-accent"
+                    className="rounded accent-teal"
                   />
                   Add return flight home
                 </label>
               </div>
 
               {addReturnLeg && (
-                <div
-                  className="rounded-xl p-3 space-y-2"
-                  style={{ background: "var(--glass-1)", border: "1px solid var(--glass-border-1)" }}
-                >
-                  <p className="text-sm font-body" style={{ color: "var(--text-muted)" }}>
+                <div className="bg-surface2 border border-border rounded-xl p-3 space-y-2">
+                  <p className="text-sm font-body text-ink-muted">
                     {legs[legs.length - 1]?.destination || "Last destination"} → {homeOrigin}
                   </p>
                   <div>
-                    <label
-                      className="block text-[10px] font-semibold uppercase tracking-[2.5px] mb-1.5 font-body"
-                      style={{ color: "var(--text-eyebrow)" }}
-                    >
+                    <label className="block text-[10px] font-semibold uppercase tracking-[2px] mb-1.5 font-body text-teal">
                       Return Date
                     </label>
                     <input
@@ -1022,7 +956,7 @@ export default function TripSetupPage() {
               {!multiMode && singleDestError && (
                 <p className="text-xs text-red-400 font-body">{singleDestError}</p>
               )}
-              <p className="text-xs font-body" style={{ color: "var(--text-muted)" }}>
+              <p className="text-xs font-body text-ink-muted">
                 Fill all origins, destinations, and dates to continue.
               </p>
             </div>

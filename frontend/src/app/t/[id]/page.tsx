@@ -92,10 +92,9 @@ export default function TripLoaderPage() {
       >
         <Loader2
           size={36}
-          className="animate-spin"
-          style={{ color: "var(--accent)" }}
+          className="animate-spin text-teal"
         />
-        <p className="text-sm font-body" style={{ color: "var(--text-muted)" }}>
+        <p className="text-sm font-body text-ink-muted">
           Loading your trip…
         </p>
       </motion.div>

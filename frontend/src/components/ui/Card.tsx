@@ -5,39 +5,42 @@ import React from "react";
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   interactive?: boolean;
   selected?: boolean;
-  selectedColor?: "success" | "primary" | "accent";
+  aiPick?: boolean;
   as?: "div" | "article" | "section";
 }
-
-const selectedRing: Record<string, string> = {
-  success: "ring-2 ring-success border-success bg-success/5",
-  primary: "ring-2 ring-primary border-primary bg-primary/5",
-  accent: "ring-2 ring-accent border-accent bg-accent/5",
-};
 
 export function Card({
   interactive = false,
   selected = false,
-  selectedColor = "success",
+  aiPick = false,
   as: Tag = "div",
   children,
   className = "",
   ...props
 }: CardProps) {
+  const base = "relative bg-surface border border-border rounded-lg transition-all duration-200";
+  const interactiveClass = interactive && !selected
+    ? "hover:shadow-md hover:-translate-y-0.5 cursor-pointer shadow-sm"
+    : "shadow-sm";
+  const selectedClass = selected
+    ? "border-teal ring-1 ring-teal/30 shadow-sm"
+    : "";
+  const aiPickClass = aiPick && !selected
+    ? "border-teal/40"
+    : "";
+
   return (
     <Tag
-      className={[
-        "card-base transition-all duration-200",
-        interactive && !selected
-          ? "hover:shadow-card-hover hover:-translate-y-0.5 cursor-pointer"
-          : "",
-        selected ? selectedRing[selectedColor] : "",
-        className,
-      ]
+      className={[base, interactiveClass, selectedClass, aiPickClass, className]
         .filter(Boolean)
         .join(" ")}
       {...props}
     >
+      {aiPick && (
+        <span className="absolute top-0 right-0 px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase rounded-bl-lg rounded-tr-lg bg-teal text-surface">
+          AI Pick
+        </span>
+      )}
       {children}
     </Tag>
   );

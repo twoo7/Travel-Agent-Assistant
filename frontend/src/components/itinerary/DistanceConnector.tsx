@@ -28,10 +28,10 @@ const MODE_LABEL: Record<HopMode, string> = {
   transit: "transit",
 };
 
-const MODE_COLOR: Record<HopMode, string> = {
-  walking: "var(--success)",
-  driving: "var(--accent)",
-  transit: "var(--warning)",
+const MODE_CLASS: Record<HopMode, string> = {
+  walking: "text-teal bg-teal/10 border border-teal/30",
+  driving: "text-amber bg-amber/10 border border-amber/30",
+  transit: "text-green bg-green/10 border border-green/30",
 };
 
 function estimateMins(km: number, m: HopMode): number {
@@ -64,7 +64,7 @@ export function DistanceConnector({
   if (!hasData && !canEstimate) {
     return (
       <div className="flex items-center py-1 px-3">
-        <div className="border-l-2 border-dashed h-4 ml-3" style={{ borderColor: "var(--glass-border-2)" }} />
+        <div className="border-l-2 border-dashed h-4 ml-3 border-border" />
       </div>
     );
   }
@@ -76,18 +76,12 @@ export function DistanceConnector({
 
   return (
     <div className="flex items-center gap-2 py-1 pl-4">
-      <div className="border-l-2 border-dashed h-4" style={{ borderColor: "var(--glass-border-2)" }} />
+      <div className="border-l-2 border-dashed h-4 border-border" />
       <button
         onClick={() => onModeChange?.(nextMode(displayMode))}
         disabled={!onModeChange}
-        className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full transition-colors font-body"
-        style={{
-          color: MODE_COLOR[displayMode],
-          background: `${MODE_COLOR[displayMode]}18`,
-          border: `1px solid ${MODE_COLOR[displayMode]}40`,
-          cursor: onModeChange ? "pointer" : "default",
-          opacity: isEstimate ? 0.7 : 1,
-        }}
+        className={`flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full transition-colors font-body ${MODE_CLASS[displayMode]}${isEstimate ? " opacity-70" : ""}`}
+        style={{ cursor: onModeChange ? "pointer" : "default" }}
         title={onModeChange ? "Click to change transport mode" : undefined}
       >
         {MODE_ICON[displayMode]}

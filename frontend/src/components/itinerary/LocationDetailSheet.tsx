@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion"; // motion used for DayPicker popover
 import {
   MapPin, Clock, X, ExternalLink, Bookmark, ArrowRight,
   Trash2, Plus, ChevronDown, ChevronLeft, ChevronRight,
@@ -159,104 +159,175 @@ export function LocationDetailSheet({ target, onClose }: Props) {
   const hasMetaGrid = priceLevel != null || bestTime || address || indoorOutdoor || bookingRequired;
 
   return (
-    <motion.div
-      className="h-full flex flex-col overflow-hidden"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.18, ease: "easeOut" }}
-      style={{ background: "var(--glass-2)", backdropFilter: "blur(24px)" }}
-    >
-      {/* ── Photo carousel ──────────────────────────────────────── */}
-      <div className="relative shrink-0 overflow-hidden" style={{ height: 156 }}>
-        {photoUrls.length > 0 ? (
-          <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              key={photoUrls[photoIndex]}
-              src={photoUrls[photoIndex]}
-              alt={name}
-              className="absolute inset-0 w-full h-full"
-              style={{ objectFit: "cover", objectPosition: "center" }}
-            />
-            {photoUrls.length > 1 && (
-              <>
-                <button onClick={prevPhoto} className="absolute left-1.5 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-full hover:bg-white/30 transition-colors" style={{ background: "rgba(0,0,0,0.45)", color: "#fff", backdropFilter: "blur(4px)" }} aria-label="Previous photo">
-                  <ChevronLeft size={13} />
-                </button>
-                <button onClick={nextPhoto} className="absolute right-1.5 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-full hover:bg-white/30 transition-colors" style={{ background: "rgba(0,0,0,0.45)", color: "#fff", backdropFilter: "blur(4px)" }} aria-label="Next photo">
-                  <ChevronRight size={13} />
-                </button>
-              </>
-            )}
-            {/* Photo label bottom-left */}
-            {photoUrls.length > 1 && (
-              <div className="absolute bottom-2 left-3 text-[9px] font-semibold font-body" style={{ color: "rgba(255,255,255,0.6)" }}>
-                photo {photoIndex + 1} / {photoUrls.length}
-              </div>
-            )}
-            {/* Counter badge bottom-right */}
-            {photoUrls.length > 1 && (
-              <div className="absolute bottom-2 right-2.5 text-[9px] font-bold font-body px-1.5 py-0.5 rounded" style={{ background: "rgba(0,0,0,0.55)", color: "rgba(255,255,255,0.85)", backdropFilter: "blur(4px)" }}>
-                {photoIndex + 1}/{photoUrls.length}
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="absolute inset-0" style={{ background: heroMeta.bg }} />
-        )}
+    <div className="h-full flex flex-col overflow-hidden bg-surface">
 
-        {/* Bottom scrim */}
-        <div className="absolute inset-0 pointer-events-none" style={{ background: "linear-gradient(to bottom, rgba(10,22,40,0.1) 0%, rgba(10,22,40,0.55) 100%)" }} />
-
-        {/* Badges top-left */}
-        <div className="absolute top-2.5 left-3 flex items-center gap-1.5 pointer-events-none">
-          {dayLabel && (
-            <span className="text-[9px] font-bold uppercase tracking-[2px] px-2 py-0.5 rounded-full font-body" style={{ background: "#E07A5F", color: "#fff" }}>
-              {dayLabel}
-            </span>
-          )}
-          {category && (
-            <span className="text-[9px] font-semibold uppercase tracking-[2px] px-2 py-0.5 rounded-full font-body" style={{ background: "rgba(10,22,40,0.65)", color: "rgba(255,255,255,0.9)", backdropFilter: "blur(6px)", border: "1px solid rgba(255,255,255,0.2)" }}>
-              {heroMeta.label}
-            </span>
-          )}
+      {/* ── Peek area: name + close + action bar (always visible) ── */}
+      <div className="shrink-0 px-4 pt-3 pb-0">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <h2 className="font-display text-[20px] font-medium leading-tight text-ink truncate">
+              {name}
+            </h2>
+            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+              {rating != null && (
+                <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5">
+                    {[1,2,3,4,5].map((s) => (
+                      <Star key={s} size={10} fill={s <= Math.round(rating) ? "#f59e0b" : "transparent"} color="#f59e0b" />
+                    ))}
+                  </div>
+                  <span className="text-[11px] font-body text-ink-subtle">
+                    {rating.toFixed(1)}{reviewCount != null ? ` (${reviewCount.toLocaleString()})` : ""}
+                  </span>
+                </div>
+              )}
+              {dayLabel && (
+                <span className="text-[9px] font-bold uppercase tracking-[1.5px] px-2 py-0.5 rounded-full font-body bg-teal text-surface">
+                  {dayLabel}
+                </span>
+              )}
+              {category && (
+                <span className="text-[9px] font-bold uppercase tracking-[1.5px] px-2 py-0.5 rounded-full font-body bg-surface2 text-ink-muted">
+                  {heroMeta.label}
+                </span>
+              )}
+            </div>
+          </div>
+          <button onClick={onClose} className="shrink-0 w-7 h-7 flex items-center justify-center rounded-full hover:bg-surface2 transition-colors text-ink-subtle" aria-label="Close">
+            <X size={13} />
+          </button>
         </div>
-
-        {/* Close */}
-        <button onClick={onClose} className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors" style={{ background: "rgba(0,0,0,0.4)", color: "#fff", backdropFilter: "blur(4px)" }} aria-label="Close">
-          <X size={12} />
-        </button>
       </div>
 
-      {/* ── Scrollable body ─────────────────────────────────────── */}
+      {/* ── Action bar (always visible in peek) ─────────────────── */}
+      {!isAirport && (
+        <div className="shrink-0 px-4 pt-2.5 pb-3 space-y-2">
+          {isSidebar && (
+            <div className="relative">
+              <button
+                onClick={() => setShowDayPicker((v) => !v)}
+                className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-sm font-semibold font-body transition-all bg-teal text-surface hover:bg-teal-hover active:scale-[0.98]"
+              >
+                <Plus size={13} />
+                Add to day
+                <ChevronDown size={10} style={{ opacity: 0.75, transition: "transform 0.15s", transform: showDayPicker ? "rotate(180deg)" : "rotate(0deg)" }} />
+              </button>
+              <AnimatePresence>
+                {showDayPicker && (
+                  <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }} transition={{ duration: 0.12 }} className="absolute bottom-full mb-1.5 left-0 right-0 z-20">
+                    <DayPicker
+                      days={(target as Extract<DetailTarget, { source: "sidebar" }>).days}
+                      onPick={(dayNumber) => { (target as Extract<DetailTarget, { source: "sidebar" }>).onAddToDay(dayNumber); onClose(); }}
+                      onCancel={() => setShowDayPicker(false)}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
+          {isDay && otherDays.length > 0 && (
+            <div className="relative">
+              <button
+                onClick={() => setShowDayPicker((v) => !v)}
+                className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-sm font-semibold font-body transition-all bg-teal text-surface hover:bg-teal-hover active:scale-[0.98]"
+              >
+                <ArrowRight size={13} />
+                Move to day
+                <ChevronDown size={10} style={{ opacity: 0.75, transition: "transform 0.15s", transform: showDayPicker ? "rotate(180deg)" : "rotate(0deg)" }} />
+              </button>
+              <AnimatePresence>
+                {showDayPicker && (
+                  <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }} transition={{ duration: 0.12 }} className="absolute bottom-full mb-1.5 left-0 right-0 z-20">
+                    <DayPicker
+                      days={otherDays}
+                      onPick={(toDay) => { (target as Extract<DetailTarget, { source: "day" }>).onMoveToDay(toDay); onClose(); }}
+                      onCancel={() => setShowDayPicker(false)}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium font-body transition-all bg-surface2 border border-border text-ink-muted hover:text-ink active:scale-[0.98]">
+              <ExternalLink size={11} />
+              Maps
+            </a>
+            {isSidebar && (target as Extract<DetailTarget, { source: "sidebar" }>).onSave && (
+              <button onClick={() => { (target as Extract<DetailTarget, { source: "sidebar" }>).onSave!(); onClose(); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium font-body transition-colors bg-surface2 border border-border text-ink-muted hover:text-ink active:scale-[0.98]">
+                <Bookmark size={11} />
+                Save
+              </button>
+            )}
+            {isDay && isPoi && (
+              <button onClick={() => { (target as Extract<DetailTarget, { source: "day" }>).onMoveToSaved(); onClose(); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium font-body transition-colors bg-surface2 border border-border text-ink-muted hover:text-ink active:scale-[0.98]">
+                <Bookmark size={11} />
+                Save
+              </button>
+            )}
+            {(isDay || (isSidebar && (target as Extract<DetailTarget, { source: "sidebar" }>).onRemove)) && (
+              <button
+                onClick={() => {
+                  if (isDay) (target as Extract<DetailTarget, { source: "day" }>).onRemove();
+                  else (target as Extract<DetailTarget, { source: "sidebar" }>).onRemove!();
+                  onClose();
+                }}
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium font-body transition-all bg-surface2 border border-red/25 text-red/65 hover:bg-red/10 active:scale-[0.98]"
+                aria-label="Remove"
+              >
+                <Trash2 size={11} />
+                Delete
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Scrollable body (photo + details) ───────────────────── */}
       <div className="flex-1 min-h-0 overflow-y-auto">
 
-        {/* Name + rating */}
-        <div className="px-4 pt-3 pb-2 flex items-start justify-between gap-3">
-          <h2 className="font-display text-xl leading-tight flex-1" style={{ color: "var(--text-primary)" }}>
-            {name}
-          </h2>
-          {rating != null && (
-            <div className="shrink-0 flex flex-col items-end gap-0.5 mt-0.5">
-              <div className="flex items-center gap-0.5">
-                {[1,2,3,4,5].map((s) => (
-                  <Star key={s} size={11} fill={s <= Math.round(rating) ? "#f59e0b" : "transparent"} color="#f59e0b" />
-                ))}
-              </div>
-              <span className="text-[10px] font-body" style={{ color: "var(--text-muted)" }}>
-                {rating.toFixed(1)}{reviewCount != null ? ` (${reviewCount.toLocaleString()})` : ""}
-              </span>
-            </div>
+        {/* Photo carousel */}
+        <div className="relative shrink-0 overflow-hidden border-t border-border" style={{ height: 200 }}>
+          {photoUrls.length > 0 ? (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                key={photoUrls[photoIndex]}
+                src={photoUrls[photoIndex]}
+                alt={name}
+                className="absolute inset-0 w-full h-full"
+                style={{ objectFit: "cover", objectPosition: "center" }}
+              />
+              {photoUrls.length > 1 && (
+                <>
+                  <button onClick={prevPhoto} className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/30 transition-colors" style={{ background: "rgba(0,0,0,0.45)", color: "#fff", backdropFilter: "blur(4px)" }} aria-label="Previous photo">
+                    <ChevronLeft size={14} />
+                  </button>
+                  <button onClick={nextPhoto} className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/30 transition-colors" style={{ background: "rgba(0,0,0,0.45)", color: "#fff", backdropFilter: "blur(4px)" }} aria-label="Next photo">
+                    <ChevronRight size={14} />
+                  </button>
+                </>
+              )}
+              {photoUrls.length > 1 && (
+                <div className="absolute bottom-3 right-3 text-[9px] font-bold font-body px-1.5 py-0.5 rounded" style={{ background: "rgba(0,0,0,0.55)", color: "rgba(255,255,255,0.85)", backdropFilter: "blur(4px)" }}>
+                  {photoIndex + 1}/{photoUrls.length}
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="absolute inset-0" style={{ background: heroMeta.bg }} />
           )}
         </div>
 
         {/* Meta grid */}
         {hasMetaGrid && (
           <div className="px-3 pb-2">
-            <div className="rounded-lg overflow-hidden" style={{ border: "1px solid var(--glass-border-2)" }}>
+            <div className="rounded-lg overflow-hidden border border-border">
               {/* Row 1: price + best time (or indoor/outdoor) */}
               {(priceLevel != null || bestTime || indoorOutdoor || bookingRequired) && (
-                <div className="grid grid-cols-2" style={{ borderBottom: (address || neighborhood) ? "1px solid var(--glass-border-1)" : undefined }}>
+                <div className={`grid grid-cols-2 ${(address || neighborhood) ? "border-b border-border" : ""}`}>
                   {priceLevel != null && (
                     <MetaCell label="Price" icon={null}>
                       {PRICE_LABELS[priceLevel]}
@@ -287,7 +358,7 @@ export function LocationDetailSheet({ target, onClose }: Props) {
                 <MetaCell label="Address" fullWidth>
                   {address}
                   {neighborhood && (
-                    <span className="ml-1 text-[10px]" style={{ color: "rgba(255,255,255,0.3)" }}>· {neighborhood}</span>
+                    <span className="ml-1 text-[10px] text-ink-subtle">· {neighborhood}</span>
                   )}
                 </MetaCell>
               )}
@@ -299,22 +370,21 @@ export function LocationDetailSheet({ target, onClose }: Props) {
 
           {/* Opening hours — collapsible */}
           {hoursRows.length > 0 && (
-            <div className="rounded-lg overflow-hidden" style={{ border: "1px solid var(--glass-border-2)" }}>
+            <div className="rounded-lg overflow-hidden border border-border">
               {/* Header row */}
               <button
                 onClick={() => setHoursExpanded((v) => !v)}
-                className="w-full flex items-center gap-2 px-3 py-2 text-xs font-body transition-colors hover:bg-white/5"
-                style={{ color: "var(--text-muted)" }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-xs font-body transition-colors hover:bg-surface2 text-ink-muted"
               >
-                <Clock size={11} style={{ color: "var(--text-subtle)" }} />
-                <span className="font-semibold uppercase tracking-[1.5px] text-[9px]" style={{ color: "var(--text-eyebrow)" }}>Hours</span>
+                <Clock size={11} className="text-ink-subtle" />
+                <span className="font-semibold uppercase tracking-[1.5px] text-[9px] text-ink-subtle">Hours</span>
                 <ChevronDown size={10} style={{ opacity: 0.5, transform: hoursExpanded ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.15s" }} />
                 {openStatus != null && (
-                  <span className="ml-auto text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full" style={{
-                    background: openStatus ? "rgba(107,144,128,0.2)" : "rgba(239,68,68,0.12)",
-                    color: openStatus ? "var(--success)" : "#f87171",
-                    border: `1px solid ${openStatus ? "rgba(107,144,128,0.35)" : "rgba(239,68,68,0.25)"}`,
-                  }}>
+                  <span className={`ml-auto text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full ${
+                    openStatus
+                      ? "bg-teal-light text-teal border border-teal/30"
+                      : "bg-red/10 text-red border border-red/25"
+                  }`}>
                     {openStatus ? "Open now" : "Closed"}
                   </span>
                 )}
@@ -340,7 +410,7 @@ export function LocationDetailSheet({ target, onClose }: Props) {
 
           {/* Nearest transit */}
           {nearestTransit && (
-            <p className="text-[10px] font-body flex items-center gap-1.5" style={{ color: "var(--text-subtle)" }}>
+            <p className="text-[10px] font-body flex items-center gap-1.5 text-ink-subtle">
               <MapPin size={9} />
               {nearestTransit}
             </p>
@@ -350,7 +420,7 @@ export function LocationDetailSheet({ target, onClose }: Props) {
           {themeTags.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {themeTags.map((tag) => (
-                <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full font-body" style={{ background: "var(--glass-1)", border: "1px solid var(--glass-border-1)", color: "var(--text-muted)" }}>
+                <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full font-body bg-surface2 border border-border text-ink-muted">
                   {tag}
                 </span>
               ))}
@@ -359,24 +429,22 @@ export function LocationDetailSheet({ target, onClose }: Props) {
 
           {/* Claude note */}
           {notes && (
-            <p className="text-xs font-body italic leading-relaxed" style={{ color: "var(--text-muted)" }}>
+            <p className="text-xs font-body italic leading-relaxed text-ink-muted">
               {notes}
             </p>
           )}
 
           {/* Booking tip */}
           {bookingTip && (
-            <div className="rounded-lg px-3 py-2.5 flex gap-2 text-xs font-body leading-relaxed" style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)" }}>
-              <Lightbulb size={13} className="shrink-0 mt-0.5" style={{ color: "rgba(245,158,11,0.75)" }} />
-              <span style={{ color: "rgba(245,158,11,0.9)" }}>
-                <span className="font-semibold">Tip: </span>{bookingTip}
-              </span>
+            <div className="bg-amber/10 border-l-2 border-amber rounded-r-md p-3 flex gap-2 font-body leading-relaxed">
+              <Lightbulb size={13} className="shrink-0 mt-0.5 text-amber" />
+              <span className="text-[12px] italic text-ink-muted">{bookingTip}</span>
             </div>
           )}
 
           {/* AI reason */}
           {(aiRecommended || aiReason) && aiReason && (
-            <div className="rounded-lg px-3 py-2 text-xs font-body leading-relaxed" style={{ background: "rgba(224,122,95,0.06)", border: "1px solid rgba(224,122,95,0.18)", borderLeft: "2px solid rgba(224,122,95,0.5)", color: "rgba(224,122,95,0.85)" }}>
+            <div className="rounded-lg px-3 py-2 text-xs font-body leading-relaxed bg-teal-light border border-teal/20 border-l-2 border-l-teal text-teal">
               <span className="flex items-center gap-1 font-semibold mb-0.5"><Sparkles size={9} />AI pick</span>
               {aiReason}
             </div>
@@ -386,100 +454,7 @@ export function LocationDetailSheet({ target, onClose }: Props) {
           {busyTimes && <BusyTimesBar busyTimes={busyTimes} />}
         </div>
       </div>
-
-      {/* ── Action bar ───────────────────────────────────────────── */}
-      {!isAirport && (
-        <div className="shrink-0 px-3 py-2 flex items-center gap-1.5" style={{ borderTop: "1px solid var(--glass-border-1)", background: "var(--glass-1)" }}>
-
-          {/* Move to day / Add to day */}
-          {isSidebar && (
-            <div className="relative">
-              <button
-                onClick={() => setShowDayPicker((v) => !v)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold font-body transition-all hover:opacity-90 active:scale-95"
-                style={{ background: "var(--accent)", color: "#fff", boxShadow: "0 0 10px rgba(224,122,95,0.25)" }}
-              >
-                <Plus size={11} />
-                Add to day
-                <ChevronDown size={9} style={{ opacity: 0.75, transition: "transform 0.15s", transform: showDayPicker ? "rotate(180deg)" : "rotate(0deg)" }} />
-              </button>
-              <AnimatePresence>
-                {showDayPicker && (
-                  <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }} transition={{ duration: 0.12 }} className="absolute bottom-full mb-1.5 left-0 z-20" style={{ minWidth: 160 }}>
-                    <DayPicker
-                      days={(target as Extract<DetailTarget, { source: "sidebar" }>).days}
-                      onPick={(dayNumber) => { (target as Extract<DetailTarget, { source: "sidebar" }>).onAddToDay(dayNumber); onClose(); }}
-                      onCancel={() => setShowDayPicker(false)}
-                    />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          )}
-
-          {isDay && otherDays.length > 0 && (
-            <div className="relative">
-              <button
-                onClick={() => setShowDayPicker((v) => !v)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium font-body transition-all hover:bg-white/10 active:scale-95"
-                style={{ border: "1px solid var(--glass-border-2)", color: "var(--text-primary)" }}
-              >
-                <ArrowRight size={11} />
-                Move to day
-                <ChevronDown size={9} style={{ opacity: 0.6, transition: "transform 0.15s", transform: showDayPicker ? "rotate(180deg)" : "rotate(0deg)" }} />
-              </button>
-              <AnimatePresence>
-                {showDayPicker && (
-                  <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }} transition={{ duration: 0.12 }} className="absolute bottom-full mb-1.5 left-0 z-20" style={{ minWidth: 160 }}>
-                    <DayPicker
-                      days={otherDays}
-                      onPick={(toDay) => { (target as Extract<DetailTarget, { source: "day" }>).onMoveToDay(toDay); onClose(); }}
-                      onCancel={() => setShowDayPicker(false)}
-                    />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          )}
-
-          {/* Maps */}
-          <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium font-body transition-all hover:bg-white/10 active:scale-95" style={{ border: "1px solid var(--glass-border-2)", color: "var(--text-muted)" }}>
-            <ExternalLink size={11} />
-            Maps
-          </a>
-
-          {/* Save */}
-          {isSidebar && (target as Extract<DetailTarget, { source: "sidebar" }>).onSave && (
-            <button onClick={() => { (target as Extract<DetailTarget, { source: "sidebar" }>).onSave!(); onClose(); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium font-body transition-colors hover:bg-white/8 active:scale-95" style={{ border: "1px solid var(--glass-border-2)", color: "var(--text-muted)" }}>
-              <Bookmark size={11} />
-              Save
-            </button>
-          )}
-          {isDay && isPoi && (
-            <button onClick={() => { (target as Extract<DetailTarget, { source: "day" }>).onMoveToSaved(); onClose(); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium font-body transition-colors hover:bg-white/8 active:scale-95" style={{ border: "1px solid var(--glass-border-2)", color: "var(--text-muted)" }}>
-              <Bookmark size={11} />
-              Save
-            </button>
-          )}
-
-          {/* Delete — pushed right, red-tinted */}
-          {(isDay || (isSidebar && (target as Extract<DetailTarget, { source: "sidebar" }>).onRemove)) && (
-            <button
-              onClick={() => {
-                if (isDay) (target as Extract<DetailTarget, { source: "day" }>).onRemove();
-                else (target as Extract<DetailTarget, { source: "sidebar" }>).onRemove!();
-                onClose();
-              }}
-              className="ml-auto flex items-center justify-center w-8 h-8 rounded-lg transition-all hover:bg-red-500/15 active:scale-95"
-              style={{ border: "1px solid rgba(239,68,68,0.25)", color: "rgba(239,68,68,0.65)" }}
-              aria-label="Remove"
-            >
-              <Trash2 size={13} />
-            </button>
-          )}
-        </div>
-      )}
-    </motion.div>
+    </div>
   );
 }
 
@@ -500,14 +475,13 @@ function MetaCell({
 }) {
   return (
     <div
-      className={`px-3 py-2 ${fullWidth ? "col-span-2" : ""}`}
-      style={{ borderLeft: borderLeft ? "1px solid var(--glass-border-1)" : undefined }}
+      className={`px-3 py-2 ${fullWidth ? "col-span-2" : ""} ${borderLeft ? "border-l border-border" : ""}`}
     >
-      <p className="text-[8px] font-bold uppercase tracking-[1.5px] font-body mb-0.5 flex items-center gap-1" style={{ color: "var(--text-eyebrow)" }}>
+      <p className="text-[8px] font-bold uppercase tracking-[1.5px] font-body mb-0.5 flex items-center gap-1 text-ink-subtle">
         {icon}
         {label}
       </p>
-      <p className="text-xs font-body leading-snug" style={{ color: "var(--text-primary)" }}>
+      <p className="text-xs font-body leading-snug text-ink">
         {children}
       </p>
     </div>
@@ -518,23 +492,16 @@ function HoursRow({ day, time, isToday }: { day: string; time: string; isToday: 
   const closed = !time || time.toLowerCase() === "closed";
   return (
     <div
-      className="flex items-center gap-2 px-3"
-      style={{
-        height: 28,
-        background: isToday ? "rgba(224,122,95,0.08)" : "transparent",
-        borderTop: "1px solid var(--glass-border-1)",
-        borderLeft: isToday ? "2px solid var(--accent)" : "2px solid transparent",
-      }}
+      className={`flex items-center gap-2 px-3 border-t border-border ${isToday ? "bg-teal-light border-l-2 border-l-teal" : "border-l-2 border-l-transparent"}`}
+      style={{ height: 28 }}
     >
       <span
-        className="w-8 shrink-0 font-bold uppercase tracking-wide font-body"
-        style={{ fontSize: 9, color: isToday ? "var(--accent)" : "var(--text-subtle)" }}
+        className={`w-8 shrink-0 font-bold uppercase tracking-wide font-body text-[9px] ${isToday ? "text-teal" : "text-ink-subtle"}`}
       >
         {SHORT_DAYS[day] ?? day.slice(0, 3)}
       </span>
       <span
-        className="flex-1 text-right text-[10px] font-body"
-        style={{ color: closed ? "var(--text-subtle)" : isToday ? "var(--text-primary)" : "var(--text-muted)" }}
+        className={`flex-1 text-right text-[10px] font-body ${closed ? "text-ink-subtle" : isToday ? "text-ink" : "text-ink-muted"}`}
       >
         {closed ? "Closed" : time}
       </span>

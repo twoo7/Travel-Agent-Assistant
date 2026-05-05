@@ -68,13 +68,34 @@ function buildPOI(detail: PlaceDetail): POI {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parsePriceLevel(level: number | undefined): number | undefined {
   if (level == null) return undefined;
-  // Legacy Places API returns 0–4 integer
   return level;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+function parsePlaceNew(place: any): PlaceDetail {
+  const weekdays: string[] = place.regularOpeningHours?.weekdayDescriptions ?? [];
+  const openingHours = weekdays.length > 0 ? weekdays.join("; ") : undefined;
+  const lat = typeof place.location?.lat === "function" ? place.location.lat() : (place.location?.lat ?? 0);
+  const lng = typeof place.location?.lng === "function" ? place.location.lng() : (place.location?.lng ?? 0);
+  return {
+    placeId: place.id ?? "",
+    name: place.displayName ?? "",
+    address: place.formattedAddress ?? "",
+    lat,
+    lng,
+    category: inferCategory(place.types ?? []),
+    rating: place.rating ?? undefined,
+    reviewCount: place.userRatingCount ?? undefined,
+    priceLevel: place.priceLevel != null ? Number(place.priceLevel) : undefined,
+    openingHours,
+    photoUrl: place.photos?.[0]?.getURI({ maxWidthPx: 800 }) ?? undefined,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    photoUrls: place.photos ? (place.photos as any[]).slice(0, 5).map((ph: any) => ph.getURI({ maxWidthPx: 800 })) : undefined,
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parsePlaceResult(p: any): PlaceDetail {
-  // Opening hours: prefer weekday_text array, fall back to open_now string
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const weekdays: string[] = p.opening_hours?.weekday_text ?? [];
   const openingHours = weekdays.length > 0 ? weekdays.join("; ") : undefined;
@@ -111,6 +132,8 @@ export function PlacesSearch({ onAddToDay, onSave, locationBias, days, savedIds,
   const sessionToken = useRef<google.maps.places.AutocompleteSessionToken | null>(null);
   const autocomplete = useRef<google.maps.places.AutocompleteService | null>(null);
   const placesService = useRef<google.maps.places.PlacesService | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const suggestionsRef = useRef<Record<string, any>>({});
   const mapDiv = useRef<HTMLDivElement>(null);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -124,7 +147,6 @@ export function PlacesSearch({ onAddToDay, onSave, locationBias, days, savedIds,
     }
   }, [placesLib]);
 
-  // Close dropdown on outside click
   useEffect(() => {
     function handleOutside(e: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -135,8 +157,48 @@ export function PlacesSearch({ onAddToDay, onSave, locationBias, days, savedIds,
     return () => document.removeEventListener("mousedown", handleOutside);
   }, []);
 
-  const fetchPredictions = useCallback((input: string) => {
-    if (!autocomplete.current || !sessionToken.current || input.length < 2) {
+  const fetchPredictions = useCallback(async (input: string) => {
+    if (!placesLib || input.length < 2) {
+      setPredictions([]);
+      setShowDropdown(false);
+      return;
+    }
+
+    // Try new AutocompleteSuggestion API (Places API New)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const newApi = (placesLib as any).AutocompleteSuggestion;
+    if (newApi) {
+      try {
+        if (!sessionToken.current) {
+          sessionToken.current = new placesLib.AutocompleteSessionToken();
+        }
+        const { suggestions } = await newApi.fetchAutocompleteSuggestions({
+          input,
+          sessionToken: sessionToken.current,
+          ...(locationBias ? { locationBias: { circle: { center: locationBias, radius: 50000 } } } : {}),
+        });
+        suggestionsRef.current = {};
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const parsed = (suggestions as any[]).slice(0, 6).map((s: any) => {
+          const p = s.placePrediction;
+          suggestionsRef.current[p.placeId] = s;
+          return {
+            placeId: p.placeId as string,
+            mainText: (p.mainText?.text ?? p.text?.text ?? "") as string,
+            secondaryText: (p.secondaryText?.text ?? "") as string,
+          };
+        });
+        setPredictions(parsed);
+        setShowDropdown(parsed.length > 0);
+        return;
+      } catch (err) {
+        console.error("[PlacesSearch] AutocompleteSuggestion failed", err);
+        // fall through to legacy
+      }
+    }
+
+    // Legacy AutocompleteService fallback
+    if (!autocomplete.current || !sessionToken.current) {
       setPredictions([]);
       setShowDropdown(false);
       return;
@@ -149,6 +211,7 @@ export function PlacesSearch({ onAddToDay, onSave, locationBias, days, savedIds,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     autocomplete.current.getPlacePredictions(request as any, (preds: unknown, status: string) => {
       if (status !== "OK" || !preds) {
+        console.error("[PlacesSearch] getPlacePredictions failed", { status, input });
         setPredictions([]);
         setShowDropdown(false);
         return;
@@ -162,7 +225,7 @@ export function PlacesSearch({ onAddToDay, onSave, locationBias, days, savedIds,
       setPredictions(parsed);
       setShowDropdown(parsed.length > 0);
     });
-  }, [locationBias]);
+  }, [locationBias, placesLib]);
 
   function handleQueryChange(value: string) {
     setQuery(value);
@@ -184,21 +247,43 @@ export function PlacesSearch({ onAddToDay, onSave, locationBias, days, savedIds,
     setPrimaryDetail(null);
     setRelatedResults([]);
 
-    if (!placesService.current || !placesLib) return;
+    if (!placesLib) return;
 
-    // Rotate session token after selection
     sessionToken.current = new placesLib.AutocompleteSessionToken();
 
-    setLoadingPrimary(true);
-    placesService.current.getDetails(
-      { placeId: prediction.placeId, fields: ["place_id", "name", "formatted_address", "geometry", "types", "rating", "user_ratings_total", "price_level", "opening_hours", "photos"] },
-      (place: unknown, status: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const storedSuggestion = suggestionsRef.current[prediction.placeId] as any;
+    if (storedSuggestion?.placePrediction) {
+      // New API path: use the cached PlacePrediction to fetch full details
+      setLoadingPrimary(true);
+      const place = storedSuggestion.placePrediction.toPlace();
+      place.fetchFields({
+        fields: ["id", "displayName", "formattedAddress", "location", "types", "rating", "userRatingCount", "priceLevel", "regularOpeningHours", "photos"],
+      }).then(() => {
         setLoadingPrimary(false);
-        if (status !== "OK" || !place) return;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        setPrimaryDetail(parsePlaceResult(place as any));
-      }
-    );
+        setPrimaryDetail(parsePlaceNew(place));
+      }).catch((err: unknown) => {
+        console.error("[PlacesSearch] fetchFields failed", err);
+        setLoadingPrimary(false);
+      });
+    } else if (placesService.current) {
+      // Legacy getDetails fallback
+      setLoadingPrimary(true);
+      placesService.current.getDetails(
+        { placeId: prediction.placeId, fields: ["place_id", "name", "formatted_address", "geometry", "types", "rating", "user_ratings_total", "price_level", "opening_hours", "photos"] },
+        (place: unknown, status: string) => {
+          setLoadingPrimary(false);
+          if (status !== "OK" || !place) {
+            console.error("[PlacesSearch] getDetails failed", { status });
+            return;
+          }
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          setPrimaryDetail(parsePlaceResult(place as any));
+        }
+      );
+    }
+
+    if (!placesService.current) return;
 
     setLoadingRelated(true);
     const searchQuery = `${prediction.mainText} ${prediction.secondaryText}`.trim();
@@ -239,7 +324,7 @@ export function PlacesSearch({ onAddToDay, onSave, locationBias, days, savedIds,
 
       {/* Input with dropdown */}
       <div className="relative mb-3">
-        <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: "var(--text-subtle)" }} />
+        <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-ink-subtle" />
         <input
           type="text"
           value={query}
@@ -247,18 +332,12 @@ export function PlacesSearch({ onAddToDay, onSave, locationBias, days, savedIds,
           onFocus={() => { if (predictions.length > 0) setShowDropdown(true); }}
           onKeyDown={(e) => { if (e.key === "Escape") setShowDropdown(false); }}
           placeholder="Search any place…"
-          className="w-full pl-8 pr-8 py-2 text-sm rounded-lg font-body outline-none"
-          style={{
-            background: "var(--glass-2)",
-            border: "1px solid var(--glass-border-2)",
-            color: "var(--text-primary)",
-          }}
+          className="w-full pl-8 pr-8 py-2 text-sm rounded-lg font-body outline-none bg-surface border border-border focus:border-teal focus:ring-2 focus:ring-teal/20 text-ink"
         />
         {query && (
           <button
             onClick={handleClear}
-            className="absolute right-2 top-1/2 -translate-y-1/2"
-            style={{ color: "var(--text-subtle)" }}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-ink-subtle"
             aria-label="Clear search"
           >
             <X size={13} />
@@ -267,26 +346,18 @@ export function PlacesSearch({ onAddToDay, onSave, locationBias, days, savedIds,
 
         {/* Dropdown predictions */}
         {showDropdown && predictions.length > 0 && (
-          <div
-            className="absolute top-full left-0 right-0 mt-1 rounded-lg overflow-hidden shadow-xl z-30"
-            style={{
-              background: "var(--glass-elevated, rgba(20,32,50,0.97))",
-              backdropFilter: "blur(20px)",
-              border: "1px solid var(--glass-border-1)",
-            }}
-          >
+          <div className="absolute top-full left-0 right-0 mt-1 rounded-lg overflow-hidden shadow-lg z-30 bg-surface border border-border">
             {predictions.map((pred) => (
               <button
                 key={pred.placeId}
                 onClick={() => handleSelectPrediction(pred)}
-                className="w-full flex items-start gap-2 px-3 py-2.5 text-left text-xs font-body transition-colors hover:bg-white/8"
-                style={{ borderBottom: "1px solid var(--glass-border-1)", color: "var(--text-primary)" }}
+                className="w-full flex items-start gap-2 px-3 py-2.5 text-left text-xs font-body transition-colors hover:bg-surface2 border-b border-border text-ink"
               >
-                <MapPin size={11} className="shrink-0 mt-0.5" style={{ color: "var(--text-subtle)" }} />
+                <MapPin size={11} className="shrink-0 mt-0.5 text-ink-subtle" />
                 <div className="min-w-0">
                   <div className="font-medium truncate">{pred.mainText}</div>
                   {pred.secondaryText && (
-                    <div className="truncate mt-0.5" style={{ color: "var(--text-muted)" }}>{pred.secondaryText}</div>
+                    <div className="truncate mt-0.5 text-ink-muted">{pred.secondaryText}</div>
                   )}
                 </div>
               </button>
@@ -299,7 +370,7 @@ export function PlacesSearch({ onAddToDay, onSave, locationBias, days, savedIds,
       {!hasResults && isLoading && (
         <div className="space-y-2">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="rounded-lg p-3" style={{ background: "var(--glass-2)", border: "1px solid var(--glass-border-2)" }}>
+            <div key={i} className="rounded-lg p-3 bg-surface border border-border">
               <Skeleton className="h-16 w-full rounded-lg mb-2" />
               <SkeletonText lines={2} />
             </div>
@@ -312,7 +383,7 @@ export function PlacesSearch({ onAddToDay, onSave, locationBias, days, savedIds,
         <div className="space-y-2">
           {/* Primary result */}
           {loadingPrimary && !primaryDetail && (
-            <div className="rounded-lg p-3" style={{ background: "var(--glass-2)", border: "1px solid var(--glass-border-2)" }}>
+            <div className="rounded-lg p-3 bg-surface border border-border">
               <Skeleton className="h-16 w-full rounded-lg mb-2" />
               <SkeletonText lines={2} />
             </div>
@@ -342,10 +413,7 @@ export function PlacesSearch({ onAddToDay, onSave, locationBias, days, savedIds,
           {/* Related results */}
           {relatedResults.length > 0 && (
             <>
-              <p
-                className="text-[10px] font-semibold uppercase tracking-[2px] mt-3 mb-1 font-body px-1"
-                style={{ color: "var(--text-eyebrow)" }}
-              >
+              <p className="text-[10px] font-semibold uppercase tracking-[2px] mt-3 mb-1 font-body px-1 text-ink-subtle">
                 Nearby places
               </p>
               {relatedResults.map((detail) => {
@@ -370,7 +438,7 @@ export function PlacesSearch({ onAddToDay, onSave, locationBias, days, savedIds,
                 );
               })}
               {loadingRelated && (
-                <div className="rounded-lg p-3" style={{ background: "var(--glass-2)", border: "1px solid var(--glass-border-2)" }}>
+                <div className="rounded-lg p-3 bg-surface border border-border">
                   <SkeletonText lines={2} />
                 </div>
               )}

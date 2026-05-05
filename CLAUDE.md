@@ -199,3 +199,5 @@ When something fails repeatedly, when Tim has to re-explain, or when a workaroun
 - `backend/.env` newline required between `AMADEUS_MOCK=true` and `REDIS_URL`; missing newline silently breaks both.
 - Playwright `fill()` doesn't trigger React's onChange in Places autocomplete; real keyboard events required.
 - DayPicker dropdown and sidebar POI cards are outside the a11y tree; use JS evaluate to interact.
+- UI redesign changes require a written spec/mockup review BEFORE any code changes; never iterate blind.
+- Visual companion server on Windows: run `node server.cjs` directly; `start-server.sh` returns exit 127.

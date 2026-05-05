@@ -24,7 +24,7 @@ function AirportChips({
 }) {
   return (
     <div>
-      <label className="block text-xs font-medium mb-1 font-body" style={{ color: "var(--text-muted)" }}>{label}</label>
+      <label className="block text-xs font-medium mb-1 font-body text-ink-muted">{label}</label>
       <div className="flex gap-1.5 flex-wrap">
         {airports.map((iata) => {
           const isSelected = selected === iata;
@@ -33,12 +33,12 @@ function AirportChips({
               key={iata}
               type="button"
               onClick={() => onSelect(iata)}
-              className="px-2.5 py-1.5 rounded-lg text-xs font-bold font-mono transition-all"
-              style={
+              className={[
+                "px-2.5 py-1.5 rounded-lg text-xs font-bold font-mono transition-all",
                 isSelected
-                  ? { background: "rgba(224,122,95,0.2)", border: "1.5px solid var(--accent)", color: "var(--accent)" }
-                  : { background: "var(--glass-1)", border: "1px solid var(--glass-border-2)", color: "var(--text-muted)" }
-              }
+                  ? "bg-teal-light border-2 border-teal text-teal"
+                  : "bg-surface2 border border-border text-ink-muted hover:border-teal/40",
+              ].join(" ")}
             >
               {iata}
             </button>
@@ -64,7 +64,7 @@ export function FlightSearchForm({ leg, onSearch, loading }: Props) {
   }
 
   return (
-    <div className="rounded-xl p-4 flex flex-wrap gap-3 items-end shadow-card" style={{ background: "var(--glass-2)", border: "1px solid var(--glass-border-2)", backdropFilter: "blur(12px)" }}>
+    <div className="rounded-xl p-4 flex flex-wrap gap-3 items-end bg-surface border border-border shadow-sm">
       {hasOriginOptions ? (
         <AirportChips
           label="From"
@@ -74,7 +74,7 @@ export function FlightSearchForm({ leg, onSearch, loading }: Props) {
         />
       ) : (
         <div>
-          <label className="block text-xs font-medium mb-1 font-body" style={{ color: "var(--text-muted)" }}>From</label>
+          <label className="block text-xs font-medium mb-1 font-body text-ink-muted">From</label>
           <input
             type="text"
             name="origin"
@@ -96,7 +96,7 @@ export function FlightSearchForm({ leg, onSearch, loading }: Props) {
         />
       ) : (
         <div>
-          <label className="block text-xs font-medium mb-1 font-body" style={{ color: "var(--text-muted)" }}>To</label>
+          <label className="block text-xs font-medium mb-1 font-body text-ink-muted">To</label>
           <input
             type="text"
             name="destination"
@@ -110,7 +110,7 @@ export function FlightSearchForm({ leg, onSearch, loading }: Props) {
       )}
 
       <div>
-        <label className="block text-xs font-medium mb-1 font-body" style={{ color: "var(--text-muted)" }}>Date</label>
+        <label className="block text-xs font-medium mb-1 font-body text-ink-muted">Date</label>
         <input
           type="date"
           name="departure_date"

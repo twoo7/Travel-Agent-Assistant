@@ -59,6 +59,7 @@ export default function SegmentsPage() {
   const [loading, setLoading] = useState<Record<number, boolean>>({});
   const [error, setError] = useState<Record<number, string>>({});
   const autoFiredRef = useRef<Set<number>>(new Set());
+  const legCardRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
   const [sortKey, setSortKey] = useState("ai");
   const [flightFilters, setFlightFilters] = useState<FlightFilters>({ maxStops: null, maxPrice: null });
@@ -150,6 +151,16 @@ export default function SegmentsPage() {
   function handleSelectFlight(leg_number: number, offer: FlightOffer) {
     dispatch({ type: "SET_FLIGHT", payload: { leg_number, flight: offer } });
     dispatch({ type: "CLEAR_STALE", payload: { key: `segments-${leg_number}` } });
+
+    // Auto-advance: scroll to the next unconfirmed leg after this flight is saved
+    requestAnimationFrame(() => {
+      const nextLeg = tripContext.legs.find(
+        (l) => l.leg_number > leg_number && !isLegConfirmed(l)
+      );
+      if (nextLeg) {
+        legCardRefs.current.get(nextLeg.leg_number)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
   }
 
   function handleAddLeg() {
@@ -191,11 +202,10 @@ export default function SegmentsPage() {
   if (tripContext.legs.length === 0) {
     return (
       <div className="max-w-3xl mx-auto text-center py-16">
-        <p className="font-body" style={{ color: "var(--text-muted)" }}>No trip set up yet.</p>
+        <p className="font-body text-ink-muted">No trip set up yet.</p>
         <button
           onClick={() => router.push("/")}
-          className="mt-4 font-body text-sm underline underline-offset-2"
-          style={{ color: "var(--accent)" }}
+          className="mt-4 font-body text-sm text-teal underline underline-offset-2 hover:text-teal-hover"
         >
           ← Go back to Trip Setup
         </button>
@@ -207,14 +217,13 @@ export default function SegmentsPage() {
     <div className="max-w-3xl mx-auto py-8 px-4 space-y-8">
         {/* Header */}
         <div className="mb-8">
-          <p className="text-[10px] font-semibold uppercase tracking-[2.5px] mb-2 font-body"
-             style={{ color: "var(--text-eyebrow)" }}>
+          <p className="text-[10px] font-semibold uppercase tracking-[2.5px] mb-2 font-body text-teal">
             Step 2 of 5 · Travel Segments
           </p>
-          <h1 className="font-display text-4xl mb-2 leading-tight" style={{ color: "var(--text-primary)" }}>
-            How are you <span style={{ color: "var(--accent)" }}>getting there?</span>
+          <h1 className="font-display text-[34px] font-medium mb-2 leading-tight text-ink">
+            How are you <span className="text-teal italic">getting there?</span>
           </h1>
-          <p className="font-body text-sm" style={{ color: "var(--text-muted)" }}>
+          <p className="font-body text-sm text-ink-muted">
             Configure how you&apos;re travelling between each destination.
           </p>
         </div>
@@ -227,36 +236,34 @@ export default function SegmentsPage() {
           const confirmed = isLegConfirmed(leg);
 
           return (
-            <div key={leg.leg_number} className="space-y-3">
+            <div
+              key={leg.leg_number}
+              ref={(el) => { if (el) legCardRefs.current.set(leg.leg_number, el); else legCardRefs.current.delete(leg.leg_number); }}
+              className="space-y-3"
+            >
               {/* Leg header */}
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[2.5px] mb-1 font-body"
-                     style={{ color: "var(--text-eyebrow)" }}>
+                  <p className="text-[10px] font-semibold uppercase tracking-[2.5px] mb-1 font-body text-teal">
                     Leg {leg.leg_number} · {leg.origin} {iataToCityName(leg.origin)} ({getAirportName(leg.origin)}) → {leg.destination} {iataToCityName(leg.destination)} ({getAirportName(leg.destination)}) · {leg.departure_date}
                   </p>
-                  <h2 className="font-display text-2xl" style={{ color: "var(--text-primary)" }}>
+                  <h2 className="font-display text-2xl font-medium text-ink">
                     Select Your {MODE_META[leg.transport_mode ?? "flight"]?.label ?? "Flight"}
                   </h2>
                 </div>
                 <div className="flex items-center gap-2">
                   {confirmed && (
-                    <span
-                      className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full font-body"
-                      style={{ color: "var(--success)", background: "rgba(107,144,128,0.15)", border: "1px solid rgba(107,144,128,0.3)" }}
-                    >
+                    <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full font-body text-teal bg-teal-light border border-teal/20">
                       <Check size={10} />
                       {mode === "flight" ? "Flight selected" : "Confirmed"}
                     </span>
                   )}
-                  {/* Icon for mode indicator */}
-                  <Icon size={16} style={{ color: "var(--accent)" }} />
+                  <Icon size={16} className="text-teal" />
                   {tripContext.legs.length > 1 && (
                     <motion.button
-                      whileHover={{ color: "rgba(239,68,68,0.85)", backgroundColor: "rgba(239,68,68,0.1)" }}
+                      whileHover={{ scale: 1.05 }}
                       onClick={() => handleRemoveLeg(leg.leg_number)}
-                      className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
-                      style={{ color: "var(--text-muted)" }}
+                      className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors text-ink-muted hover:text-red hover:bg-red/10"
                       aria-label={`Remove leg ${leg.leg_number}`}
                     >
                       <X size={14} />
@@ -289,8 +296,7 @@ export default function SegmentsPage() {
                   )}
 
                   {error[leg.leg_number] && (
-                    <div className="flex items-start gap-2 text-sm rounded-xl px-4 py-3 font-body"
-                         style={{ color: "rgba(239,68,68,0.9)", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
+                    <div className="flex items-start gap-2 text-sm rounded-xl px-4 py-3 font-body text-red bg-red/8 border border-red/20">
                       <AlertTriangle size={15} className="shrink-0 mt-0.5" />
                       <span>{error[leg.leg_number]}</span>
                     </div>
@@ -304,7 +310,7 @@ export default function SegmentsPage() {
                   )}
 
                   {displayResults[leg.leg_number] && displayResults[leg.leg_number].length === 0 && (
-                    <p className="text-sm text-center py-6 font-body" style={{ color: "var(--text-muted)" }}>No flights found.</p>
+                    <p className="text-sm text-center py-6 font-body text-ink-muted">No flights found.</p>
                   )}
 
                   <AnimatedList>
@@ -329,54 +335,49 @@ export default function SegmentsPage() {
         })}
 
         {/* Add another leg */}
-        <div className="rounded-xl p-5 space-y-3"
-             style={{ border: "1px dashed rgba(255,255,255,0.15)", background: "var(--glass-1)" }}>
-          <h3 className="text-sm font-semibold flex items-center gap-1.5 font-body" style={{ color: "var(--text-muted)" }}>
+        <div className="rounded-xl p-5 space-y-3 border border-dashed border-border bg-surface">
+          <h3 className="text-sm font-semibold flex items-center gap-1.5 font-body text-ink-muted">
             <Plus size={14} />
             Add another leg
           </h3>
           <div className="flex flex-wrap gap-3 items-end">
             <div className="flex-1 min-w-0">
-              <label className="block text-xs font-medium mb-1 font-body" style={{ color: "var(--text-muted)" }}>From</label>
+              <label className="block text-xs font-medium mb-1 font-body text-ink-muted">From</label>
               <input
                 value={newLeg.origin}
                 onChange={(e) => setNewLeg((p) => ({ ...p, origin: e.target.value }))}
                 placeholder="e.g. KIX"
                 maxLength={3}
-                className="w-full rounded-lg px-3 py-2 text-sm uppercase tracking-widest font-mono focus:outline-none transition-colors"
-                style={{ border: "1px solid var(--glass-border-2)" }}
+                className="w-full rounded-lg px-3 py-2 text-sm uppercase tracking-widest font-mono focus:outline-none transition-colors border border-border bg-surface focus:border-teal focus:ring-2 focus:ring-teal/20"
               />
             </div>
             <div className="flex-1 min-w-0">
-              <label className="block text-xs font-medium mb-1 font-body" style={{ color: "var(--text-muted)" }}>To</label>
+              <label className="block text-xs font-medium mb-1 font-body text-ink-muted">To</label>
               <input
                 value={newLeg.destination}
                 onChange={(e) => setNewLeg((p) => ({ ...p, destination: e.target.value }))}
                 placeholder="Destination"
                 maxLength={3}
-                className="w-full rounded-lg px-3 py-2 text-sm uppercase tracking-widest font-mono focus:outline-none transition-colors"
-                style={{ border: "1px solid var(--glass-border-2)" }}
+                className="w-full rounded-lg px-3 py-2 text-sm uppercase tracking-widest font-mono focus:outline-none transition-colors border border-border bg-surface focus:border-teal focus:ring-2 focus:ring-teal/20"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1 font-body" style={{ color: "var(--text-muted)" }}>Date</label>
+              <label className="block text-xs font-medium mb-1 font-body text-ink-muted">Date</label>
               <input
                 type="date"
                 value={newLeg.departure_date}
                 onChange={(e) => setNewLeg((p) => ({ ...p, departure_date: e.target.value }))}
-                className="rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors font-body"
-                style={{ border: "1px solid var(--glass-border-2)" }}
+                className="rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors font-body border border-border bg-surface focus:border-teal focus:ring-2 focus:ring-teal/20"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1 font-body" style={{ color: "var(--text-muted)" }}>Mode</label>
+              <label className="block text-xs font-medium mb-1 font-body text-ink-muted">Mode</label>
               <select
                 value={newLeg.transport_mode}
                 onChange={(e) =>
                   setNewLeg((p) => ({ ...p, transport_mode: e.target.value as TripLeg["transport_mode"] }))
                 }
-                className="rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors font-body"
-                style={{ border: "1px solid var(--glass-border-2)" }}
+                className="rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors font-body border border-border bg-surface focus:border-teal focus:ring-2 focus:ring-teal/20"
               >
                 <option value="flight">Flight</option>
                 <option value="train">Train</option>
@@ -399,14 +400,13 @@ export default function SegmentsPage() {
         {/* Validation + progress */}
         <div className="space-y-3 pt-2">
           {!allLegsConfirmed && validationIssues.length > 0 && (
-            <div className="flex items-start gap-3 rounded-xl p-4"
-                 style={{ background: "rgba(212,165,116,0.1)", border: "1px solid rgba(212,165,116,0.3)" }}>
-              <AlertTriangle size={16} className="shrink-0 mt-0.5" style={{ color: "var(--warning)" }} />
+            <div className="flex items-start gap-3 rounded-xl p-4 bg-amber/10 border border-amber/30">
+              <AlertTriangle size={16} className="shrink-0 mt-0.5 text-amber" />
               <div>
-                <p className="text-sm font-semibold font-body mb-1" style={{ color: "var(--warning)" }}>Before you continue:</p>
+                <p className="text-sm font-semibold font-body mb-1 text-amber">Before you continue:</p>
                 <ul className="space-y-0.5">
                   {validationIssues.map((issue, i) => (
-                    <li key={i} className="text-sm font-body" style={{ color: "rgba(212,165,116,0.8)" }}>• {issue}</li>
+                    <li key={i} className="text-sm font-body text-amber/80">• {issue}</li>
                   ))}
                 </ul>
               </div>
@@ -414,10 +414,9 @@ export default function SegmentsPage() {
           )}
 
           {allLegsConfirmed && (
-            <div className="flex items-center gap-2 rounded-xl px-4 py-3"
-                 style={{ background: "rgba(107,144,128,0.1)", border: "1px solid rgba(107,144,128,0.2)" }}>
-              <Check size={15} style={{ color: "var(--success)" }} />
-              <p className="text-sm font-medium font-body" style={{ color: "var(--success)" }}>
+            <div className="flex items-center gap-2 rounded-xl px-4 py-3 bg-teal-light border border-teal/20">
+              <Check size={15} className="text-teal" />
+              <p className="text-sm font-medium font-body text-teal">
                 All segments confirmed — ready to continue
               </p>
             </div>
@@ -425,13 +424,13 @@ export default function SegmentsPage() {
 
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-body" style={{ color: "var(--text-muted)" }}>{confirmedLegs} of {totalLegs} legs confirmed</span>
-              <span className="text-xs font-semibold font-body" style={{ color: "var(--accent)" }}>{Math.round(progressPct)}%</span>
+              <span className="text-xs font-body text-ink-muted">{confirmedLegs} of {totalLegs} legs confirmed</span>
+              <span className="text-xs font-semibold font-body text-teal">{Math.round(progressPct)}%</span>
             </div>
-            <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: "var(--glass-2)" }}>
+            <div className="h-1.5 w-full rounded-full overflow-hidden bg-surface2">
               <div
-                className="h-full rounded-full transition-all duration-500"
-                style={{ width: `${progressPct}%`, background: allLegsConfirmed ? "var(--success)" : "var(--accent)" }}
+                className="h-full rounded-full transition-all duration-500 bg-teal"
+                style={{ width: `${progressPct}%` }}
               />
             </div>
           </div>

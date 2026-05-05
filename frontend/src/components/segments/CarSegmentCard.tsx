@@ -52,34 +52,20 @@ export function CarSegmentCard({ leg }: Props) {
     `https://www.google.com/maps/dir/${encodeURIComponent(leg.origin)}/${encodeURIComponent(leg.destination)}`;
 
   return (
-    <div
-      className="rounded-xl p-5 relative"
-      style={{
-        background: "var(--glass-2)",
-        border: "1px solid var(--glass-border-2)",
-        boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
-        backdropFilter: "blur(12px)",
-      }}
-    >
-      <span
-        className="absolute top-4 right-4 inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full font-body"
-        style={{ color: "var(--success)", background: "rgba(107,144,128,0.15)", border: "1px solid rgba(107,144,128,0.3)" }}
-      >
+    <div className="rounded-xl p-5 relative bg-surface border border-border shadow-sm">
+      <span className="absolute top-4 right-4 inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full font-body text-teal bg-teal-light border border-teal/30">
         <Check size={10} />
         Confirmed
       </span>
 
       <div className="flex items-center gap-2 mb-3">
-        <div
-          className="w-9 h-9 rounded-lg flex items-center justify-center"
-          style={{ background: "rgba(212,165,116,0.15)" }}
-        >
-          <Car size={18} style={{ color: "var(--warning)" }} />
+        <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-amber/10">
+          <Car size={18} className="text-amber" />
         </div>
-        <h3 className="text-lg font-semibold font-display" style={{ color: "var(--text-primary)" }}>Bus/Car</h3>
+        <h3 className="text-lg font-semibold font-display text-ink">Bus/Car</h3>
       </div>
 
-      <p className="text-base font-medium mb-4 font-body" style={{ color: "var(--text-primary)" }}>
+      <p className="text-base font-medium mb-4 font-body text-ink">
         {leg.origin} → {leg.destination}
       </p>
 
@@ -88,17 +74,17 @@ export function CarSegmentCard({ leg }: Props) {
           <Skeleton className="h-4 w-48" />
         </div>
       ) : error || !driveInfo || driveInfo.distance_km === null ? (
-        <p className="text-sm mb-4 font-body" style={{ color: "var(--text-muted)" }}>Couldn&apos;t calculate drive time.</p>
+        <p className="text-sm mb-4 font-body text-ink-muted">Couldn&apos;t calculate drive time.</p>
       ) : (
         <div className="flex flex-wrap items-center gap-4 mb-4">
           <div className="flex items-center gap-1.5">
-            <MapPin size={13} style={{ color: "var(--warning)" }} />
-            <span className="text-sm font-body" style={{ color: "var(--text-primary)" }}>
+            <MapPin size={13} className="text-amber" />
+            <span className="text-sm font-body text-ink">
               <span className="font-semibold">{driveInfo.distance_km.toLocaleString()} km</span>
             </span>
           </div>
-          <div className="w-px h-4" style={{ background: "var(--glass-border-2)" }} />
-          <span className="text-sm font-body" style={{ color: "var(--text-primary)" }}>
+          <div className="w-px h-4 bg-border" />
+          <span className="text-sm font-body text-ink">
             Est. drive time:{" "}
             <span className="font-semibold">
               {driveInfo.duration_mins !== null ? formatDuration(driveInfo.duration_mins) : "—"}
@@ -111,19 +97,15 @@ export function CarSegmentCard({ leg }: Props) {
         href={mapsUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-1.5 text-sm font-medium underline underline-offset-2 mb-4 font-body transition-colors"
-        style={{ color: "var(--warning)" }}
+        className="inline-flex items-center gap-1.5 text-sm font-medium underline underline-offset-2 mb-4 font-body transition-colors text-amber hover:opacity-80 block"
       >
         Open in Google Maps
         <ExternalLink size={12} />
       </a>
 
-      <div
-        className="flex items-start gap-2 rounded-lg px-3 py-2 mt-2"
-        style={{ background: "rgba(212,165,116,0.08)", border: "1px solid rgba(212,165,116,0.15)" }}
-      >
-        <Info size={13} className="shrink-0 mt-0.5" style={{ color: "var(--warning)" }} />
-        <p className="text-xs font-body" style={{ color: "var(--text-muted)" }}>
+      <div className="flex items-start gap-2 rounded-lg px-3 py-2 mt-2 bg-amber/10 border border-amber/30">
+        <Info size={13} className="shrink-0 mt-0.5 text-amber" />
+        <p className="text-xs font-body text-ink-muted">
           Drive time is an estimate. Factor in breaks, border crossings, and traffic.
         </p>
       </div>

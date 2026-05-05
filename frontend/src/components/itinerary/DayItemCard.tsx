@@ -61,32 +61,21 @@ export function DayItemCard({ item, itemId, onRemove, onOpenDetails, isOverlay =
         pointerEvents: isDragging ? "none" : undefined,
       };
 
-  const itemStyle: React.CSSProperties = {
-    background:
-      isHotel
-        ? "rgba(107,144,128,0.1)"
-        : item.type === "airport"
-        ? "rgba(224,122,95,0.1)"
-        : "var(--glass-2)",
-    border:
-      isHotel
-        ? "1px solid rgba(107,144,128,0.3)"
-        : item.type === "airport"
-        ? "1px solid rgba(224,122,95,0.3)"
-        : "1px solid var(--glass-border-2)",
-    ...(isOverlay ? { boxShadow: "0 8px 32px rgba(0,0,0,0.4)" } : {}),
-  };
+  const itemClass = isHotel
+    ? "bg-teal-light border border-teal/30"
+    : item.type === "airport"
+    ? "bg-amber/10 border border-amber/30"
+    : "bg-surface border border-border";
 
-  const iconColor =
-    isHotel ? "var(--success)" : item.type === "airport" ? "var(--accent)" : "var(--text-muted)";
+  const iconClass = isHotel ? "text-teal" : item.type === "airport" ? "text-amber" : "text-ink-muted";
 
   const canOpenDetails = !isOverlay && item.type !== "airport" && !!onOpenDetails;
 
   return (
     <div
       ref={isOverlay ? undefined : setNodeRef}
-      style={{ ...style, ...itemStyle, cursor: canOpenDetails ? "pointer" : undefined }}
-      className="rounded-lg px-3 py-2 flex items-start gap-2"
+      style={{ ...style, cursor: canOpenDetails ? "pointer" : undefined, ...(isOverlay ? { boxShadow: "0 8px 32px rgba(0,0,0,0.15)" } : {}) }}
+      className={`rounded-lg px-3 py-2 flex items-start gap-2 ${itemClass}`}
       onClick={canOpenDetails ? onOpenDetails : undefined}
     >
       {/* Drag handle — hidden for hotels and airports */}
@@ -94,8 +83,7 @@ export function DayItemCard({ item, itemId, onRemove, onOpenDetails, isOverlay =
         <div
           {...attributes}
           {...listeners}
-          className="cursor-grab active:cursor-grabbing mt-0.5 shrink-0 select-none"
-          style={{ color: "var(--text-subtle)" }}
+          className="cursor-grab active:cursor-grabbing mt-0.5 shrink-0 select-none text-ink-subtle"
           aria-label="Drag handle"
           onClick={(e) => e.stopPropagation()}
         >
@@ -104,32 +92,31 @@ export function DayItemCard({ item, itemId, onRemove, onOpenDetails, isOverlay =
       )}
 
       {/* Icon */}
-      <span className="shrink-0 mt-0.5" style={{ color: iconColor }}>
+      <span className={`shrink-0 mt-0.5 ${iconClass}`}>
         {getItemIcon(item)}
       </span>
 
       {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-sm font-medium truncate font-body" style={{ color: "var(--text-primary)" }}>
+          <span className="text-sm font-medium truncate font-body text-ink">
             {item.name}
           </span>
           {item.spans_days && item.spans_days > 1 && (
             <span
-              className="text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 font-body"
-              style={{ background: "rgba(107,144,128,0.15)", color: "var(--success)" }}
+              className="text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 font-body bg-teal-light text-teal"
             >
               spans {item.spans_days} days
             </span>
           )}
         </div>
         {item.address && (
-          <p className="text-xs truncate mt-0.5 font-body" style={{ color: "var(--text-muted)" }}>
+          <p className="text-xs truncate mt-0.5 font-body text-ink-muted">
             {item.address}
           </p>
         )}
         {item.duration_mins && (
-          <p className="text-xs flex items-center gap-1 mt-0.5 font-body" style={{ color: "var(--text-subtle)" }}>
+          <p className="text-xs flex items-center gap-1 mt-0.5 font-body text-ink-subtle">
             <Clock size={10} />
             {item.duration_mins} min
           </p>
@@ -141,8 +128,7 @@ export function DayItemCard({ item, itemId, onRemove, onOpenDetails, isOverlay =
         <motion.button
           whileHover={{ color: "rgba(239,68,68,0.85)", backgroundColor: "rgba(239,68,68,0.1)" }}
           onClick={(e) => { e.stopPropagation(); onRemove(); }}
-          className="transition-colors shrink-0 mt-0.5 w-5 h-5 flex items-center justify-center rounded"
-          style={{ color: "var(--text-subtle)" }}
+          className="transition-colors shrink-0 mt-0.5 w-5 h-5 flex items-center justify-center rounded text-ink-subtle hover:text-red hover:bg-red/10"
           aria-label="Remove"
         >
           <X size={12} />

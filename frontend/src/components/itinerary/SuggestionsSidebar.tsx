@@ -82,8 +82,7 @@ export function SuggestionsSidebar({
     return (
       <button
         onClick={() => setCollapsed(false)}
-        className="w-10 shrink-0 rounded-xl flex items-center justify-center self-start py-3 transition-colors"
-        style={{ background: "var(--sidebar-bg)", backdropFilter: "blur(16px)", border: "1px solid var(--glass-border-1)", color: "var(--text-muted)" }}
+        className="w-10 shrink-0 rounded-xl flex items-center justify-center self-start py-3 transition-colors bg-surface border border-border text-ink-muted hover:border-teal/40"
         aria-label="Open suggestions"
       >
         <ChevronRight size={16} />
@@ -98,14 +97,11 @@ export function SuggestionsSidebar({
   ];
 
   return (
-    <div
-      className="w-full flex flex-col h-full overflow-hidden rounded-xl"
-      style={{ background: "var(--sidebar-bg)", backdropFilter: "blur(16px)", border: "1px solid var(--glass-border-1)" }}
-    >
+    <div className="w-full flex flex-col h-full overflow-hidden rounded-xl bg-surface border border-border">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid var(--glass-border-1)" }}>
-        <h2 className="font-semibold text-sm flex items-center gap-1.5 font-body" style={{ color: "var(--accent)" }}>
-          <Sparkles size={14} className={loading ? "animate-ai-pulse" : undefined} style={{ color: "var(--accent)" }} />
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+        <h2 className="font-semibold text-sm flex items-center gap-1.5 font-body text-teal">
+          <Sparkles size={14} className={loading ? "animate-pulse" : undefined} />
           Locations
         </h2>
         <div className="flex items-center gap-1">
@@ -114,16 +110,14 @@ export function SuggestionsSidebar({
               onClick={onRefresh}
               disabled={refreshing}
               title="Refresh suggestions"
-              className="p-1 rounded-md transition-colors"
-              style={{ color: "var(--text-subtle)" }}
+              className="p-1 rounded-md transition-colors text-ink-subtle hover:text-ink"
             >
               <RefreshCw size={13} className={refreshing ? "animate-spin" : ""} />
             </button>
           )}
           <button
             onClick={() => setCollapsed(true)}
-            className="transition-colors w-7 h-7 flex items-center justify-center rounded-lg hover:bg-[var(--glass-1)]"
-            style={{ color: "var(--text-subtle)" }}
+            className="transition-colors w-7 h-7 flex items-center justify-center rounded-lg hover:bg-surface2 text-ink-subtle"
             aria-label="Collapse sidebar"
           >
             <ChevronRight size={14} className="rotate-180" />
@@ -132,24 +126,18 @@ export function SuggestionsSidebar({
       </div>
 
       {/* Tab bar */}
-      <div className="flex" style={{ borderBottom: "1px solid var(--glass-border-1)" }}>
+      <div className="flex border-b border-border">
         {tabs.map(({ id, label, icon, badge }) => (
           <button
             key={id}
             onClick={() => setTab(id)}
-            className="flex-1 py-2 text-xs font-semibold font-body flex items-center justify-center gap-1 transition-colors relative"
-            style={
-              tab === id
-                ? { color: "var(--accent)", borderBottom: "2px solid var(--accent)" }
-                : { color: "var(--text-muted)", borderBottom: "2px solid transparent" }
-            }
+            className={`flex-1 py-2 text-xs font-semibold font-body flex items-center justify-center gap-1 transition-colors relative border-b-2 ${
+              tab === id ? "text-teal border-teal" : "text-ink-muted border-transparent"
+            }`}
           >
             {icon}{label}
             {badge != null && badge > 0 && (
-              <span
-                className="ml-0.5 text-[9px] px-1 py-0 rounded-full font-medium"
-                style={{ background: "var(--accent)", color: "white" }}
-              >
+              <span className="ml-0.5 text-[9px] px-1 py-0 rounded-full font-medium bg-teal text-surface">
                 {badge}
               </span>
             )}
@@ -160,7 +148,7 @@ export function SuggestionsSidebar({
       {/* Search tab */}
       {tab === "search" && (
         <div className="flex-1 overflow-y-auto p-3">
-          <p className="text-xs font-body mb-3" style={{ color: "var(--text-muted)" }}>
+          <p className="text-xs font-body mb-3 text-ink-muted">
             Search any place and add it to your itinerary.
           </p>
           <PlacesSearch
@@ -178,7 +166,7 @@ export function SuggestionsSidebar({
       {tab === "saved" && (
         <div className="flex-1 overflow-y-auto">
           {savedPois.length === 0 ? (
-            <div className="text-center py-10 text-sm font-body px-4" style={{ color: "var(--text-muted)" }}>
+            <div className="text-center py-10 text-sm font-body px-4 text-ink-muted">
               <Bookmark size={20} className="mx-auto mb-2 opacity-40" />
               No saved places yet.
               <p className="text-xs mt-1 opacity-60">Save places from AI Picks or Search to plan later.</p>
@@ -209,18 +197,17 @@ export function SuggestionsSidebar({
       {tab === "picks" && (
         <>
           {/* Category chips */}
-          <div className="flex flex-wrap gap-1.5 px-3 py-2" style={{ borderBottom: availableTags.length > 0 ? "1px solid var(--glass-border-1)" : undefined }}>
+          <div className={`flex flex-wrap gap-1.5 px-3 py-2 ${availableTags.length > 0 ? "border-b border-border" : ""}`}>
             {CATEGORY_CHIPS.map(({ label, value }) => (
               <motion.button
                 key={value}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setCategoryFilter(value)}
-                className="text-xs px-2.5 py-1 rounded-full whitespace-nowrap transition-colors font-body"
-                style={
+                className={`text-xs px-2.5 py-1 rounded-full whitespace-nowrap transition-colors font-body ${
                   categoryFilter === value
-                    ? { background: "var(--accent)", color: "white", border: "none" }
-                    : { background: "var(--glass-1)", color: "var(--text-muted)", border: "1px solid var(--glass-border-1)" }
-                }
+                    ? "bg-teal text-surface"
+                    : "bg-surface2 text-ink-muted border border-border"
+                }`}
               >
                 {label}
               </motion.button>
@@ -229,17 +216,16 @@ export function SuggestionsSidebar({
 
           {/* Theme-tag secondary filter */}
           {availableTags.length > 0 && (
-            <div className="flex flex-wrap gap-1 px-3 py-1.5" style={{ borderBottom: "1px solid var(--glass-border-1)" }}>
+            <div className="flex flex-wrap gap-1 px-3 py-1.5 border-b border-border">
               {availableTags.map((tag) => (
                 <button
                   key={tag}
                   onClick={() => setTagFilter(tagFilter === tag ? null : tag)}
-                  className="text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap font-body transition-colors"
-                  style={
+                  className={`text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap font-body transition-colors ${
                     tagFilter === tag
-                      ? { background: "var(--success)", color: "white", border: "none" }
-                      : { background: "var(--glass-1)", color: "var(--text-subtle)", border: "1px solid var(--glass-border-1)" }
-                  }
+                      ? "bg-teal-mid text-surface"
+                      : "bg-surface2 text-ink-subtle border border-border"
+                  }`}
                 >
                   {tag}
                 </button>
@@ -261,7 +247,7 @@ export function SuggestionsSidebar({
             )}
 
             {!loading && filtered.length === 0 && (
-              <div className="text-center py-10 text-sm font-body" style={{ color: "var(--text-muted)" }}>
+              <div className="text-center py-10 text-sm font-body text-ink-muted">
                 No suggestions yet.
               </div>
             )}
@@ -269,10 +255,7 @@ export function SuggestionsSidebar({
             {!loading && grouped.map(({ neighborhood, pois: group }, gi) => (
               <div key={gi}>
                 {neighborhood && (
-                  <p
-                    className="px-4 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-widest font-body"
-                    style={{ color: "var(--text-eyebrow)" }}
-                  >
+                  <p className="px-4 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-widest font-body text-ink-subtle">
                     {neighborhood}
                   </p>
                 )}
@@ -309,11 +292,10 @@ export function SuggestionsSidebar({
 
             {/* Removed hotels section */}
             {savedHotels.length > 0 && (
-              <div className="mx-2 my-3 rounded-lg overflow-hidden" style={{ border: "1px solid var(--glass-border-1)" }}>
+              <div className="mx-2 my-3 rounded-lg overflow-hidden border border-border">
                 <button
                   onClick={() => setHotelsExpanded((v) => !v)}
-                  className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold font-body transition-colors hover:bg-[var(--glass-1)]"
-                  style={{ color: "var(--text-subtle)", background: "var(--glass-1)" }}
+                  className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold font-body transition-colors hover:bg-surface2 bg-surface2 text-ink-subtle"
                 >
                   <span className="flex items-center gap-1.5">
                     <Hotel size={11} />
@@ -322,21 +304,20 @@ export function SuggestionsSidebar({
                   {hotelsExpanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
                 </button>
                 {hotelsExpanded && (
-                  <div className="divide-y" style={{ borderTop: "1px solid var(--glass-border-1)" }}>
+                  <div className="divide-y divide-border border-t border-border">
                     {savedHotels.map((sh) => (
                       <div key={sh.id} className="flex items-center justify-between px-3 py-2 gap-2">
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold truncate font-body" style={{ color: "var(--text-primary)" }}>
+                          <p className="text-xs font-semibold truncate font-body text-ink">
                             {sh.item.name}
                           </p>
-                          <p className="text-[10px] font-body" style={{ color: "var(--text-muted)" }}>
+                          <p className="text-[10px] font-body text-ink-muted">
                             Day {sh.day_number}
                           </p>
                         </div>
                         <button
                           onClick={() => onRestoreHotel?.(sh.id)}
-                          className="text-[10px] px-2 py-0.5 rounded font-body shrink-0"
-                          style={{ background: "rgba(107,144,128,0.2)", color: "var(--success)", border: "1px solid rgba(107,144,128,0.4)" }}
+                          className="text-[10px] px-2 py-0.5 rounded font-body shrink-0 bg-teal-light text-teal border border-teal/30"
                         >
                           Restore
                         </button>

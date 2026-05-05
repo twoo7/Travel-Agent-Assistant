@@ -12,23 +12,16 @@ export function AIPulseBadge({ pulsing = false, className = "" }: AIPulseBadgePr
   return (
     <span
       className={[
-        "inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full font-body",
-        "text-white",
+        "inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full font-body",
+        "bg-teal text-surface",
+        pulsing ? "animate-pulse" : "",
         className,
       ]
         .filter(Boolean)
         .join(" ")}
-      style={{
-        background: "linear-gradient(135deg, var(--accent), var(--accent-dark))",
-        boxShadow: "0 0 12px var(--accent-glow)",
-      }}
     >
-      <Sparkles
-        aria-hidden="true"
-        size={10}
-        className={pulsing ? "animate-ai-pulse" : ""}
-      />
-      <span aria-hidden="true">✦</span>{" "}AI Pick
+      <Sparkles aria-hidden="true" size={10} />
+      AI Pick
     </span>
   );
 }

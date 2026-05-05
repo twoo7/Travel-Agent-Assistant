@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
-import { DM_Serif_Display, DM_Sans } from "next/font/google";
+import { Playfair_Display, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { TripContextProvider } from "@/context/TripContext";
 import { LayoutShell } from "@/components/LayoutShell";
 import { ToastProvider } from "@/components/ui/Toast";
 
-const dmSerif = DM_Serif_Display({
+const playfair = Playfair_Display({
   subsets: ["latin"],
-  weight: "400",
-  variable: "--font-dm-serif",
+  weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
+  variable: "--font-playfair",
 });
 
 const dmSans = DM_Sans({
@@ -17,7 +18,7 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Travel Agent Assistant",
+  title: "Voyage — AI Travel Planner",
   description: "AI-powered trip planner",
 };
 
@@ -25,9 +26,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
-        <script dangerouslySetInnerHTML={{ __html: `(function(){var t=localStorage.getItem('theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');})();` }} />
+        <script dangerouslySetInnerHTML={{ __html: `(function(){var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark');})();` }} />
       </head>
-      <body className={`${dmSerif.variable} ${dmSans.variable} font-body page-canvas`}>
+      <body className={`${playfair.variable} ${dmSans.variable} font-body`}>
         <TripContextProvider>
           <ToastProvider>
             <LayoutShell>{children}</LayoutShell>

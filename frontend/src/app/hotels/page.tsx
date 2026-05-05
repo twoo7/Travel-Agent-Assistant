@@ -165,11 +165,10 @@ export default function HotelsPage() {
   if (tripContext.legs.length === 0) {
     return (
       <div className="max-w-3xl mx-auto text-center py-16">
-        <p className="font-body" style={{ color: "var(--text-muted)" }}>No trip set up yet.</p>
+        <p className="font-body text-ink-muted">No trip set up yet.</p>
         <button
           onClick={() => router.push("/")}
-          className="mt-4 font-body text-sm underline underline-offset-2"
-          style={{ color: "var(--accent)" }}
+          className="mt-4 font-body text-sm text-teal underline underline-offset-2 hover:text-teal-hover"
         >
           ← Go back to Trip Setup
         </button>
@@ -181,9 +180,9 @@ export default function HotelsPage() {
     <div className="max-w-3xl mx-auto space-y-8">
         {/* Header */}
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[2.5px] mb-1 font-body" style={{ color: "var(--text-eyebrow)" }}>Step 3 of 5</p>
-          <h1 className="font-display text-4xl mb-2" style={{ color: "var(--text-primary)" }}>Choose Your Hotels</h1>
-          <p className="font-body" style={{ color: "var(--text-muted)" }}>Find a hotel for each destination in your trip.</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[2.5px] mb-1 font-body text-teal">Step 3 of 5</p>
+          <h1 className="font-display text-[34px] font-medium mb-2 text-ink">Choose Your Hotels</h1>
+          <p className="font-body text-sm text-ink-muted">Find a hotel for each destination in your trip.</p>
         </div>
 
         {/* Leg sections */}
@@ -194,36 +193,30 @@ export default function HotelsPage() {
 
           return (
             <div key={leg.leg_number} className="space-y-3">
-              <h2 className="font-semibold font-body flex items-center gap-2 flex-wrap" style={{ color: "var(--text-primary)" }}>
-                <Hotel size={15} style={{ color: "var(--accent)" }} />
+              <h2 className="font-semibold font-body flex items-center gap-2 flex-wrap text-ink">
+                <Hotel size={15} className="text-teal" />
                 Leg {leg.leg_number}:{" "}
                 <span className="font-mono text-sm">{iataToCityName(leg.origin)} → {iataToCityName(leg.destination)}</span>
                 {returnLeg && (
-                  <span
-                    className="text-xs font-body font-normal px-2 py-0.5 rounded-full"
-                    style={{ color: "var(--text-muted)", background: "var(--glass-1)", border: "1px solid var(--glass-border-1)" }}
-                  >
+                  <span className="text-xs font-body font-normal px-2 py-0.5 rounded-full text-ink-muted bg-surface2 border border-border">
                     Return home — no hotel needed
                   </span>
                 )}
               </h2>
 
               {returnLeg && (
-                <p className="text-sm font-body italic" style={{ color: "var(--text-muted)" }}>
+                <p className="text-sm font-body italic text-ink-muted">
                   This leg returns you to {iataToCityName(tripContext.home_origin)}. No hotel booking required.
                 </p>
               )}
 
               {/* Overnight ferry notice */}
               {leg.transport_mode === "ferry" && (
-                <div
-                  className="flex items-start gap-3 rounded-xl p-4"
-                  style={{ background: "var(--glass-2)", border: "1px solid var(--glass-border-2)" }}
-                >
-                  <Ship size={16} className="shrink-0 mt-0.5" style={{ color: "var(--accent)" }} />
+                <div className="flex items-start gap-3 rounded-xl p-4 bg-surface2 border border-border">
+                  <Ship size={16} className="shrink-0 mt-0.5 text-teal" />
                   <div>
-                    <p className="font-semibold text-sm font-body" style={{ color: "var(--text-primary)" }}>Overnight Ferry Leg</p>
-                    <p className="text-sm font-body mt-0.5" style={{ color: "var(--text-muted)" }}>
+                    <p className="font-semibold text-sm font-body text-ink">Overnight Ferry Leg</p>
+                    <p className="text-sm font-body mt-0.5 text-ink-muted">
                       Your overnight ferry from {leg.origin} to {leg.destination} includes cabin
                       accommodation. No hotel needed for this leg&apos;s departure night — you&apos;ll
                       sleep on board.
@@ -234,12 +227,9 @@ export default function HotelsPage() {
 
               {/* Sleeper train advisory — non-suppressing */}
               {leg.transport_mode === "train" && (
-                <div
-                  className="flex items-start gap-2 rounded-xl px-3 py-2"
-                  style={{ background: "var(--glass-1)", border: "1px solid var(--glass-border-1)" }}
-                >
-                  <Train size={13} className="shrink-0 mt-0.5" style={{ color: "var(--text-muted)" }} />
-                  <p className="text-xs font-body" style={{ color: "var(--text-subtle)" }}>
+                <div className="flex items-start gap-2 rounded-xl px-3 py-2 bg-surface border border-border">
+                  <Train size={13} className="shrink-0 mt-0.5 text-ink-muted" />
+                  <p className="text-xs font-body text-ink-subtle">
                     Note: If this is an overnight sleeper train, berth accommodation may be included —
                     you may not need a hotel for this leg.
                   </p>
@@ -257,14 +247,7 @@ export default function HotelsPage() {
               ))}
 
               {returnLeg ? (
-                <div
-                  className="rounded-xl px-4 py-3 text-sm font-body"
-                  style={{
-                    background: "var(--glass-base)",
-                    color: "var(--text-subtle)",
-                    border: "1px solid var(--border-base)"
-                  }}
-                >
+                <div className="rounded-xl px-4 py-3 text-sm font-body bg-surface border border-border text-ink-subtle">
                   Return home — no hotel search needed for the final leg back to {tripContext.home_origin}.
                 </div>
               ) : (
@@ -284,10 +267,7 @@ export default function HotelsPage() {
                   )}
 
                   {error[leg.leg_number] && (
-                    <div
-                      className="flex items-start gap-2 text-sm rounded-xl px-4 py-3 font-body"
-                      style={{ color: "var(--warning)", background: "rgba(224,173,95,0.08)", border: "1px solid rgba(224,173,95,0.25)" }}
-                    >
+                    <div className="flex items-start gap-2 text-sm rounded-xl px-4 py-3 font-body text-amber bg-amber/10 border border-amber/30">
                       <AlertTriangle size={15} className="shrink-0 mt-0.5" />
                       <span>{error[leg.leg_number]}</span>
                       <button
@@ -311,7 +291,7 @@ export default function HotelsPage() {
                   )}
 
                   {displayResults[leg.leg_number] && displayResults[leg.leg_number].length === 0 && (
-                    <p className="text-sm text-center py-6 font-body" style={{ color: "var(--text-muted)" }}>No hotels found.</p>
+                    <p className="text-sm text-center py-6 font-body text-ink-muted">No hotels found.</p>
                   )}
 
                   <AnimatedList>
@@ -350,16 +330,13 @@ export default function HotelsPage() {
         {/* Validation + progress */}
         <div className="space-y-3 pt-2">
           {!allLegsHaveHotels && validationIssues.length > 0 && (
-            <div
-              className="flex items-start gap-3 rounded-xl p-4"
-              style={{ background: "rgba(224,173,95,0.08)", border: "1px solid rgba(224,173,95,0.25)" }}
-            >
-              <AlertTriangle size={16} className="shrink-0 mt-0.5" style={{ color: "var(--warning)" }} />
+            <div className="flex items-start gap-3 rounded-xl p-4 bg-amber/10 border border-amber/30">
+              <AlertTriangle size={16} className="shrink-0 mt-0.5 text-amber" />
               <div>
-                <p className="text-sm font-semibold font-body mb-1" style={{ color: "var(--warning)" }}>Before you continue:</p>
+                <p className="text-sm font-semibold font-body mb-1 text-amber">Before you continue:</p>
                 <ul className="space-y-0.5">
                   {validationIssues.map((issue, i) => (
-                    <li key={i} className="text-sm font-body" style={{ color: "var(--warning)" }}>• {issue}</li>
+                    <li key={i} className="text-sm font-body text-amber/80">• {issue}</li>
                   ))}
                 </ul>
               </div>
@@ -367,12 +344,9 @@ export default function HotelsPage() {
           )}
 
           {allLegsHaveHotels && (
-            <div
-              className="flex items-center gap-2 rounded-xl px-4 py-3"
-              style={{ background: "rgba(107,144,128,0.08)", border: "1px solid rgba(107,144,128,0.25)" }}
-            >
-              <Check size={15} style={{ color: "var(--success)" }} />
-              <p className="text-sm font-medium font-body" style={{ color: "var(--success)" }}>
+            <div className="flex items-center gap-2 rounded-xl px-4 py-3 bg-teal-light border border-teal/20">
+              <Check size={15} className="text-teal" />
+              <p className="text-sm font-medium font-body text-teal">
                 All hotels confirmed — ready to continue
               </p>
             </div>
@@ -380,16 +354,13 @@ export default function HotelsPage() {
 
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-body" style={{ color: "var(--text-muted)" }}>{confirmedLegs} of {totalLegs} legs with hotel</span>
-              <span className="text-xs font-semibold font-body" style={{ color: "var(--accent)" }}>{Math.round(progressPct)}%</span>
+              <span className="text-xs font-body text-ink-muted">{confirmedLegs} of {totalLegs} legs with hotel</span>
+              <span className="text-xs font-semibold font-body text-teal">{Math.round(progressPct)}%</span>
             </div>
-            <div
-              className="h-1.5 w-full rounded-full overflow-hidden"
-              style={{ background: "var(--glass-1)" }}
-            >
+            <div className="h-1.5 w-full rounded-full overflow-hidden bg-surface2">
               <div
-                className="h-full rounded-full transition-all duration-500"
-                style={{ width: `${progressPct}%`, background: allLegsHaveHotels ? "var(--success)" : "var(--accent)" }}
+                className="h-full rounded-full transition-all duration-500 bg-teal"
+                style={{ width: `${progressPct}%` }}
               />
             </div>
           </div>

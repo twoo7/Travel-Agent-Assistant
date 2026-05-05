@@ -13,8 +13,8 @@ import type { DayPlan, HopMode } from "@/types/trip";
 interface Props {
   days: DayPlan[];
   currentLeg?: number;
-  focusedDay?: number | null;
-  onFocusedDayChange?: (day: number | null) => void;
+  focusedDays?: number[];
+  onFocusedDaysChange?: (days: number[]) => void;
   selectedLatLng?: { lat: number; lng: number; name?: string } | null;
 }
 
@@ -82,7 +82,7 @@ function BoundsFitter({ points }: { points: LatLng[] }) {
   return null;
 }
 
-export function TripMap({ days, currentLeg, focusedDay, onFocusedDayChange, selectedLatLng }: Props) {
+export function TripMap({ days, currentLeg, focusedDays = [], onFocusedDaysChange, selectedLatLng }: Props) {
   const [infoMarker, setInfoMarker] = useState<MarkerInfo | null>(null);
   const [infoPos, setInfoPos] = useState<LatLng | null>(null);
 
@@ -91,8 +91,8 @@ export function TripMap({ days, currentLeg, focusedDay, onFocusedDayChange, sele
     [days, currentLeg]
   );
   const visibleDays = useMemo(
-    () => focusedDay != null ? legDays.filter((d) => d.day_number === focusedDay) : legDays,
-    [legDays, focusedDay]
+    () => focusedDays.length > 0 ? legDays.filter((d) => focusedDays.includes(d.day_number)) : legDays,
+    [legDays, focusedDays]
   );
   const allItems = useMemo(
     () => legDays.flatMap((d) => d.items).filter((i) => i.lat !== 0 || i.lng !== 0),
@@ -107,16 +107,18 @@ export function TripMap({ days, currentLeg, focusedDay, onFocusedDayChange, sele
     <div className="h-full flex flex-col gap-2 min-h-[400px]">
       <style>{`@keyframes ping{75%,100%{transform:scale(2);opacity:0}}`}</style>
       {/* Map header — focused day indicator + All days reset */}
-      {focusedDay != null && (
+      {focusedDays.length > 0 && (
         <div
           className="flex items-center justify-between px-3 py-1.5 rounded-xl"
           style={{ background: "var(--glass-2)", border: "1px solid var(--glass-border-2)" }}
         >
           <span className="text-xs font-medium font-body" style={{ color: "var(--text-primary)" }}>
-            Day {focusedDay}
+            {focusedDays.length === 1
+              ? `Day ${focusedDays[0]}`
+              : `Days ${[...focusedDays].sort((a, b) => a - b).join(", ")}`}
           </span>
           <button
-            onClick={() => onFocusedDayChange?.(null)}
+            onClick={() => onFocusedDaysChange?.([])}
             className="text-xs px-2 py-0.5 rounded-full transition-colors font-body"
             style={{ background: "var(--glass-1)", color: "var(--text-muted)", border: "1px solid var(--glass-border-1)" }}
           >

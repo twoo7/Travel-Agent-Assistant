@@ -53,26 +53,14 @@ export function LocationCard({
 
   return (
     <div
-      className={`rounded-xl overflow-hidden ${isAdded ? "opacity-50" : ""}`}
-      style={{
-        background: "var(--glass-2)",
-        border: "1px solid var(--glass-border-2)",
-        ...(recommended ? { borderLeft: "2px solid var(--accent)" } : {}),
-      }}
+      className={`rounded-xl overflow-hidden bg-surface border ${
+        recommended ? "border-l-2 border-teal/40" : "border-border"
+      }`}
     >
-      {/* Saved indicator strip */}
-      {isSaved && !isAdded && (
-        <div
-          className="flex items-center gap-1 px-3 py-1 text-[9px] font-bold uppercase tracking-[1.5px] font-body"
-          style={{ background: "rgba(107,144,128,0.12)", borderBottom: "1px solid rgba(107,144,128,0.2)", color: "var(--success)" }}
-        >
-          <Bookmark size={9} fill="currentColor" />
-          Saved
-        </div>
-      )}
+
       {/* Main row: text left, square image right */}
       <div
-        className={`flex gap-2.5 p-3 ${hasExpandableContent || onOpenDetail ? "cursor-pointer" : ""}`}
+        className={`flex gap-2.5 p-2.5 ${hasExpandableContent || onOpenDetail ? "cursor-pointer" : ""}`}
         onClick={hasExpandableContent ? () => setExpanded((v) => !v) : onOpenDetail}
       >
         {/* Text block */}
@@ -85,27 +73,30 @@ export function LocationCard({
               className="group inline-flex items-center gap-1 max-w-full"
               onClick={(e) => e.stopPropagation()}
             >
-              <span className="text-sm font-semibold leading-snug font-body group-hover:underline line-clamp-2" style={{ color: "var(--text-primary)" }}>
+              <span className="text-[13px] font-semibold leading-snug font-body group-hover:underline truncate text-ink">
                 {name}
               </span>
-              <ExternalLink size={10} className="opacity-0 group-hover:opacity-50 shrink-0 transition-opacity" style={{ color: "var(--text-muted)" }} />
+              <ExternalLink size={10} className="opacity-0 group-hover:opacity-50 shrink-0 transition-opacity text-ink-muted" />
             </a>
-            {category && (
-              <p className="text-[11px] font-body capitalize mt-0.5" style={{ color: "var(--text-muted)" }}>{category}</p>
-            )}
           </div>
 
           {address && (
-            <p className="text-[11px] font-body line-clamp-1" style={{ color: "var(--text-subtle)" }}>{address}</p>
+            <p className="text-[11px] font-body line-clamp-1 text-ink-subtle">{address}</p>
           )}
 
-          {/* Rating + price row */}
-          <div className="flex items-center gap-2">
+          {/* Rating + category + price row */}
+          <div className="flex items-center gap-1.5 flex-wrap">
             {rating != null && (
-              <span className="text-xs font-body font-medium" style={{ color: "var(--warning)" }}>★ {rating.toFixed(1)}</span>
+              <span className="text-xs font-body font-medium text-amber">★ {rating.toFixed(1)}</span>
+            )}
+            {rating != null && priceLevel != null && (
+              <span className="text-[11px] font-body text-ink-subtle">·</span>
             )}
             {priceLevel != null && (
-              <span className="text-xs font-body" style={{ color: "var(--text-muted)" }}>{PRICE_LABELS[priceLevel]}</span>
+              <span className="text-xs font-body text-ink-muted">{PRICE_LABELS[priceLevel]}</span>
+            )}
+            {category && (
+              <span className="text-[10px] font-body capitalize px-1.5 py-0.5 rounded bg-surface2 text-ink-muted">{category}</span>
             )}
           </div>
         </div>
@@ -119,22 +110,20 @@ export function LocationCard({
               alt={name}
               className="w-full h-full object-cover rounded-lg"
             />
-            {onRemove && (
+            {onRemove && !isSaved && (
               <button
                 onClick={(e) => { e.stopPropagation(); onRemove?.(); }}
-                className="absolute top-1 right-1 w-5 h-5 flex items-center justify-center rounded-full transition-colors hover:bg-red-500/80"
-                style={{ background: "rgba(0,0,0,0.5)", color: "#fff" }}
+                className="absolute top-1 right-1 w-5 h-5 flex items-center justify-center rounded-full transition-colors bg-black/50 text-white hover:bg-red/80"
                 aria-label="Remove"
               >
                 <X size={10} />
               </button>
             )}
           </div>
-        ) : onRemove ? (
+        ) : (onRemove && !isSaved) ? (
           <button
             onClick={(e) => { e.stopPropagation(); onRemove?.(); }}
-            className="shrink-0 w-5 h-5 flex items-center justify-center rounded transition-colors hover:bg-red-500/10 self-start"
-            style={{ color: "var(--text-subtle)" }}
+            className="shrink-0 w-5 h-5 flex items-center justify-center rounded transition-colors hover:bg-red/10 hover:text-red text-ink-subtle self-start"
             aria-label="Remove"
           >
             <X size={11} />
@@ -143,17 +132,17 @@ export function LocationCard({
       </div>
 
       {expanded && hasExpandableContent && (
-        <div className="px-3 pb-2 space-y-1" style={{ borderTop: "1px solid var(--glass-border-1)", paddingTop: 8 }}>
+        <div className="px-3 pb-2 pt-2 space-y-1 border-t border-border">
           {aiNote && (
-            <p className="text-xs italic font-body" style={{ color: "var(--accent)" }}>{aiNote}</p>
+            <p className="text-xs italic font-body text-teal">{aiNote}</p>
           )}
           {bestTime && (
-            <p className="text-xs flex items-center gap-1 font-body" style={{ color: "var(--text-muted)" }}>
+            <p className="text-xs flex items-center gap-1 font-body text-ink-muted">
               <Clock size={10} />{bestTime}
             </p>
           )}
           {bookingRequired && (
-            <p className="text-xs flex items-center gap-1 font-body" style={{ color: "var(--warning)" }}>
+            <p className="text-xs flex items-center gap-1 font-body text-amber">
               <Ticket size={10} />Booking required
             </p>
           )}
@@ -162,13 +151,10 @@ export function LocationCard({
       )}
 
       {/* Action bar */}
-      <div className="px-3 pb-3">
+      <div className="px-2.5 pb-2.5">
       {isAdded ? (
-        <div
-          className="w-full text-xs font-medium py-1.5 rounded-lg flex items-center justify-center gap-1 font-body"
-          style={{ background: "var(--glass-1)", color: "var(--text-subtle)", cursor: "default" }}
-        >
-          <Check size={11} />Added
+        <div className="w-full text-xs font-medium py-1 rounded-lg flex items-center justify-center gap-1 font-body bg-teal-light text-teal cursor-default">
+          <Check size={11} />Added to day
         </div>
       ) : pickerOpen ? (
         <DayPicker
@@ -180,20 +166,18 @@ export function LocationCard({
         <div className="flex gap-1.5">
           <button
             onClick={() => setPickerOpen(true)}
-            className="flex-1 text-xs font-medium py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1 font-body"
-            style={{ background: "var(--accent)", color: "white" }}
+            className="flex-1 text-xs font-medium py-1 rounded-lg transition-colors flex items-center justify-center gap-1 font-body bg-teal text-surface hover:bg-teal-hover"
           >
-            <Plus size={11} />Add to day
+            <Plus size={11} />Add
           </button>
           {(onSave || (isSaved && onRemove)) && (
             <button
               onClick={isSaved ? onRemove : onSave}
-              className="text-xs font-medium py-1.5 px-2 rounded-lg transition-colors flex items-center justify-center font-body"
-              style={
+              className={`text-xs font-medium py-1.5 px-2 rounded-lg transition-colors flex items-center justify-center font-body ${
                 isSaved
-                  ? { background: "rgba(107,144,128,0.15)", color: "var(--success)", border: "1px solid rgba(107,144,128,0.35)" }
-                  : { background: "var(--glass-1)", color: "var(--text-subtle)", border: "1px solid var(--glass-border-1)" }
-              }
+                  ? "bg-teal-light text-teal border border-teal/30"
+                  : "bg-surface2 text-ink-subtle border border-border"
+              }`}
               title={isSaved ? "Remove from saved" : "Save for later"}
             >
               <Bookmark size={11} fill={isSaved ? "currentColor" : "none"} />

@@ -37,9 +37,9 @@ const variantConfig: Record<
   ToastVariant,
   { icon: React.ReactNode; bgClass: string }
 > = {
-  success: { icon: <Check size={16} />, bgClass: "bg-success text-white" },
-  error: { icon: <AlertCircle size={16} />, bgClass: "bg-red-500 text-white" },
-  info: { icon: <Info size={16} />, bgClass: "" },
+  success: { icon: <Check size={16} />, bgClass: "bg-teal text-surface" },
+  error: { icon: <AlertCircle size={16} />, bgClass: "bg-red text-surface" },
+  info: { icon: <Info size={16} />, bgClass: "bg-surface border border-border text-ink" },
 };
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
@@ -85,26 +85,19 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 exit={{ opacity: 0, y: -8, scale: 0.95 }}
                 transition={{ duration: 0.2, ease: "easeOut" }}
                 className={[
-                  "pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl shadow-card-hover",
+                  "pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl shadow-md",
                   "text-sm font-body font-medium max-w-xs",
-                  hasUndo ? "" : bgClass,
+                  hasUndo ? "bg-surface border border-border text-ink" : bgClass,
                 ]
                   .filter(Boolean)
                   .join(" ")}
-                style={hasUndo ? {
-                  background: "var(--glass-elevated, rgba(255,255,255,0.11))",
-                  backdropFilter: "blur(20px)",
-                  border: "1px solid var(--glass-border-1)",
-                  color: "var(--text-primary)",
-                } : undefined}
               >
                 {!hasUndo && <span className="shrink-0">{icon}</span>}
                 <span className="flex-1">{t.message}</span>
                 {hasUndo && (
                   <button
                     onClick={() => { t.onUndo?.(); dismiss(t.id); }}
-                    className="shrink-0 text-xs font-semibold px-2 py-1 rounded-lg transition-colors font-body"
-                    style={{ color: "var(--accent)", background: "rgba(224,122,95,0.15)" }}
+                    className="shrink-0 text-xs font-semibold px-2 py-1 rounded-lg transition-colors font-body text-teal bg-teal-light"
                   >
                     {t.undoLabel}
                   </button>

@@ -77,44 +77,30 @@ function TripCard({
       initial={{ opacity: 0, scale: 0.96 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.94 }}
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      transition={{ type: "spring", stiffness: 240, damping: 26 }}
       onClick={() => onOpen(trip.trip_id)}
-      className="group rounded-2xl p-5 cursor-pointer transition-all duration-200 relative"
-      style={{
-        background: "var(--glass-2)",
-        border: "1px solid var(--glass-border-2)",
-        backdropFilter: "blur(12px)",
-      }}
+      className="group bg-surface border border-border rounded-xl p-5 cursor-pointer shadow-sm hover:shadow-md transition-all duration-200 relative"
       whileHover={{ y: -2 }}
     >
       {/* Badges */}
       <div className="absolute top-4 right-4 flex items-center gap-1.5">
         {isActive && (
-          <span
-            className="text-[10px] font-semibold uppercase tracking-[2px] px-2 py-0.5 rounded-full font-body"
-            style={{ background: "rgba(107,144,128,0.2)", color: "var(--success)", border: "1px solid rgba(107,144,128,0.4)" }}
-          >
+          <span className="text-[10px] font-semibold uppercase tracking-[2px] px-2 py-0.5 rounded-full font-body bg-teal-light text-teal border border-teal/20">
             Active
           </span>
         )}
         {trip.is_draft && (
-          <span
-            className="text-[10px] font-semibold uppercase tracking-[2px] px-2 py-0.5 rounded-full font-body"
-            style={{ background: "rgba(224,122,95,0.15)", color: "var(--accent)", border: "1px solid rgba(224,122,95,0.3)" }}
-          >
+          <span className="text-[10px] font-semibold uppercase tracking-[2px] px-2 py-0.5 rounded-full font-body bg-amber/10 text-amber border border-amber/20">
             Draft
           </span>
         )}
       </div>
 
-      <h2
-        className="text-lg font-semibold font-body mb-2 pr-28 truncate"
-        style={{ color: "var(--text-primary)" }}
-      >
+      <h2 className="font-display text-lg font-medium text-ink mb-2 pr-28 truncate">
         {trip.name || "Unnamed Trip"}
       </h2>
 
-      <div className="flex items-center gap-3 text-xs font-body" style={{ color: "var(--text-muted)" }}>
+      <div className="flex items-center gap-3 text-xs font-body text-ink-muted">
         <span className="flex items-center gap-1">
           <Calendar size={12} />
           Updated {formatDate(trip.updated_at)}
@@ -131,24 +117,21 @@ function TripCard({
               <div key={key} className="flex items-center">
                 <div className="flex flex-col items-center gap-0.5">
                   {done ? (
-                    <CheckCircle2 size={14} style={{ color: "var(--success)" }} />
+                    <CheckCircle2 size={14} className="text-teal" />
                   ) : isCurrentStep ? (
-                    <Circle size={14} style={{ color: "var(--accent)" }} strokeWidth={2.5} />
+                    <Circle size={14} className="text-amber" strokeWidth={2.5} />
                   ) : (
-                    <Circle size={14} style={{ color: "var(--text-subtle)" }} strokeWidth={1.5} />
+                    <Circle size={14} className="text-ink-subtle" strokeWidth={1.5} />
                   )}
-                  <span
-                    className="text-[9px] font-semibold uppercase tracking-wide font-body"
-                    style={{ color: done ? "var(--success)" : isCurrentStep ? "var(--accent)" : "var(--text-subtle)" }}
-                  >
+                  <span className={[
+                    "text-[9px] font-semibold uppercase tracking-wide font-body",
+                    done ? "text-teal" : isCurrentStep ? "text-amber" : "text-ink-subtle",
+                  ].join(" ")}>
                     {label}
                   </span>
                 </div>
                 {idx < STEPS.length - 1 && (
-                  <div
-                    className="w-6 h-px mb-3 mx-0.5"
-                    style={{ background: done ? "var(--success)" : "var(--glass-border-2)" }}
-                  />
+                  <div className={["w-6 h-px mb-3 mx-0.5", done ? "bg-teal" : "bg-border"].join(" ")} />
                 )}
               </div>
             );
@@ -157,16 +140,14 @@ function TripCard({
       )}
 
       {/* Actions */}
-      <div className="flex items-center gap-2 mt-4 pt-3" style={{ borderTop: "1px solid var(--glass-border-1)" }}>
+      <div className="flex items-center gap-2 mt-4 pt-3 border-t border-border">
         <button
           type="button"
           onClick={handleShare}
-          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors font-body"
-          style={{
-            background: "var(--glass-1)",
-            border: "1px solid var(--glass-border-1)",
-            color: copying ? "var(--success)" : "var(--text-muted)",
-          }}
+          className={[
+            "flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-border bg-surface2 transition-colors font-body",
+            copying ? "text-teal" : "text-ink-muted hover:text-ink",
+          ].join(" ")}
           title="Copy share link"
         >
           <Share2 size={12} />
@@ -179,19 +160,14 @@ function TripCard({
             e.stopPropagation();
             onDelete(trip.trip_id);
           }}
-          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors font-body"
-          style={{
-            background: "var(--glass-1)",
-            border: "1px solid var(--glass-border-1)",
-            color: "var(--text-muted)",
-          }}
+          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-border bg-surface2 text-ink-muted hover:text-red hover:border-red/30 transition-colors font-body"
           title="Delete trip"
         >
           <Trash2 size={12} />
           Delete
         </button>
 
-        <div className="ml-auto flex items-center gap-1 text-xs font-medium font-body" style={{ color: "var(--accent)" }}>
+        <div className="ml-auto flex items-center gap-1 text-xs font-medium font-body text-teal">
           Open
           <ArrowRight size={12} />
         </div>
@@ -247,14 +223,11 @@ export default function TripsPage() {
     <div className="max-w-2xl mx-auto py-10 px-4 md:px-0 min-h-screen">
         {/* Header */}
         <div className="mb-8">
-          <p
-            className="text-[10px] font-semibold uppercase tracking-[2.5px] mb-3 font-body"
-            style={{ color: "var(--text-eyebrow)" }}
-          >
+          <p className="text-[10px] font-semibold uppercase tracking-[2px] mb-2 font-body text-teal">
             My Trips
           </p>
           <div className="flex items-end justify-between gap-4">
-            <h1 className="font-display text-4xl leading-tight" style={{ color: "var(--text-primary)" }}>
+            <h1 className="font-display text-[34px] font-medium leading-tight text-ink">
               Your journeys
             </h1>
             <Button
@@ -271,10 +244,7 @@ export default function TripsPage() {
 
         {/* Content */}
         {error && (
-          <div
-            className="rounded-xl p-4 text-sm font-body"
-            style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#f87171" }}
-          >
+          <div className="rounded-xl p-4 text-sm font-body text-red bg-red/8 border border-red/20">
             {error}
           </div>
         )}
@@ -282,7 +252,7 @@ export default function TripsPage() {
         {!error && trips === null && (
           <div className="space-y-3">
             {[0, 1, 2].map((i) => (
-              <Skeleton key={i} className="h-36 rounded-2xl" />
+              <Skeleton key={i} className="h-36 rounded-xl" />
             ))}
           </div>
         )}
@@ -293,11 +263,11 @@ export default function TripsPage() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center py-20"
           >
-            <MapPin size={40} className="mx-auto mb-4" style={{ color: "var(--text-muted)" }} />
-            <p className="text-lg font-semibold font-body mb-1" style={{ color: "var(--text-primary)" }}>
+            <MapPin size={40} className="mx-auto mb-4 text-ink-muted" />
+            <p className="font-display text-lg font-medium mb-1 text-ink">
               No trips yet
             </p>
-            <p className="text-sm font-body mb-6" style={{ color: "var(--text-muted)" }}>
+            <p className="text-sm font-body mb-6 text-ink-muted">
               Start planning your first adventure.
             </p>
             <Button variant="primary" size="md" icon={<Plus size={14} />} onClick={handleNewTrip} disabled={creating}>
